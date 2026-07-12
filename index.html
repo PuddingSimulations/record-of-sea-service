@@ -7,538 +7,693 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Sea Service" />
 <title>Record of Sea Service</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
 <style>
+  :root {
+    --navy: #1B2A4A;
+    --amber: #C08A3E;
+    --amber-light: #C08A3E22;
+    --gray-500: #6B7280;
+    --gray-400: #9CA3AF;
+    --gray-200: #E5E7EB;
+    --ink: #2A2A2A;
+    --deck: #3D6B6B;
+    --engineering: #C08A3E;
+    --deck-eng: #7A5C8E;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; background: #FFFFFF; }
-  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, system-ui, sans-serif; color: var(--ink); }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 112px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .badge { width: 44px; height: 44px; border-radius: 999px; background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  h1 { font-size: 24px; font-weight: 700; color: var(--navy); margin: 0; letter-spacing: 0.01em; }
+  .subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray-500); margin: 2px 0 0; }
+  .total-card { background: var(--navy); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .total-card .label { font-size: 14px; color: #C9BFA0; }
+  .total-card .value { font-size: 30px; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums; }
+  .section-heading { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray-500); margin: 0 0 8px 4px; }
+  .summary-box { border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+  .summary-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid #E8E0C8; }
+  .summary-row:first-child { border-top: none; }
+  .summary-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .dot-bar { width: 6px; height: 24px; border-radius: 999px; flex-shrink: 0; }
+  .summary-name { font-size: 14px; }
+  .summary-code { font-size: 12px; color: var(--gray-500); }
+  .summary-total { font-size: 14px; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; flex-shrink: 0; padding-left: 8px; }
+  .empty-box { border: 1px dashed var(--gray-200); border-radius: 12px; padding: 32px 16px; text-align: center; }
+  .empty-box p { font-size: 14px; color: var(--gray-500); margin: 0; }
+  .entries-list { display: flex; flex-direction: column; gap: 8px; }
+  .entry-card { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .entry-main { min-width: 0; }
+  .entry-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .entry-vessel { font-size: 14px; font-weight: 600; }
+  .entry-code { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .entry-dates { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .entry-details { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+  .entry-notes { font-size: 12px; color: var(--gray-400); font-style: italic; margin-top: 4px; }
+  .delete-btn { flex-shrink: 0; padding: 6px; border-radius: 999px; border: none; background: transparent; cursor: pointer; }
+  .delete-btn:active { background: rgba(0,0,0,0.05); }
+  .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 999px; background: var(--amber); border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.2); cursor: pointer; z-index: 40; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(27,42,74,0.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .modal-overlay.open { display: flex; }
+  .modal { width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: #FFFFFF; border-radius: 16px; padding: 20px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .modal-header h2 { font-size: 18px; font-weight: 600; color: var(--navy); margin: 0; }
+  .close-btn { padding: 4px; border-radius: 999px; border: none; background: transparent; cursor: pointer; }
+  .close-btn:active { background: rgba(0,0,0,0.05); }
+  .form-section { padding-top: 16px; border-top: 1px solid var(--gray-200); }
+  .form-section:first-child { padding-top: 0; border-top: none; }
+  .form-section + .form-section { margin-top: 20px; }
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--navy); margin: 0 0 12px; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); margin-bottom: 4px; }
+  .field-hint { font-size: 11px; color: var(--gray-400); margin: 4px 0 0; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%; border: 1px solid var(--gray-200); border-radius: 8px; padding: 8px 12px;
+    font-size: 14px; color: var(--ink); background: #FFFFFF; font-family: inherit; outline: none;
+  }
+  textarea { resize: none; }
+  input:disabled { opacity: 0.6; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .vessel-select { border-color: var(--amber) !important; background: var(--amber-light) !important; color: var(--navy) !important; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .autocalc-btn { font-size: 11px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--gray-200); background: transparent; color: var(--gray-500); cursor: pointer; }
+  .autocalc-btn.active { border-color: var(--amber); color: var(--amber); background: var(--amber-light); }
+  .calendar-box { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px; }
+  .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .calendar-nav button { width: 32px; height: 32px; border-radius: 999px; border: none; background: transparent; font-size: 18px; color: var(--navy); cursor: pointer; }
+  .calendar-nav button:active { background: rgba(0,0,0,0.05); }
+  .calendar-nav span { font-size: 14px; font-weight: 600; color: var(--navy); }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--gray-400); margin-bottom: 4px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; }
+  .day-cell { width: 32px; height: 32px; margin: 0 auto; border-radius: 999px; border: none; background: transparent; font-size: 12px; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .day-cell.faded { opacity: 0.3; }
+  .day-cell.inrange { background: #C08A3E33; }
+  .day-cell.endpoint { background: var(--amber); color: #FFFFFF; font-weight: 700; }
+  .cal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-200); }
+  .cal-footer span { font-size: 12px; color: var(--gray-500); }
+  .clear-btn { font-size: 12px; color: var(--amber); background: none; border: none; cursor: pointer; padding-left: 8px; flex-shrink: 0; }
+  .save-btn { width: 100%; border: none; border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600; background: var(--amber); color: var(--navy); cursor: pointer; margin-top: 20px; }
+  .save-btn:disabled { opacity: 0.4; }
 </style>
 </head>
 <body>
-<div id="root"></div>
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo } = React;
+<div class="wrap">
+  <header>
+    <div class="badge">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="5" r="3"></circle><line x1="12" y1="22" x2="12" y2="8"></line><path d="M5 12H2a10 10 0 0 0 20 0h-3"></path>
+      </svg>
+    </div>
+    <div>
+      <h1>Record of Sea Service</h1>
+      <p class="subtitle">AMSA Form 771 · Near Coastal</p>
+    </div>
+  </header>
 
-// ---- Minimal inline icons (no external icon package needed) ----
-function Icon({ children, size = 20, color = 'currentColor', strokeWidth = 2, ...rest }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
-         strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" {...rest}>
-      {children}
-    </svg>
-  );
-}
-function Plus(props) {
-  return <Icon {...props}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>;
-}
-function Trash2(props) {
-  return (
-    <Icon {...props}>
-      <path d="M3 6h18" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
-    </Icon>
-  );
-}
-function Anchor(props) {
-  return (
-    <Icon {...props}>
-      <circle cx="12" cy="5" r="3" />
-      <line x1="12" y1="22" x2="12" y2="8" />
-      <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
-    </Icon>
-  );
-}
-function X(props) {
-  return <Icon {...props}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>;
-}
+  <div class="total-card">
+    <span class="label">Total qualifying days</span>
+    <span class="value" id="grandTotal">0</span>
+  </div>
 
-// ---- AMSA reference data ----
-const DUTY_CATEGORIES = [
-  { code: 'AEIC', name: 'Assistant to engineer in charge', group: 'Engineering' },
-  { code: 'AE/ED', name: 'Assistant to engineer or engine driver', group: 'Engineering' },
-  { code: 'E/ED', name: 'Engineer or engine driver', group: 'Engineering' },
-  { code: 'EW', name: 'Engineer watchkeeper', group: 'Engineering' },
-  { code: 'EIC', name: 'Engineer in charge', group: 'Engineering' },
-  { code: 'D', name: 'Deck work', group: 'Deck' },
-  { code: 'DE', name: 'Deck and engineering', group: 'Deck & Engineering' },
-  { code: 'GPH', name: 'General purpose hand', group: 'Deck' },
-  { code: 'INW', name: 'In charge of navigation watch / officer of watch', group: 'Deck' },
-  { code: 'C', name: 'Coxswain grade 1 or 2 or 3', group: 'Deck' },
-];
+  <div id="summarySection"></div>
 
-const GROUP_COLORS = {
-  'Deck': '#3D6B6B',
-  'Engineering': '#C08A3E',
-  'Deck & Engineering': '#7A5C8E',
-  'Other': '#6B6B6B',
-};
+  <div>
+    <p class="section-heading">Entries</p>
+    <div id="entriesSection"></div>
+  </div>
+</div>
 
-const PROPULSION_TYPES = [
-  { code: 'I', name: 'Inboard' },
-  { code: 'O', name: 'Outboard' },
-  { code: 'S', name: 'Steam' },
-];
+<button class="fab" id="openModalBtn" aria-label="Add sea service entry">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+</button>
 
-const OPERATION_TYPES = [
-  { code: 'C', name: 'Commercial' },
-  { code: 'R', name: 'Recreational' },
-  { code: 'M', name: 'Military' },
-];
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <h2>Add Sea Service</h2>
+      <button class="close-btn" id="closeModalBtn" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
 
-const MODE_OF_OPERATION = [
-  { code: 'VU', name: 'Underway' },
-  { code: 'NUD', name: 'Not underway \u2013 deck or refit work' },
-  { code: 'NUE', name: 'Not underway \u2013 engine or refit work' },
-];
+    <div class="form-section">
+      <p class="section-title">Vessel details</p>
+      <div class="field" id="knownVesselField" style="display:none;">
+        <label class="field-label">Use existing vessel</label>
+        <select id="knownVesselSelect" class="vessel-select">
+          <option value="">Select a vessel to pre-fill…</option>
+        </select>
+        <p class="field-hint">Fills in the vessel identifier, length, power and propulsion from your last entry for that vessel. You can still edit any of it below.</p>
+      </div>
+      <div class="field">
+        <label class="field-label">Vessel name</label>
+        <input type="text" id="vesselName" placeholder="e.g. MV Southern Star" />
+      </div>
+      <div class="field">
+        <label class="field-label">Vessel identifier</label>
+        <input type="text" id="vesselId" placeholder="e.g. registration / call sign" />
+      </div>
+      <div class="field row-2">
+        <div>
+          <label class="field-label">Length (m)</label>
+          <input type="number" min="0" id="vesselLength" />
+        </div>
+        <div>
+          <label class="field-label">Power (kW)</label>
+          <input type="number" min="0" id="vesselPower" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Propulsion type</label>
+        <select id="propulsion"></select>
+      </div>
+    </div>
 
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+    <div class="form-section">
+      <p class="section-title">Operation</p>
+      <div class="field">
+        <label class="field-label">Type of operation</label>
+        <select id="operationType"></select>
+      </div>
+      <div class="field">
+        <label class="field-label">Mode of operation</label>
+        <select id="modeOfOperation"></select>
+      </div>
+    </div>
 
-function isoDate(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+    <div class="form-section">
+      <p class="section-title">Your role</p>
+      <div class="field">
+        <label class="field-label">Position on board</label>
+        <input type="text" id="position" placeholder="e.g. Second Mate, Assistant Engineer" />
+      </div>
+      <div class="field">
+        <label class="field-label">Duty category</label>
+        <select id="dutyCategory"></select>
+      </div>
+    </div>
 
-function buildMonthGrid(viewDate) {
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  const firstOfMonth = new Date(year, month, 1);
-  const firstWeekday = (firstOfMonth.getDay() + 6) % 7; // 0 = Monday
-  const gridStart = new Date(year, month, 1 - firstWeekday);
-  return Array.from({ length: 42 }, (_, i) => {
-    const d = new Date(gridStart);
-    d.setDate(gridStart.getDate() + i);
-    return d;
-  });
-}
+    <div class="form-section">
+      <p class="section-title">Sea time</p>
+      <div class="field">
+        <label class="field-label">Voyage dates</label>
+        <div class="calendar-box">
+          <div class="calendar-nav">
+            <button type="button" id="prevMonthBtn" aria-label="Previous month">‹</button>
+            <span id="calendarMonthLabel"></span>
+            <button type="button" id="nextMonthBtn" aria-label="Next month">›</button>
+          </div>
+          <div class="cal-weekdays">
+            <div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div><div>Su</div>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-footer">
+            <span id="dateRangeLabel">Tap a start date, then a finish date</span>
+            <button type="button" class="clear-btn" id="clearDatesBtn" style="display:none;">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="toggle-row">
+          <label class="field-label" style="margin-bottom:0;">Qualifying days</label>
+          <button type="button" class="autocalc-btn active" id="autoCalcBtn">Auto (from dates)</button>
+        </div>
+        <input type="number" min="1" id="daysInput" value="1" disabled />
+        <p class="field-hint" id="daysHint">Counting every calendar day from start to finish, inclusive. Switch to Manual if there were days off in between that shouldn't count.</p>
+      </div>
+    </div>
 
-// ---- Local persistence (browser localStorage — works on any standalone host) ----
-const STORAGE_KEY = 'sea-service-entries';
+    <div class="field" style="margin-top:20px;">
+      <label class="field-label">Notes (optional)</label>
+      <textarea id="notes" rows="2" placeholder="e.g. supervisor name, task book reference"></textarea>
+    </div>
 
-function SeaServiceTracker() {
-  const [entries, setEntries] = useState([]);
-  const [loaded, setLoaded] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    vessel: '',
-    vesselId: '',
-    position: '',
-    vesselLength: '',
-    vesselPower: '',
-    propulsion: 'I',
-    operationType: 'C',
-    modeOfOperation: 'VU',
-    category: 'D',
-    start: '',
-    end: '',
-    days: 1,
-    notes: '',
-  });
-  const [autoCalc, setAutoCalc] = useState(true);
-  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+    <button class="save-btn" id="saveEntryBtn" disabled>Save entry</button>
+  </div>
+</div>
 
-  function handleDayClick(dateObj) {
-    const iso = isoDate(dateObj);
-    setForm((f) => {
-      if (!f.start || (f.start && f.end)) {
-        return { ...f, start: iso, end: '' };
-      }
-      if (iso < f.start) {
-        return { ...f, start: iso, end: f.start };
-      }
-      return { ...f, end: iso };
-    });
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'sea-service-entries';
+
+  var DUTY_CATEGORIES = [
+    { code: 'AEIC', name: 'Assistant to engineer in charge', group: 'Engineering' },
+    { code: 'AE/ED', name: 'Assistant to engineer or engine driver', group: 'Engineering' },
+    { code: 'E/ED', name: 'Engineer or engine driver', group: 'Engineering' },
+    { code: 'EW', name: 'Engineer watchkeeper', group: 'Engineering' },
+    { code: 'EIC', name: 'Engineer in charge', group: 'Engineering' },
+    { code: 'D', name: 'Deck work', group: 'Deck' },
+    { code: 'DE', name: 'Deck and engineering', group: 'Deck & Engineering' },
+    { code: 'GPH', name: 'General purpose hand', group: 'Deck' },
+    { code: 'INW', name: 'In charge of navigation watch / officer of watch', group: 'Deck' },
+    { code: 'C', name: 'Coxswain grade 1 or 2 or 3', group: 'Deck' }
+  ];
+
+  var GROUP_COLORS = {
+    'Deck': '#3D6B6B',
+    'Engineering': '#C08A3E',
+    'Deck & Engineering': '#7A5C8E',
+    'Other': '#6B6B6B'
+  };
+
+  var PROPULSION_TYPES = [
+    { code: 'I', name: 'Inboard' },
+    { code: 'O', name: 'Outboard' },
+    { code: 'S', name: 'Steam' }
+  ];
+
+  var OPERATION_TYPES = [
+    { code: 'C', name: 'Commercial' },
+    { code: 'R', name: 'Recreational' },
+    { code: 'M', name: 'Military' }
+  ];
+
+  var MODE_OF_OPERATION = [
+    { code: 'VU', name: 'Underway' },
+    { code: 'NUD', name: 'Not underway \u2013 deck or refit work' },
+    { code: 'NUE', name: 'Not underway \u2013 engine or refit work' }
+  ];
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function isoDate(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function buildMonthGrid(viewDate) {
+    var year = viewDate.getFullYear();
+    var month = viewDate.getMonth();
+    var firstOfMonth = new Date(year, month, 1);
+    var firstWeekday = (firstOfMonth.getDay() + 6) % 7;
+    var gridStart = new Date(year, month, 1 - firstWeekday);
+    var days = [];
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      days.push(d);
+    }
+    return days;
   }
 
   function daysBetween(start, end) {
     if (!start || !end) return null;
-    const s = new Date(start + 'T00:00:00');
-    const e = new Date(end + 'T00:00:00');
-    const diff = Math.round((e - s) / 86400000) + 1;
+    var s = new Date(start + 'T00:00:00');
+    var e = new Date(end + 'T00:00:00');
+    var diff = Math.round((e - s) / 86400000) + 1;
     return diff > 0 ? diff : null;
   }
 
-  useEffect(() => {
-    if (!autoCalc) return;
-    const calculated = daysBetween(form.start, form.end);
-    if (calculated !== null) {
-      setForm((f) => ({ ...f, days: calculated }));
-    }
-  }, [form.start, form.end, autoCalc]);
-
-  // Load once on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setEntries(JSON.parse(raw));
-    } catch (e) {
-      // no existing data, or storage unavailable
-    } finally {
-      setLoaded(true);
-    }
-  }, []);
-
-  // Save whenever entries change (after initial load)
-  useEffect(() => {
-    if (!loaded) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    } catch (e) {
-      // storage full or unavailable
-    }
-  }, [entries, loaded]);
-
-  const totals = useMemo(() => {
-    const map = {};
-    entries.forEach((e) => {
-      map[e.category] = (map[e.category] || 0) + Number(e.days);
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-    return DUTY_CATEGORIES
-      .map((c) => ({ ...c, total: map[c.code] || 0 }))
-      .filter((c) => c.total > 0);
-  }, [entries]);
+  }
 
-  const grandTotal = entries.reduce((sum, e) => sum + Number(e.days), 0);
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
 
-  const sortedEntries = useMemo(
-    () => [...entries].sort((a, b) => (b.start || '').localeCompare(a.start || '')),
-    [entries]
-  );
+  // ---- State ----
+  var entries = [];
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) entries = JSON.parse(raw);
+  } catch (e) { entries = []; }
 
-  const knownVessels = useMemo(() => {
-    const byName = new Map();
-    [...entries]
-      .sort((a, b) => (a.start || '').localeCompare(b.start || ''))
-      .forEach((e) => {
-        byName.set(e.vessel, {
+  var form = defaultForm();
+  var autoCalc = true;
+  var calendarMonth = new Date();
+
+  function defaultForm() {
+    return {
+      vessel: '', vesselId: '', position: '', vesselLength: '', vesselPower: '',
+      propulsion: 'I', operationType: 'C', modeOfOperation: 'VU', category: 'D',
+      start: '', end: '', days: 1, notes: ''
+    };
+  }
+
+  function saveEntries() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {}
+  }
+
+  // ---- DOM refs ----
+  var $ = function (id) { return document.getElementById(id); };
+  var grandTotalEl = $('grandTotal');
+  var summarySection = $('summarySection');
+  var entriesSection = $('entriesSection');
+  var modalOverlay = $('modalOverlay');
+  var vesselNameInput = $('vesselName');
+  var vesselIdInput = $('vesselId');
+  var vesselLengthInput = $('vesselLength');
+  var vesselPowerInput = $('vesselPower');
+  var propulsionSelect = $('propulsion');
+  var operationTypeSelect = $('operationType');
+  var modeOfOperationSelect = $('modeOfOperation');
+  var positionInput = $('position');
+  var dutyCategorySelect = $('dutyCategory');
+  var notesInput = $('notes');
+  var daysInput = $('daysInput');
+  var daysHint = $('daysHint');
+  var autoCalcBtn = $('autoCalcBtn');
+  var calendarMonthLabel = $('calendarMonthLabel');
+  var calGrid = $('calGrid');
+  var dateRangeLabel = $('dateRangeLabel');
+  var clearDatesBtn = $('clearDatesBtn');
+  var knownVesselField = $('knownVesselField');
+  var knownVesselSelect = $('knownVesselSelect');
+  var saveEntryBtn = $('saveEntryBtn');
+
+  // ---- Populate static selects ----
+  function fillSelect(selectEl, items) {
+    selectEl.innerHTML = '';
+    items.forEach(function (item) {
+      var opt = document.createElement('option');
+      opt.value = item.code;
+      opt.textContent = item.name + ' (' + item.code + ')';
+      selectEl.appendChild(opt);
+    });
+  }
+  fillSelect(propulsionSelect, PROPULSION_TYPES);
+  fillSelect(operationTypeSelect, OPERATION_TYPES);
+  fillSelect(modeOfOperationSelect, MODE_OF_OPERATION);
+  fillSelect(dutyCategorySelect, DUTY_CATEGORIES);
+
+  // ---- Rendering: totals + entries (main page) ----
+  function renderMain() {
+    var grandTotal = entries.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
+    grandTotalEl.textContent = grandTotal;
+
+    var totalsMap = {};
+    entries.forEach(function (e) {
+      totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days);
+    });
+    var totals = DUTY_CATEGORIES
+      .map(function (c) { return { code: c.code, name: c.name, group: c.group, total: totalsMap[c.code] || 0 }; })
+      .filter(function (c) { return c.total > 0; });
+
+    if (totals.length > 0) {
+      var html = '<p class="section-heading">By duty category</p><div class="summary-box">';
+      totals.forEach(function (c) {
+        var color = GROUP_COLORS[c.group] || '#6B6B6B';
+        html += '<div class="summary-row">' +
+          '<div class="summary-left">' +
+            '<span class="dot-bar" style="background:' + color + '"></span>' +
+            '<div><div class="summary-name">' + escapeHtml(c.name) + ' <span class="summary-code">(' + escapeHtml(c.code) + ')</span></div></div>' +
+          '</div>' +
+          '<span class="summary-total">' + c.total + 'd</span>' +
+        '</div>';
+      });
+      html += '</div>';
+      summarySection.innerHTML = html;
+    } else {
+      summarySection.innerHTML = '';
+    }
+
+    if (entries.length === 0) {
+      entriesSection.innerHTML = '<div class="empty-box"><p>No entries yet. Tap the + button to log your first stretch of sea service.</p></div>';
+      return;
+    }
+
+    var sorted = entries.slice().sort(function (a, b) { return (b.start || '').localeCompare(a.start || ''); });
+    var listHtml = '<div class="entries-list">';
+    sorted.forEach(function (e) {
+      var cat = DUTY_CATEGORIES.filter(function (c) { return c.code === e.category; })[0];
+      var color = cat ? (GROUP_COLORS[cat.group] || '#6B6B6B') : '#6B6B6B';
+      var dateLine = formatDate(e.start) + (e.end ? ' \u2013 ' + formatDate(e.end) : '') + ' · ' + e.days + ' day' + (e.days == 1 ? '' : 's');
+
+      var detailParts = [];
+      if (e.position) detailParts.push('Position: ' + e.position);
+      if (e.vesselId) detailParts.push('ID: ' + e.vesselId);
+      if (e.vesselLength || e.vesselPower) {
+        var lp = (e.vesselLength ? e.vesselLength + 'm' : '') + (e.vesselLength && e.vesselPower ? ', ' : '') + (e.vesselPower ? e.vesselPower + 'kW' : '');
+        detailParts.push(lp);
+      }
+      var prop = PROPULSION_TYPES.filter(function (p) { return p.code === e.propulsion; })[0];
+      if (prop) detailParts.push(prop.name);
+      var opType = OPERATION_TYPES.filter(function (o) { return o.code === e.operationType; })[0];
+      if (opType) detailParts.push(opType.name);
+      var modeOp = MODE_OF_OPERATION.filter(function (m) { return m.code === e.modeOfOperation; })[0];
+      if (modeOp) detailParts.push(modeOp.name);
+
+      listHtml += '<div class="entry-card">' +
+        '<div class="entry-main">' +
+          '<div class="entry-title-row">' +
+            '<span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
+            '<span class="entry-code" style="background:' + color + '22;color:' + color + '">' + escapeHtml(e.category) + '</span>' +
+          '</div>' +
+          '<div class="entry-dates">' + dateLine + '</div>' +
+          (detailParts.length ? '<div class="entry-details">' + escapeHtml(detailParts.join(' · ')) + '</div>' : '') +
+          (e.notes ? '<div class="entry-notes">' + escapeHtml(e.notes) + '</div>' : '') +
+        '</div>' +
+        '<button class="delete-btn" data-delete-id="' + e.id + '" aria-label="Delete entry">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>' +
+          '</svg>' +
+        '</button>' +
+      '</div>';
+    });
+    listHtml += '</div>';
+    entriesSection.innerHTML = listHtml;
+
+    Array.prototype.forEach.call(entriesSection.querySelectorAll('[data-delete-id]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-delete-id');
+        entries = entries.filter(function (e) { return e.id !== id; });
+        saveEntries();
+        renderMain();
+      });
+    });
+  }
+
+  // ---- Calendar rendering ----
+  function renderCalendar() {
+    calendarMonthLabel.textContent = calendarMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+    var days = buildMonthGrid(calendarMonth);
+    var html = '';
+    days.forEach(function (d) {
+      var iso = isoDate(d);
+      var inCurrentMonth = d.getMonth() === calendarMonth.getMonth();
+      var isStart = iso === form.start;
+      var isEnd = iso === form.end;
+      var isEndpoint = isStart || isEnd;
+      var inRange = form.start && form.end && iso > form.start && iso < form.end;
+      var cls = 'day-cell';
+      if (!inCurrentMonth) cls += ' faded';
+      if (isEndpoint) cls += ' endpoint';
+      else if (inRange) cls += ' inrange';
+      html += '<button type="button" class="' + cls + '" data-date="' + iso + '">' + d.getDate() + '</button>';
+    });
+    calGrid.innerHTML = html;
+
+    Array.prototype.forEach.call(calGrid.querySelectorAll('[data-date]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var iso = btn.getAttribute('data-date');
+        handleDayClick(iso);
+      });
+    });
+
+    if (form.start) {
+      dateRangeLabel.textContent = formatDate(form.start) + (form.end ? ' \u2013 ' + formatDate(form.end) : ' \u2013 select finish date');
+      clearDatesBtn.style.display = '';
+    } else {
+      dateRangeLabel.textContent = 'Tap a start date, then a finish date';
+      clearDatesBtn.style.display = 'none';
+    }
+
+    updateDaysField();
+    updateSaveButtonState();
+  }
+
+  function handleDayClick(iso) {
+    if (!form.start || (form.start && form.end)) {
+      form.start = iso;
+      form.end = '';
+    } else if (iso < form.start) {
+      form.end = form.start;
+      form.start = iso;
+    } else {
+      form.end = iso;
+    }
+    renderCalendar();
+  }
+
+  function updateDaysField() {
+    if (autoCalc) {
+      var calc = daysBetween(form.start, form.end);
+      if (calc !== null) {
+        form.days = calc;
+        daysInput.value = calc;
+      }
+      daysInput.disabled = true;
+      daysHint.textContent = "Counting every calendar day from start to finish, inclusive. Switch to Manual if there were days off in between that shouldn't count.";
+    } else {
+      daysInput.disabled = false;
+      daysHint.textContent = 'A day counts if you worked 8+ hours in a 24-hour period. More than 8 hours in that period still only counts as 1 day.';
+    }
+  }
+
+  function updateSaveButtonState() {
+    saveEntryBtn.disabled = !vesselNameInput.value.trim();
+  }
+
+  // ---- Modal open/close/reset ----
+  function resetForm() {
+    form = defaultForm();
+    autoCalc = true;
+    calendarMonth = new Date();
+
+    vesselNameInput.value = '';
+    vesselIdInput.value = '';
+    vesselLengthInput.value = '';
+    vesselPowerInput.value = '';
+    propulsionSelect.value = 'I';
+    operationTypeSelect.value = 'C';
+    modeOfOperationSelect.value = 'VU';
+    positionInput.value = '';
+    dutyCategorySelect.value = 'D';
+    notesInput.value = '';
+    daysInput.value = 1;
+    autoCalcBtn.classList.add('active');
+    autoCalcBtn.textContent = 'Auto (from dates)';
+
+    renderCalendar();
+  }
+
+  function populateKnownVessels() {
+    var byName = {};
+    entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); })
+      .forEach(function (e) {
+        byName[e.vessel] = {
           vessel: e.vessel,
           vesselId: e.vesselId || '',
           vesselLength: e.vesselLength || '',
           vesselPower: e.vesselPower || '',
-          propulsion: e.propulsion || 'I',
-        });
+          propulsion: e.propulsion || 'I'
+        };
       });
-    return Array.from(byName.values()).sort((a, b) => a.vessel.localeCompare(b.vessel));
-  }, [entries]);
+    var list = Object.keys(byName).map(function (k) { return byName[k]; }).sort(function (a, b) { return a.vessel.localeCompare(b.vessel); });
 
-  function resetForm() {
-    setForm({
-      vessel: '',
-      vesselId: '',
-      position: '',
-      vesselLength: '',
-      vesselPower: '',
-      propulsion: 'I',
-      operationType: 'C',
-      modeOfOperation: 'VU',
-      category: 'D',
-      start: '',
-      end: '',
-      days: 1,
-      notes: '',
-    });
-    setAutoCalc(true);
-    setCalendarMonth(new Date());
+    if (list.length > 0) {
+      knownVesselField.style.display = '';
+      var html = '<option value="">Select a vessel to pre-fill\u2026</option>';
+      list.forEach(function (v) {
+        html += '<option value="' + escapeHtml(v.vessel) + '">' + escapeHtml(v.vessel) + '</option>';
+      });
+      knownVesselSelect.innerHTML = html;
+      knownVesselSelect.onchange = function () {
+        var name = knownVesselSelect.value;
+        if (!name) return;
+        var v = byName[name];
+        if (v) {
+          vesselNameInput.value = v.vessel;
+          vesselIdInput.value = v.vesselId;
+          vesselLengthInput.value = v.vesselLength;
+          vesselPowerInput.value = v.vesselPower;
+          propulsionSelect.value = v.propulsion;
+          updateSaveButtonState();
+        }
+      };
+    } else {
+      knownVesselField.style.display = 'none';
+    }
   }
 
-  function handleAdd() {
-    if (!form.vessel.trim() || !form.days) return;
-    const entry = {
-      id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-      vessel: form.vessel.trim(),
-      vesselId: form.vesselId.trim(),
-      position: form.position.trim(),
-      vesselLength: form.vesselLength,
-      vesselPower: form.vesselPower,
-      propulsion: form.propulsion,
-      operationType: form.operationType,
-      modeOfOperation: form.modeOfOperation,
-      category: form.category,
+  function openModal() {
+    resetForm();
+    populateKnownVessels();
+    modalOverlay.classList.add('open');
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('open');
+  }
+
+  $('openModalBtn').addEventListener('click', openModal);
+  $('closeModalBtn').addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', function (e) {
+    if (e.target === modalOverlay) closeModal();
+  });
+  $('modalBox').addEventListener('click', function (e) { e.stopPropagation(); });
+
+  $('prevMonthBtn').addEventListener('click', function () {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  $('nextMonthBtn').addEventListener('click', function () {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+    renderCalendar();
+  });
+  clearDatesBtn.addEventListener('click', function () {
+    form.start = '';
+    form.end = '';
+    renderCalendar();
+  });
+
+  autoCalcBtn.addEventListener('click', function () {
+    autoCalc = !autoCalc;
+    if (autoCalc) {
+      autoCalcBtn.classList.add('active');
+      autoCalcBtn.textContent = 'Auto (from dates)';
+    } else {
+      autoCalcBtn.classList.remove('active');
+      autoCalcBtn.textContent = 'Manual';
+    }
+    updateDaysField();
+  });
+
+  daysInput.addEventListener('input', function () {
+    form.days = daysInput.value;
+  });
+
+  vesselNameInput.addEventListener('input', updateSaveButtonState);
+
+  saveEntryBtn.addEventListener('click', function () {
+    var vessel = vesselNameInput.value.trim();
+    if (!vessel || !form.days) return;
+
+    var entry = {
+      id: uuid(),
+      vessel: vessel,
+      vesselId: vesselIdInput.value.trim(),
+      position: positionInput.value.trim(),
+      vesselLength: vesselLengthInput.value,
+      vesselPower: vesselPowerInput.value,
+      propulsion: propulsionSelect.value,
+      operationType: operationTypeSelect.value,
+      modeOfOperation: modeOfOperationSelect.value,
+      category: dutyCategorySelect.value,
       start: form.start,
       end: form.end,
-      days: Number(form.days),
-      notes: form.notes.trim(),
+      days: Number(daysInput.value),
+      notes: notesInput.value.trim()
     };
-    setEntries((prev) => [...prev, entry]);
-    resetForm();
-    setShowForm(false);
-  }
 
-  function handleDelete(id) {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  }
+    entries.push(entry);
+    saveEntries();
+    renderMain();
+    closeModal();
+  });
 
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FFFFFF', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div className="max-w-2xl mx-auto px-4 pb-28 pt-6">
-        <header className="flex items-center gap-3 mb-6">
-          <div className="flex items-center justify-center rounded-full w-11 h-11 shrink-0" style={{ backgroundColor: '#1B2A4A' }}>
-            <Anchor size={20} color="#FFFFFF" strokeWidth={1.75} />
-          </div>
-          <div>
-            <h1 className="text-2xl leading-tight" style={{ color: '#1B2A4A', letterSpacing: '0.01em', fontFamily: 'system-ui, sans-serif', fontWeight: 700 }}>
-              Record of Sea Service
-            </h1>
-            <p className="text-xs uppercase tracking-widest" style={{ color: '#6B7280', fontFamily: 'system-ui, sans-serif' }}>
-              AMSA Form 771 · Near Coastal
-            </p>
-          </div>
-        </header>
-
-        <div className="rounded-lg px-5 py-4 mb-5 flex items-center justify-between" style={{ backgroundColor: '#1B2A4A' }}>
-          <span className="text-sm" style={{ color: '#C9BFA0', fontFamily: 'system-ui, sans-serif' }}>Total qualifying days</span>
-          <span className="text-3xl font-bold tabular-nums" style={{ color: '#FFFFFF', fontFamily: 'system-ui, sans-serif' }}>{grandTotal}</span>
-        </div>
-
-        {totals.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xs uppercase tracking-widest mb-2 px-1" style={{ color: '#6B7280', fontFamily: 'system-ui, sans-serif' }}>
-              By duty category
-            </h2>
-            <div className="rounded-lg overflow-hidden border" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' }}>
-              {totals.map((c, i) => (
-                <div key={c.code} className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: i === 0 ? 'none' : '1px solid #E8E0C8' }}>
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="w-1.5 h-6 rounded-full shrink-0" style={{ backgroundColor: GROUP_COLORS[c.group] }} />
-                    <div className="min-w-0">
-                      <div className="text-sm" style={{ color: '#2A2A2A' }}>
-                        {c.name}{' '}
-                        <span className="text-xs" style={{ color: '#6B7280', fontFamily: 'system-ui, sans-serif' }}>({c.code})</span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums shrink-0 pl-2" style={{ color: '#1B2A4A', fontFamily: 'system-ui, sans-serif' }}>
-                    {c.total}d
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <h2 className="text-xs uppercase tracking-widest mb-2 px-1" style={{ color: '#6B7280', fontFamily: 'system-ui, sans-serif' }}>Entries</h2>
-          {sortedEntries.length === 0 ? (
-            <div className="rounded-lg border border-dashed px-4 py-8 text-center" style={{ borderColor: '#E5E7EB' }}>
-              <p className="text-sm" style={{ color: '#6B7280', fontFamily: 'system-ui, sans-serif' }}>
-                No entries yet. Tap the + button to log your first stretch of sea service.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sortedEntries.map((e) => {
-                const cat = DUTY_CATEGORIES.find((c) => c.code === e.category);
-                return (
-                  <div key={e.id} className="rounded-lg border px-4 py-3 flex items-start justify-between gap-3" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' }}>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold" style={{ color: '#2A2A2A' }}>{e.vessel}</span>
-                        <span className="text-[11px] px-1.5 py-0.5 rounded" style={{ backgroundColor: GROUP_COLORS[cat?.group] + '22', color: GROUP_COLORS[cat?.group], fontFamily: 'system-ui, sans-serif' }}>
-                          {e.category}
-                        </span>
-                      </div>
-                      <div className="text-xs mt-0.5" style={{ color: '#6B7280', fontFamily: 'system-ui, sans-serif' }}>
-                        {formatDate(e.start)}{e.end ? ` \u2013 ${formatDate(e.end)}` : ''} · {e.days} day{e.days == 1 ? '' : 's'}
-                      </div>
-                      {(e.position || e.vesselId || e.vesselLength || e.vesselPower || e.propulsion || e.operationType || e.modeOfOperation) && (
-                        <div className="text-[11px] mt-1" style={{ color: '#9CA3AF', fontFamily: 'system-ui, sans-serif' }}>
-                          {[
-                            e.position && `Position: ${e.position}`,
-                            e.vesselId && `ID: ${e.vesselId}`,
-                            (e.vesselLength || e.vesselPower) && `${e.vesselLength ? e.vesselLength + 'm' : ''}${e.vesselLength && e.vesselPower ? ', ' : ''}${e.vesselPower ? e.vesselPower + 'kW' : ''}`,
-                            e.propulsion && PROPULSION_TYPES.find((p) => p.code === e.propulsion)?.name,
-                            e.operationType && OPERATION_TYPES.find((o) => o.code === e.operationType)?.name,
-                            e.modeOfOperation && MODE_OF_OPERATION.find((m) => m.code === e.modeOfOperation)?.name,
-                          ].filter(Boolean).join(' · ')}
-                        </div>
-                      )}
-                      {e.notes && <div className="text-xs mt-1 italic" style={{ color: '#9CA3AF' }}>{e.notes}</div>}
-                    </div>
-                    <button onClick={() => handleDelete(e.id)} className="shrink-0 p-1.5 rounded-full hover:bg-black/5 transition-colors" aria-label="Delete entry">
-                      <Trash2 size={16} color="#9CA3AF" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <button onClick={() => setShowForm(true)} className="fixed bottom-6 right-6 rounded-full w-14 h-14 flex items-center justify-center shadow-lg" style={{ backgroundColor: '#C08A3E' }} aria-label="Add sea service entry">
-        <Plus size={26} color="#1B2A4A" strokeWidth={2.5} />
-      </button>
-
-      {showForm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ backgroundColor: 'rgba(27,42,74,0.45)' }} onClick={() => setShowForm(false)}>
-          <div className="w-full sm:max-w-md rounded-2xl p-5 overflow-y-auto overscroll-contain" style={{ backgroundColor: '#FFFFFF', fontFamily: 'system-ui, sans-serif', maxHeight: '85vh', WebkitOverflowScrolling: 'touch' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold" style={{ color: '#1B2A4A' }}>Add Sea Service</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded-full hover:bg-black/5">
-                <X size={20} color="#6B7280" />
-              </button>
-            </div>
-
-            <div className="space-y-5">
-              <div className="space-y-3">
-                <h3 className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: '#1B2A4A' }}>Vessel details</h3>
-
-                {knownVessels.length > 0 && (
-                  <div>
-                    <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Use existing vessel</label>
-                    <select value="" onChange={(ev) => {
-                      const name = ev.target.value;
-                      if (!name) return;
-                      const v = knownVessels.find((k) => k.vessel === name);
-                      if (v) setForm((f) => ({ ...f, vessel: v.vessel, vesselId: v.vesselId, vesselLength: v.vesselLength, vesselPower: v.vesselPower, propulsion: v.propulsion }));
-                    }} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#C08A3E', backgroundColor: '#C08A3E11', color: '#1B2A4A' }}>
-                      <option value="">Select a vessel to pre-fill…</option>
-                      {knownVessels.map((v) => <option key={v.vessel} value={v.vessel}>{v.vessel}</option>)}
-                    </select>
-                    <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>
-                      Fills in the vessel identifier, length, power and propulsion from your last entry for that vessel. You can still edit any of it below.
-                    </p>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Vessel name</label>
-                  <input type="text" value={form.vessel} onChange={(ev) => setForm({ ...form, vessel: ev.target.value })} placeholder="e.g. MV Southern Star" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Vessel identifier</label>
-                  <input type="text" value={form.vesselId} onChange={(ev) => setForm({ ...form, vesselId: ev.target.value })} placeholder="e.g. registration / call sign" className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Length (m)</label>
-                    <input type="number" min="0" value={form.vesselLength} onChange={(ev) => setForm({ ...form, vesselLength: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-                  </div>
-                  <div>
-                    <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Power (kW)</label>
-                    <input type="number" min="0" value={form.vesselPower} onChange={(ev) => setForm({ ...form, vesselPower: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Propulsion type</label>
-                  <select value={form.propulsion} onChange={(ev) => setForm({ ...form, propulsion: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }}>
-                    {PROPULSION_TYPES.map((p) => <option key={p.code} value={p.code}>{p.name} ({p.code})</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4" style={{ borderTop: '1px solid #E5E7EB' }}>
-                <h3 className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: '#1B2A4A' }}>Operation</h3>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Type of operation</label>
-                  <select value={form.operationType} onChange={(ev) => setForm({ ...form, operationType: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }}>
-                    {OPERATION_TYPES.map((o) => <option key={o.code} value={o.code}>{o.name} ({o.code})</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Mode of operation</label>
-                  <select value={form.modeOfOperation} onChange={(ev) => setForm({ ...form, modeOfOperation: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }}>
-                    {MODE_OF_OPERATION.map((m) => <option key={m.code} value={m.code}>{m.name} ({m.code})</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4" style={{ borderTop: '1px solid #E5E7EB' }}>
-                <h3 className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: '#1B2A4A' }}>Your role</h3>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Position on board</label>
-                  <input type="text" value={form.position} onChange={(ev) => setForm({ ...form, position: ev.target.value })} placeholder="e.g. Second Mate, Assistant Engineer" className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Duty category</label>
-                  <select value={form.category} onChange={(ev) => setForm({ ...form, category: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }}>
-                    {DUTY_CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4" style={{ borderTop: '1px solid #E5E7EB' }}>
-                <h3 className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: '#1B2A4A' }}>Sea time</h3>
-                <div>
-                  <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Voyage dates</label>
-                  <div className="rounded-lg border p-3" style={{ borderColor: '#E5E7EB' }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5" style={{ color: '#1B2A4A' }} aria-label="Previous month">‹</button>
-                      <span className="text-sm font-semibold" style={{ color: '#1B2A4A' }}>{calendarMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</span>
-                      <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5" style={{ color: '#1B2A4A' }} aria-label="Next month">›</button>
-                    </div>
-                    <div className="grid grid-cols-7 gap-y-1 text-center text-[10px] mb-1" style={{ color: '#9CA3AF' }}>
-                      {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((d) => <div key={d}>{d}</div>)}
-                    </div>
-                    <div className="grid grid-cols-7 gap-y-1">
-                      {buildMonthGrid(calendarMonth).map((d, i) => {
-                        const iso = isoDate(d);
-                        const inCurrentMonth = d.getMonth() === calendarMonth.getMonth();
-                        const isStart = iso === form.start;
-                        const isEnd = iso === form.end;
-                        const isEndpoint = isStart || isEnd;
-                        const inRange = form.start && form.end && iso > form.start && iso < form.end;
-                        return (
-                          <button type="button" key={i} onClick={() => handleDayClick(d)} className="aspect-square flex items-center justify-center text-xs mx-auto rounded-full" style={{ width: '2rem', opacity: inCurrentMonth ? 1 : 0.3, backgroundColor: isEndpoint ? '#C08A3E' : inRange ? '#C08A3E33' : 'transparent', color: isEndpoint ? '#FFFFFF' : '#2A2A2A', fontWeight: isEndpoint ? 700 : 400 }}>
-                            {d.getDate()}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid #E5E7EB' }}>
-                      <span className="text-xs" style={{ color: '#6B7280' }}>
-                        {form.start ? `${formatDate(form.start)}${form.end ? ` \u2013 ${formatDate(form.end)}` : ' \u2013 select finish date'}` : 'Tap a start date, then a finish date'}
-                      </span>
-                      {(form.start || form.end) && (
-                        <button type="button" onClick={() => setForm((f) => ({ ...f, start: '', end: '' }))} className="text-xs shrink-0 pl-2" style={{ color: '#C08A3E' }}>Clear</button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs uppercase tracking-wide" style={{ color: '#6B7280' }}>Qualifying days</label>
-                    <button type="button" onClick={() => setAutoCalc((v) => !v)} className="text-[11px] px-2 py-0.5 rounded-full border" style={{ borderColor: autoCalc ? '#C08A3E' : '#E5E7EB', color: autoCalc ? '#C08A3E' : '#6B7280', backgroundColor: autoCalc ? '#C08A3E22' : 'transparent' }}>
-                      {autoCalc ? 'Auto (from dates)' : 'Manual'}
-                    </button>
-                  </div>
-                  <input type="number" min="1" value={form.days} disabled={autoCalc} onChange={(ev) => setForm({ ...form, days: ev.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm outline-none disabled:opacity-60" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-                  <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>
-                    {autoCalc ? 'Counting every calendar day from start to finish, inclusive. Switch to Manual if there were days off in between that shouldn\u2019t count.' : 'A day counts if you worked 8+ hours in a 24-hour period. More than 8 hours in that period still only counts as 1 day.'}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>Notes (optional)</label>
-                <textarea value={form.notes} onChange={(ev) => setForm({ ...form, notes: ev.target.value })} placeholder="e.g. supervisor name, task book reference" rows={2} className="w-full rounded-lg border px-3 py-2 text-sm outline-none resize-none" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', color: '#2A2A2A' }} />
-              </div>
-
-              <button onClick={handleAdd} disabled={!form.vessel.trim()} className="w-full rounded-lg py-2.5 text-sm font-semibold disabled:opacity-40" style={{ backgroundColor: '#C08A3E', color: '#1B2A4A' }}>
-                Save entry
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<SeaServiceTracker />);
+  // ---- Init ----
+  renderMain();
+})();
 </script>
 </body>
 </html>
