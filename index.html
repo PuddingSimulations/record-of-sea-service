@@ -272,6 +272,27 @@
   .link-btn { width: 100%; border: none; background: none; color: var(--ink-2); font-size: 15px; font-weight: 600; padding: 12px 0 0; cursor: pointer; }
   .link-btn:active { opacity: 0.5; }
 
+  /* What you'll need */
+  .req-head { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none; color: inherit; padding: 0; cursor: pointer; text-align: left; }
+  .req-head .t { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; flex: 1; }
+  .req-count { font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .req-head svg { color: var(--ink-3); transition: transform .4s var(--ease); flex-shrink: 0; }
+  .req-card.open .req-head svg { transform: rotate(180deg); }
+  .req-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--ease); }
+  .req-card.open .req-body { grid-template-rows: 1fr; }
+  .req-inner { overflow: hidden; min-height: 0; }
+  .req-list { padding-top: 12px; }
+  .req-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .req-row.auto { cursor: default; }
+  .tick { flex-shrink: 0; width: 26px; height: 26px; margin-top: 1px; border-radius: 50%; border: 2px solid var(--ink-3); display: flex; align-items: center; justify-content: center; color: transparent; transition: background .25s ease, border-color .25s ease, transform .35s var(--spring); }
+  .req-row:active .tick { transform: scale(0.85); }
+  .req-row.done .tick { background: var(--good); border-color: var(--good); color: #0B2A16; }
+  .req-row .rt { font-size: 15px; font-weight: 700; }
+  .req-row .rd { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin-top: 3px; }
+  .req-row.done .rt { color: var(--ink-2); }
+  .chk { font-size: 10px; font-weight: 700; color: var(--yellow); border: 1px solid var(--yellow); border-radius: 999px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; letter-spacing: 0.02em; white-space: nowrap; }
+  .req-foot { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; margin: 6px 0 0; }
+
   /* Settings */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
   .set-row:first-child { border-top: none; }
@@ -395,6 +416,14 @@
 
     <p class="ticket-note" id="ticketFilterNote" style="display:none;color:var(--yellow);"></p>
     <p class="ticket-note" id="ticketNote"></p>
+  </section>
+
+  <section class="card req-card rise d3" id="reqCard">
+    <button class="req-head" id="reqToggle" type="button" aria-expanded="false">
+      <span class="t">What you'll need</span><span class="req-count" id="reqCount"></span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="req-body"><div class="req-inner"><div class="req-list" id="reqList"></div></div></div>
   </section>
 
   <div id="summarySection"></div>
@@ -710,6 +739,31 @@
     eng3: ['med1', 'med2', 'med3']
   };
 
+  // What a new certificate needs besides sea service. From AMSA's certificate pages, steps page and
+  // medical standards (Nov 2026). Items marked unsure could not be confirmed and are flagged in the app.
+  var MEDICAL_TXT = 'Certificate of medical fitness for near coastal seafarers (AMSA form 1850), or a current AMSA 303, completed by a doctor. Your first certificate needs it. Renewals for the lower tickets (GPH, Coxswain, Master Inland Waters, Master <24m, MED 2 and 3) accept a self-declaration, but Master <45m and <100m renewals need a new 1850.';
+  var EYES_DECK = 'Tested as part of your 1850 medical. Distance vision 6/6 in the better eye and 6/9 in the other, near vision N8 for charts, and colour vision by the Ishihara plate test (a lantern test is the fallback). If you are colour-deficient you can still qualify but are limited to daylight hours. No coloured lenses during the test.';
+  var EYES_ENG = 'Tested as part of your 1850 medical, including colour vision. If you are colour-deficient, check what that means for your duties.';
+  var FIRSTAID_TXT = 'Provide first aid (HLTAID011) or equivalent, current when you apply. AMSA may ask for a new one if it expires within 90 days.';
+  var RADIO_S = 'Marine radio Short Range Operator Certificate of Proficiency (SROCP) or higher, issued through the Office of Maritime Communications.';
+  var RADIO_L = 'Marine radio Long Range Operator Certificate of Proficiency (LROCP) or higher, issued through the Office of Maritime Communications.';
+  var AMPA_TXT = 'AMSA Mandated Practical Assessment (AMPA) with a registered training organisation. Submit its cover page with your application.';
+  var ORAL_TXT = 'You must pass an AMSA oral examination before this certificate is issued.';
+  var REQS = {
+    gph: { course: 'Certificate I in Maritime Operations (General Purpose Hand NC) from a registered training organisation.', eyes: 'deck' },
+    cox3: { course: 'Course and assessment details were not confirmed. Check the AMSA page.', courseUnsure: true, tasks: 'Practical on-water tasks witnessed and signed off by an observer on AMSA form 1882.', firstAidUnsure: true, eyes: 'deck' },
+    cox2: { course: 'Certificate I in Maritime Operations (Coxswain Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, firstAidUnsure: true, eyes: 'deck' },
+    cox1: { course: 'Certificate II in Maritime Operations (Coxswain Grade 1 NC) from a registered training organisation.', ampa: 'AMSA Mandated Practical Assessment (AMPA) on a vessel over 5m long, with a registered training organisation.', radio: RADIO_S, eyes: 'deck' },
+    inland: { course: 'Course details were not confirmed. Check the AMSA page.', courseUnsure: true, firstAidUnsure: true, eyes: 'deck' },
+    master24: { course: 'Certificate III in Maritime Operations (Master <24m NC) from a registered training organisation.', ampa: AMPA_TXT, radio: RADIO_L, eyes: 'deck' },
+    master45: { course: 'Certificate IV level Master <45m course from a registered training organisation. Confirm the exact course name with AMSA.', courseUnsure: true, ampa: 'An approved final assessment, or 60 days of sea service in the 6 months before you apply.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
+    master100: { course: 'Diploma level Master <100m course from a registered training organisation. Confirm the exact course name with AMSA.', courseUnsure: true, radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
+    med3: { course: 'Certificate II in Maritime Operations (Marine Engine Driver Grade 3 NC) from a registered training organisation.', ampa: AMPA_TXT + ' It covers engine room tasks, deck machinery and low-voltage electrical systems.', eyes: 'eng' },
+    med2: { course: 'Course details were not confirmed. Check the AMSA page.', courseUnsure: true, ampaUnsure: true, ampa: 'A practical assessment may apply. Check the AMSA page.', eyes: 'eng' },
+    med1: { course: 'Certificate IV in Maritime Operations (Marine Engine Driver Grade 1 NC) from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' },
+    eng3: { course: 'Diploma of Marine Engineering (or the Engineer Class 3 NC course) from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' }
+  };
+
   // ---- Helpers ----
   function formatDate(iso) {
     if (!iso) return '';
@@ -898,6 +952,9 @@
   // Tickets the user already holds (excluded from "Working towards", listed on the passport card)
   var HELD_KEY = 'sea-service-held', heldIds = [];
   try { heldIds = JSON.parse(localStorage.getItem(HELD_KEY) || '[]') || []; } catch (e) { heldIds = []; }
+  var CHECK_KEY = 'sea-service-checklist', checklist = {};
+  try { checklist = JSON.parse(localStorage.getItem(CHECK_KEY) || '{}') || {}; } catch (e) { checklist = {}; }
+  function saveChecklist() { try { localStorage.setItem(CHECK_KEY, JSON.stringify(checklist)); } catch (e) {} }
   function saveHeld() { try { localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); } catch (e) {} }
   // The held ticket (if any) that already covers this one
   function coveredBy(id) {
@@ -1040,7 +1097,45 @@
     if (!isCustom && q.catDays > q.days) bits.push((q.catDays - q.days) + ' day' + (q.catDays - q.days === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
     if (!isCustom && q.unverified) bits.push(q.unverified + ' day' + (q.unverified === 1 ? '' : 's') + ' counted without vessel length/power on record.');
     ticketFilterNote.textContent = bits.join(' '); ticketFilterNote.style.display = bits.length ? '' : 'none';
+    renderReqs(ticket, logged, required, isCustom);
   }
+
+  var TICK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  function renderReqs(ticket, logged, required, isCustom) {
+    var card = $('reqCard'), r = REQS[ticket.id];
+    if (isCustom || !r) { card.style.display = 'none'; return; }
+    card.style.display = '';
+    var items = [];
+    items.push({ k: 'sea', t: 'Sea service', d: logged + ' of ' + required + ' days logged. Evidence: Form 771, the on-board record in your task book, a letter from the operator, owner, master or chief engineer, or an approved log book.', auto: logged >= required });
+    items.push({ k: 'course', t: 'Training course', d: r.course, unsure: r.courseUnsure });
+    if (r.ampa) items.push({ k: 'ampa', t: 'Practical assessment', d: r.ampa, unsure: r.ampaUnsure });
+    if (r.tasks) items.push({ k: 'tasks', t: 'On-water tasks', d: r.tasks });
+    items.push({ k: 'firstaid', t: 'First aid', d: FIRSTAID_TXT, unsure: r.firstAidUnsure });
+    if (r.radio) items.push({ k: 'radio', t: 'Marine radio', d: r.radio });
+    items.push({ k: 'medical', t: 'Medical', d: MEDICAL_TXT });
+    items.push({ k: 'eyes', t: 'Eyesight test', d: r.eyes === 'deck' ? EYES_DECK : EYES_ENG });
+    if (r.oral) items.push({ k: 'oral', t: 'Oral exam', d: r.oral });
+    items.push({ k: 'id', t: 'ID and photo', d: 'Proof of identity and a colour passport-style photo. Australia Post can take the photo if you apply there.' });
+    items.push({ k: 'apply', t: 'Apply', d: 'Apply on myAMSA with your myID, upload your documents and pay the fee. No myAMSA? Print form 426 and lodge it at a participating Australia Post. Your training organisation can issue an interim certificate for up to 60 days while AMSA assesses it.' });
+    var saved = checklist[ticket.id] || {}, done = 0, html = '';
+    items.forEach(function (it) {
+      var on = it.auto === undefined ? !!saved[it.k] : it.auto;
+      if (on) done++;
+      html += '<div class="req-row' + (on ? ' done' : '') + (it.auto !== undefined ? ' auto' : '') + '" data-req="' + it.k + '"><span class="tick">' + TICK_SVG + '</span><div><div class="rt">' + it.t + (it.unsure ? '<span class="chk">check with AMSA</span>' : '') + '</div><div class="rd">' + escapeHtml(it.d) + '</div></div></div>';
+    });
+    html += '<p class="req-foot">Taken from AMSA\u2019s published pages and may have changed. Confirm every item with AMSA or your training organisation before you apply.</p>';
+    $('reqList').innerHTML = html;
+    $('reqCount').textContent = done + ' of ' + items.length + ' ready';
+  }
+  $('reqToggle').addEventListener('click', function () {
+    var open = $('reqCard').classList.toggle('open'); $('reqToggle').setAttribute('aria-expanded', open ? 'true' : 'false'); fx('toggle');
+  });
+  $('reqList').addEventListener('click', function (ev) {
+    var row = ev.target.closest('.req-row'); if (!row || row.classList.contains('auto')) return;
+    var id = ticketState.ticketId, k = row.getAttribute('data-req');
+    checklist[id] = checklist[id] || {}; checklist[id][k] = !checklist[id][k];
+    saveChecklist(); renderTicketProgress(); fx(checklist[id][k] ? 'tick' : 'undo');
+  });
 
   ticketSelect.addEventListener('change', function () {
     ticketState.ticketId = ticketSelect.value; saveTicketState(); wasComplete = null; renderTicketProgress(); fx('tick');
