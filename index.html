@@ -73,8 +73,18 @@
   .icon-btn:active { transform: scale(0.88); }
   @media (prefers-color-scheme: dark) { .icon-btn { color: var(--amber); } }
 
+  /* Large title collapses into a blurred nav bar */
+  .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; padding-top: env(safe-area-inset-top, 0px); height: calc(46px + env(safe-area-inset-top, 0px));
+    display: flex; align-items: center; justify-content: center; background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+    border-bottom: 1px solid transparent; opacity: 0; transform: translateY(-10px); pointer-events: none; transition: opacity .25s ease, transform .4s var(--ease), border-color .25s; }
+  .navbar.show { opacity: 1; transform: none; border-bottom-color: var(--line); }
+  .navbar span { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .head-actions { display: flex; gap: 10px; }
+  button, select, label { touch-action: manipulation; }
+
   /* Entrance animation */
   .rise { opacity: 0; transform: translateY(14px); animation: rise .6s var(--ease) forwards; }
+  .stagger { animation: rise .6s var(--ease) both; animation-delay: calc(var(--i, 0) * 55ms + 250ms); }
   .rise.d1 { animation-delay: .05s; } .rise.d2 { animation-delay: .12s; } .rise.d3 { animation-delay: .19s; } .rise.d4 { animation-delay: .26s; }
   @keyframes rise { to { opacity: 1; transform: none; } }
 
@@ -86,6 +96,9 @@
     border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 0 0 28px rgba(255,255,255,0.03), 0 0 0 56px rgba(255,255,255,0.02); pointer-events: none; }
   .hero-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.65); }
   .hero-value { font-size: 68px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; margin: 8px 0 14px; font-variant-numeric: tabular-nums; }
+  .hero-value { transform-origin: left center; }
+  .hero-value.bump { animation: bump .7s var(--spring); }
+  @keyframes bump { 0% { transform: scale(1); } 30% { transform: scale(1.08); } 100% { transform: none; } }
   .hero-value small { font-size: 20px; font-weight: 600; letter-spacing: 0; color: rgba(255,255,255,0.65); margin-left: 6px; }
   .hero-stats { display: flex; gap: 8px; position: relative; z-index: 1; }
   .pill { font-size: 12px; font-weight: 600; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,0.12); color: #fff;
@@ -113,6 +126,8 @@
   .segmented .thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px; background: var(--card);
     box-shadow: 0 1px 4px rgba(0,0,0,0.12); transition: transform .35s var(--ease); }
   .segmented.right .thumb { transform: translateX(100%); }
+  .segmented button:active { transform: scale(0.94); }
+  .segmented button { transition: color .2s, transform .25s var(--spring); }
   .segmented button { position: relative; z-index: 1; flex: 1; border: none; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 9px 4px; cursor: pointer; transition: color .2s; }
   .segmented button.active { color: var(--ink); }
 
@@ -147,7 +162,8 @@
   .working-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin: 0 0 4px; }
   .work-row { display: block; width: 100%; text-align: left; border: none; background: none; color: inherit; padding: 9px 0; cursor: pointer; transition: opacity .15s; }
   .work-row + .work-row { border-top: 1px solid var(--line); }
-  .work-row:active { opacity: 0.55; }
+  .work-row { transition: transform .25s var(--spring), opacity .15s; }
+  .work-row:active { opacity: 0.6; transform: scale(0.98); }
   .work-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
   .work-name { font-size: 14px; font-weight: 600; min-width: 0; }
   .work-count { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -175,6 +191,8 @@
   .swipe { position: relative; border-radius: 20px; overflow: hidden; background: transparent; transition: opacity .3s ease, transform .3s var(--ease), max-height .35s var(--ease), margin .35s var(--ease); max-height: 400px; }
   .swipe.swiping, .swipe.removing { background: var(--danger); }
   .swipe.removing { opacity: 0; transform: translateX(-30%); max-height: 0; margin-top: -10px; }
+  .swipe-action svg { transition: transform .3s var(--spring); }
+  .swipe.armed .swipe-action svg { transform: scale(1.35); }
   .swipe-action { position: absolute; inset: 0 0 0 auto; width: 100px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; gap: 6px; }
   .entry-card { position: relative; background: var(--card); border-radius: 20px; padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; touch-action: pan-y; will-change: transform; box-shadow: var(--shadow); }
   .entry-card.snap { transition: transform .35s var(--ease); }
@@ -220,6 +238,7 @@
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .vessel-select { background: var(--amber-soft) !important; color: var(--ink) !important; }
   .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .autocalc-btn:active, .clear-btn:active { transform: scale(0.92); }
   .autocalc-btn { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; border: none; background: var(--card-2); color: var(--ink-2); cursor: pointer; transition: all .2s; }
   .autocalc-btn.active { background: var(--amber-soft); color: var(--amber); }
 
@@ -276,14 +295,19 @@
 <body>
 
 <div class="wrap">
+  <div class="navbar" id="navbar" aria-hidden="true"><span>Sea Service</span></div>
+
   <header class="rise">
     <div>
       <h1>Sea Service</h1>
       <p class="subtitle">AMSA Form 771 · Near Coastal</p>
     </div>
+    <div class="head-actions">
+    <button class="icon-btn" id="soundBtn" aria-label="Sounds" aria-pressed="true"></button>
     <button class="icon-btn" id="exportBtn" aria-label="Share sea passport">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
     </button>
+    </div>
   </header>
 
   <section class="hero rise d1">
@@ -568,7 +592,127 @@
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
   }
-  function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch (e) {} }
+
+  // ---- Feedback: haptics + synthesized sounds (no audio files) ----
+  var SOUND_KEY = 'sea-service-sound', soundOn = true;
+  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) {}
+  var actx = null, master = null;
+  function audio() {
+    if (!soundOn) return null;
+    try {
+      if (!actx) {
+        var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+        actx = new AC(); master = actx.createGain(); master.gain.value = 0.9;
+        var comp = actx.createDynamicsCompressor(); master.connect(comp); comp.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    } catch (e) { return null; }
+  }
+  ['pointerdown', 'touchend', 'click'].forEach(function (ev) { window.addEventListener(ev, function () { audio(); }, { passive: true }); });
+
+  function tone(o) {
+    var c = audio(); if (!c) return;
+    var t = c.currentTime + (o.delay || 0), osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(o.freq, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + o.dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(o.gain || 0.1, t + (o.attack || 0.004));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    osc.connect(g); g.connect(master); osc.start(t); osc.stop(t + o.dur + 0.03);
+  }
+  function whoosh(o) {
+    var c = audio(); if (!c) return;
+    var t = c.currentTime, len = Math.floor(c.sampleRate * o.dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = c.createBufferSource(); src.buffer = buf;
+    var f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.1;
+    f.frequency.setValueAtTime(o.from, t); f.frequency.exponentialRampToValueAtTime(o.to, t + o.dur);
+    var g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(o.gain || 0.2, t + o.dur * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    src.connect(f); f.connect(g); g.connect(master); src.start(t);
+  }
+
+  // iOS Safari has no vibrate API, but toggling a native switch input fires the system haptic (iOS 17.4+).
+  var hapticLabel = null;
+  function tap() {
+    try {
+      if (!hapticLabel) {
+        hapticLabel = document.createElement('label'); hapticLabel.setAttribute('aria-hidden', 'true');
+        hapticLabel.style.cssText = 'position:fixed;left:-99px;top:-99px;width:1px;height:1px;opacity:0;pointer-events:none;';
+        var inp = document.createElement('input'); inp.type = 'checkbox'; inp.setAttribute('switch', ''); inp.tabIndex = -1;
+        hapticLabel.appendChild(inp); document.body.appendChild(hapticLabel);
+      }
+      hapticLabel.click();
+    } catch (e) {}
+  }
+  function haptic(kind) {
+    try {
+      if (kind === 'light') { tap(); if (navigator.vibrate) navigator.vibrate(8); }
+      else if (kind === 'medium') { tap(); setTimeout(tap, 70); if (navigator.vibrate) navigator.vibrate(16); }
+      else if (kind === 'success') { tap(); setTimeout(tap, 80); setTimeout(tap, 170); if (navigator.vibrate) navigator.vibrate([10, 50, 14, 50, 24]); }
+    } catch (e) {}
+  }
+
+  var PENTA = [0, 2, 4, 7, 9];
+  function fx(name, n) {
+    switch (name) {
+      case 'tick': haptic('light'); tone({ freq: 2100, dur: 0.035, type: 'triangle', gain: 0.07 }); break;
+      case 'detent': haptic('medium'); tone({ freq: 1300, dur: 0.03, type: 'square', gain: 0.035 }); tone({ freq: 650, dur: 0.06, type: 'sine', gain: 0.08 }); break;
+      case 'toggle': haptic('light'); tone({ freq: 880, to: 1320, dur: 0.07, gain: 0.09 }); break;
+      case 'note':
+        haptic('light'); n = n || 0;
+        tone({ freq: 523.25 * Math.pow(2, (PENTA[n % 5] + 12 * Math.floor(n / 5)) / 12), dur: 0.22, type: 'sine', gain: 0.11 });
+        tone({ freq: 1046.5 * Math.pow(2, (PENTA[n % 5] + 12 * Math.floor(n / 5)) / 12), dur: 0.12, type: 'sine', gain: 0.025 }); break;
+      case 'open': haptic('medium'); tone({ freq: 360, to: 720, dur: 0.14, gain: 0.1 }); tone({ freq: 720, to: 1080, dur: 0.1, delay: 0.07, gain: 0.05 }); break;
+      case 'close': haptic('light'); tone({ freq: 720, to: 330, dur: 0.12, gain: 0.08 }); break;
+      case 'delete': haptic('medium'); whoosh({ dur: 0.24, from: 2600, to: 450, gain: 0.22 }); tone({ freq: 240, to: 100, dur: 0.18, type: 'triangle', gain: 0.07 }); break;
+      case 'undo': haptic('light'); tone({ freq: 500, to: 940, dur: 0.11, gain: 0.09 }); tone({ freq: 1250, dur: 0.07, delay: 0.09, gain: 0.04 }); break;
+      case 'success':
+        haptic('success');
+        [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { tone({ freq: f, dur: 0.34, delay: i * 0.07, type: 'triangle', gain: 0.1 }); tone({ freq: f * 2, dur: 0.2, delay: i * 0.07, gain: 0.02 }); }); break;
+      case 'complete':
+        haptic('success');
+        [659.25, 783.99, 987.77, 1318.5, 1567.98, 1975.5].forEach(function (f, i) { tone({ freq: f, dur: 0.55, delay: i * 0.075, type: 'triangle', gain: 0.1 }); tone({ freq: f * 2, dur: 0.3, delay: i * 0.075, gain: 0.025 }); }); break;
+    }
+  }
+
+  // ---- Confetti ----
+  var confCanvas = null, confCtx = null, parts = [], confRAF = 0;
+  function burstAt(el) {
+    if (reduceMotion || !el) return;
+    var r = el.getBoundingClientRect();
+    if (r.top + r.height / 2 > innerHeight - 40 || r.bottom < 40) r = grandTotalEl.getBoundingClientRect(); // ring off-screen: burst from the total
+    burst(r.left + r.width / 2, r.top + r.height / 2, 46);
+  }
+  function burst(cx, cy, n) {
+    if (reduceMotion) return;
+    if (!confCanvas) {
+      confCanvas = document.createElement('canvas');
+      confCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:80;';
+      document.body.appendChild(confCanvas); confCtx = confCanvas.getContext('2d');
+    }
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    confCanvas.width = innerWidth * dpr; confCanvas.height = innerHeight * dpr;
+    var colors = ['#E3B26B', '#C08A3E', '#FFFFFF', '#6FD3A8', '#7FA4FF', '#FFE2B0'];
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * Math.PI * 2, sp = 4 + Math.random() * 9;
+      parts.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 5, w: 5 + Math.random() * 6, h: 3 + Math.random() * 4,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, c: colors[i % colors.length], life: 1 });
+    }
+    if (!confRAF) confRAF = requestAnimationFrame(confStep);
+  }
+  function confStep() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    confCtx.setTransform(dpr, 0, 0, dpr, 0, 0); confCtx.clearRect(0, 0, innerWidth, innerHeight);
+    parts = parts.filter(function (q) { return q.life > 0 && q.y < innerHeight + 40; });
+    parts.forEach(function (q) {
+      q.vy += 0.38; q.vx *= 0.985; q.x += q.vx; q.y += q.vy; q.rot += q.vr; q.life -= 0.012;
+      confCtx.save(); confCtx.globalAlpha = Math.max(0, Math.min(1, q.life * 1.6)); confCtx.translate(q.x, q.y); confCtx.rotate(q.rot);
+      confCtx.fillStyle = q.c; confCtx.fillRect(-q.w / 2, -q.h / 2, q.w, q.h); confCtx.restore();
+    });
+    confRAF = parts.length ? requestAnimationFrame(confStep) : 0;
+    if (!parts.length) confCtx.clearRect(0, 0, innerWidth, innerHeight);
+  }
+
   var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Animated number counter
@@ -670,7 +814,7 @@
     var list = categories ? entries.filter(function (e) { return categories.indexOf(e.category) !== -1; }) : entries;
     return list.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
   }
-  var wasComplete = null;
+  var wasComplete = null, completedThisRender = false;
   var RING_LEN = 2 * Math.PI * 43;
 
   function renderTicketProgress() {
@@ -694,7 +838,7 @@
     ring.classList.toggle('complete', complete);
     ticketRemaining.textContent = complete ? 'Requirement met 🎉' : (required - logged) + ' day' + (required - logged === 1 ? '' : 's') + ' to go';
 
-    if (wasComplete === false && complete) { haptic([10, 40, 20]); }
+    if (wasComplete === false && complete) { completedThisRender = true; fx('complete'); setTimeout(function () { burstAt(ring); }, 150); }
     wasComplete = complete;
 
     if (!isCustom && ticket.subCategories) {
@@ -712,11 +856,11 @@
   }
 
   ticketSelect.addEventListener('change', function () {
-    ticketState.ticketId = ticketSelect.value; saveTicketState(); wasComplete = null; renderTicketProgress(); haptic(6);
+    ticketState.ticketId = ticketSelect.value; saveTicketState(); wasComplete = null; renderTicketProgress(); fx('tick');
   });
   Array.prototype.forEach.call(taskBookToggle.querySelectorAll('button'), function (btn) {
     btn.addEventListener('click', function () {
-      ticketState.taskBook = btn.getAttribute('data-tb'); syncToggle(); saveTicketState(); renderTicketProgress(); renderWorking(); haptic(6);
+      ticketState.taskBook = btn.getAttribute('data-tb'); syncToggle(); saveTicketState(); renderTicketProgress(); renderWorking(); fx('toggle');
     });
   });
   customDaysInput.addEventListener('input', function () {
@@ -753,7 +897,7 @@
   workingSection.addEventListener('click', function (ev) {
     var row = ev.target.closest('[data-ticket]'); if (!row) return;
     ticketState.ticketId = row.getAttribute('data-ticket'); ticketSelect.value = ticketState.ticketId;
-    saveTicketState(); wasComplete = null; renderTicketProgress(); haptic(6);
+    saveTicketState(); wasComplete = null; renderTicketProgress(); fx('tick');
     $('ticketCard').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   });
 
@@ -762,6 +906,10 @@
 
   function renderMain() {
     var grandTotal = entries.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
+    var stagger = firstRender; firstRender = false;
+    if (Number(grandTotalEl.getAttribute('data-v') || 0) !== grandTotal && !stagger) {
+      var hv = grandTotalEl.parentNode; hv.classList.remove('bump'); void hv.offsetWidth; hv.classList.add('bump');
+    }
     countTo(grandTotalEl, grandTotal);
     var vesselCount = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
     $('statEntries').textContent = entries.length + (entries.length === 1 ? ' entry' : ' entries');
@@ -799,6 +947,7 @@
     }
 
     var sorted = entries.slice().sort(function (a, b) { return (b.start || '').localeCompare(a.start || ''); });
+    var si = 0;
     var listHtml = '<div class="entries-list">';
     sorted.forEach(function (e) {
       var cat = DUTY_CATEGORIES.filter(function (c) { return c.code === e.category; })[0];
@@ -815,7 +964,7 @@
       var opType = OPERATION_TYPES.filter(function (o) { return o.code === e.operationType; })[0]; if (opType) detailParts.push(opType.name);
       var modeOp = MODE_OF_OPERATION.filter(function (m) { return m.code === e.modeOfOperation; })[0]; if (modeOp) detailParts.push(modeOp.name);
 
-      listHtml += '<div class="swipe' + (e.id === lastAddedId ? ' new' : '') + '" data-id="' + escapeHtml(e.id) + '">' +
+      listHtml += '<div class="swipe' + (e.id === lastAddedId ? ' new' : '') + (stagger ? ' stagger' : '') + '" style="--i:' + (si++) + '" data-id="' + escapeHtml(e.id) + '">' +
         '<div class="swipe-action">' + TRASH_SVG + 'Delete</div>' +
         '<div class="entry-card">' +
           '<div class="entry-main">' +
@@ -837,7 +986,7 @@
   // ---- Swipe to delete (with undo) ----
   function attachSwipe(row) {
     var card = row.querySelector('.entry-card');
-    var sx = 0, sy = 0, dx = 0, tracking = false, horizontal = null, width = 0;
+    var sx = 0, sy = 0, dx = 0, tracking = false, horizontal = null, width = 0, armed = false;
     row.addEventListener('touchstart', function (ev) {
       if (ev.touches.length !== 1) return;
       sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; dx = 0; tracking = true; horizontal = null;
@@ -852,11 +1001,13 @@
       dx = Math.min(0, mx);
       var shown = dx < -100 ? -100 + (dx + 100) * 0.35 : dx; // rubber-band past the action
       card.style.transform = 'translateX(' + shown + 'px)';
+      var isArmed = dx < -Math.min(110, width * 0.3);
+      if (isArmed !== armed) { armed = isArmed; row.classList.toggle('armed', armed); if (armed) fx('detent'); else haptic('light'); }
     }, { passive: false });
     function end() {
       if (!tracking) return; tracking = false;
-      card.classList.add('snap');
-      if (horizontal && dx < -Math.min(110, width * 0.3)) { haptic(12); removeEntry(row.getAttribute('data-id'), row); }
+      card.classList.add('snap'); if (!(horizontal && dx < -Math.min(110, width * 0.3))) { armed = false; row.classList.remove('armed'); }
+      if (horizontal && dx < -Math.min(110, width * 0.3)) { fx('delete'); removeEntry(row.getAttribute('data-id'), row); }
       else { card.style.transform = ''; setTimeout(function () { row.classList.remove('swiping'); }, 360); }
     }
     row.addEventListener('touchend', end);
@@ -876,7 +1027,7 @@
     setTimeout(function () {
       entries.splice(idx, 1); saveEntries(); renderMain();
       showToast('Entry deleted', 'Undo', function () {
-        entries.push(removed); saveEntries(); renderMain(); haptic(8);
+        entries.push(removed); saveEntries(); renderMain(); fx('undo');
       });
     }, 320);
   }
@@ -929,7 +1080,7 @@
     var chip = ev.target.closest('[data-style]'); if (!chip) return;
     passportStyle = chip.getAttribute('data-style');
     try { localStorage.setItem(STYLE_KEY, passportStyle); } catch (e) {}
-    renderStyleRow(); refreshPassport(); haptic(6);
+    renderStyleRow(); refreshPassport(); fx('tick');
   });
 
   function drawPassport(name, T) {
@@ -1063,9 +1214,10 @@
   function openShare() {
     renderStyleRow(); refreshPassport();
     document.body.style.overflow = 'hidden';
-    shareOverlay.classList.add('open'); haptic(8);
+    shareOverlay.classList.add('open'); fx('open');
   }
   function closeShare() {
+    if (shareOverlay.classList.contains('open')) fx('close');
     shareOverlay.classList.remove('open'); shareSheet.style.transform = '';
     document.body.style.overflow = '';
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -1139,7 +1291,8 @@
   }
   calGrid.addEventListener('click', function (ev) {
     var btn = ev.target.closest('[data-date]'); if (!btn) return;
-    haptic(6); handleDayClick(btn.getAttribute('data-date'));
+    handleDayClick(btn.getAttribute('data-date'));
+    fx('note', form.end ? (daysBetween(form.start, form.end) || 1) - 1 : 0);
   });
   function handleDayClick(iso) {
     if (!form.start || (form.start && form.end)) { form.start = iso; form.end = ''; }
@@ -1186,7 +1339,7 @@
       knownVesselSelect.onchange = function () {
         var v = byName[knownVesselSelect.value]; if (!v) return;
         vesselNameInput.value = v.vessel; vesselIdInput.value = v.vesselId; vesselLengthInput.value = v.vesselLength;
-        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; updateSaveButtonState(); haptic(6);
+        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; updateSaveButtonState(); fx('tick');
       };
     } else { knownVesselField.style.display = 'none'; }
   }
@@ -1194,9 +1347,10 @@
   function openModal() {
     resetForm(); populateKnownVessels();
     document.body.style.overflow = 'hidden';
-    modalOverlay.classList.add('open'); haptic(8);
+    modalOverlay.classList.add('open'); fx('open');
   }
-  function closeModal() {
+  function closeModal(silent) {
+    if (silent !== true && modalOverlay.classList.contains('open')) fx('close');
     modalOverlay.classList.remove('open');
     sheet.style.transform = '';
     document.body.style.overflow = '';
@@ -1204,7 +1358,7 @@
   }
 
   $('openModalBtn').addEventListener('click', openModal);
-  $('closeModalBtn').addEventListener('click', closeModal);
+  $('closeModalBtn').addEventListener('click', function () { closeModal(); });
   modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) closeModal(); });
 
   // Drag-to-dismiss on a sheet header
@@ -1229,15 +1383,15 @@
   makeDraggable(sheetHead, sheet, closeModal);
   makeDraggable($('shareHead'), shareSheet, closeShare);
 
-  $('prevMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); haptic(5); });
-  $('nextMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); haptic(5); });
+  $('prevMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); fx('tick'); });
+  $('nextMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); fx('tick'); });
   clearDatesBtn.addEventListener('click', function () { form.start = ''; form.end = ''; renderCalendar(); });
 
   autoCalcBtn.addEventListener('click', function () {
     autoCalc = !autoCalc;
     autoCalcBtn.classList.toggle('active', autoCalc);
     autoCalcBtn.textContent = autoCalc ? 'Auto (from dates)' : 'Manual';
-    updateDaysField(); haptic(6);
+    updateDaysField(); fx('toggle');
   });
   daysInput.addEventListener('input', function () { form.days = daysInput.value; });
   vesselNameInput.addEventListener('input', updateSaveButtonState);
@@ -1252,9 +1406,28 @@
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
     entries.push(entry); lastAddedId = entry.id; saveEntries();
-    closeModal();
-    setTimeout(function () { renderMain(); haptic([8, 30, 12]); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
+    closeModal(true);
+    setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 34); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
   });
+
+  // ---- Sound toggle ----
+  var soundBtn = $('soundBtn');
+  var SPEAKER_ON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  var SPEAKER_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
+  function syncSoundBtn() { soundBtn.innerHTML = soundOn ? SPEAKER_ON : SPEAKER_OFF; soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); soundBtn.title = soundOn ? 'Sounds on' : 'Sounds off'; }
+  soundBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) {}
+    syncSoundBtn(); if (soundOn) fx('toggle'); else haptic('light');
+  });
+  syncSoundBtn();
+
+  // ---- Collapsing nav bar ----
+  var navbar = $('navbar'), navShown = false;
+  window.addEventListener('scroll', function () {
+    var show = window.scrollY > 70;
+    if (show !== navShown) { navShown = show; navbar.classList.toggle('show', show); }
+  }, { passive: true });
 
   // ---- Init ----
   renderMain();
