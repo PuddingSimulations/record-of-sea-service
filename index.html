@@ -114,7 +114,7 @@
   .select-wrap { position: relative; margin-bottom: 12px; }
   .select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
     border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); pointer-events: none; }
-  select, input[type=text], input[type=number], textarea {
+  select, input[type=text], input[type=number], input[type=tel], input[type=email], textarea {
     width: 100%; border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; color: var(--ink);
     background: var(--card-2); font-family: inherit; outline: none; -webkit-appearance: none; appearance: none;
     transition: box-shadow .2s ease, background .2s ease; }
@@ -271,7 +271,7 @@
   .save-btn:disabled { opacity: 0.35; transform: none; }
 
   /* Share sheet */
-  .passport-wrap img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; background: var(--card-2); border-radius: 22px; box-shadow: 0 18px 40px rgba(15,24,48,0.32); -webkit-touch-callout: default; -webkit-user-select: none; user-select: none; }
+  .passport-wrap img { display: block; width: 100%; height: auto; min-height: 240px; background: var(--card-2); border-radius: 22px; box-shadow: 0 18px 40px rgba(15,24,48,0.32); -webkit-touch-callout: default; -webkit-user-select: none; user-select: none; }
   .style-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
   .style-chip { border: none; background: none; padding: 0; color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; }
   .style-chip i { display: block; width: 52px; height: 52px; border-radius: 16px; box-shadow: inset 0 0 0 1px rgba(128,128,128,0.35); transition: transform .25s var(--spring), box-shadow .2s; position: relative; overflow: hidden; }
@@ -281,6 +281,22 @@
   .style-chip.active i { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 5px var(--amber); }
   .link-btn { width: 100%; border: none; background: none; color: var(--ink-2); font-size: 15px; font-weight: 600; padding: 12px 0 0; cursor: pointer; }
   .link-btn:active { opacity: 0.5; }
+
+  /* Settings */
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .set-row:first-child { border-top: none; }
+  .group-label + .set-row { border-top: none; }
+  .set-row .n { font-size: 15px; font-weight: 600; min-width: 0; }
+  .set-row small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; margin-top: 2px; line-height: 1.35; }
+  .switch { -webkit-appearance: none; appearance: none; width: 51px; height: 31px; border-radius: 999px; background: var(--card-2); position: relative; flex-shrink: 0; transition: background .25s ease; cursor: pointer; border: none; outline: none; margin: 0; box-shadow: inset 0 0 0 1px var(--line); }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform .4s var(--spring); }
+  .switch:checked { background: var(--good); box-shadow: none; }
+  .switch:checked::after { transform: translateX(20px); }
+  .switch:active::after { width: 32px; }
+  .switch:checked:active::after { transform: translateX(15px); }
+  .switch:focus-visible { box-shadow: 0 0 0 2px var(--amber); }
+  .group-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin: 18px 0 2px; }
+  .group-label:first-child { margin-top: 0; }
 
   /* Form 771 helper */
   .section-row { display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; }
@@ -327,7 +343,9 @@
       <p class="subtitle">AMSA Form 771 · Near Coastal</p>
     </div>
     <div class="head-actions">
-    <button class="icon-btn" id="soundBtn" aria-label="Sounds" aria-pressed="true"></button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
     <button class="icon-btn" id="exportBtn" aria-label="Share sea passport">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
     </button>
@@ -340,6 +358,7 @@
     <div class="hero-stats">
       <span class="pill" id="statEntries">0 entries</span>
       <span class="pill" id="statVessels">0 vessels</span>
+      <span class="pill" id="statTickets" style="display:none;"></span>
     </div>
   </section>
 
@@ -436,6 +455,22 @@
   </div>
 </div>
 
+<div class="overlay" id="settingsOverlay">
+  <div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="sheet-head" id="settingsHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>Settings</h2>
+        <button class="close-btn" id="closeSettingsBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="sheet-body" id="settingsBody"></div>
+    <div class="sheet-foot"><button class="save-btn" id="settingsDoneBtn" type="button">Done</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="formOverlay">
   <div class="sheet" id="formSheet" role="dialog" aria-modal="true" aria-label="Auto-fill Form 771">
     <div class="sheet-head" id="formHead">
@@ -504,6 +539,40 @@
         <div class="field">
           <label class="field-label" for="propulsion">Propulsion type</label>
           <div class="select-wrap" style="margin:0;"><select id="propulsion"></select></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="vesselOwner">Owner / operator</label>
+          <input type="text" id="vesselOwner" placeholder="Company or person who operates the vessel" autocomplete="off" autocapitalize="words" />
+        </div>
+      </div>
+
+      <div class="form-card">
+        <p class="section-title">Supervisor details</p>
+        <div class="field" id="knownSupField" style="display:none;">
+          <label class="field-label" for="knownSupSelect">Use previous supervisor</label>
+          <div class="select-wrap" style="margin:0;"><select id="knownSupSelect" class="vessel-select"><option value="">Select a supervisor to pre-fill…</option></select></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="supName">Name of master / supervisor</label>
+          <input type="text" id="supName" placeholder="Who verifies this sea service" autocomplete="off" autocapitalize="words" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="supPosition">Position / title</label>
+          <input type="text" id="supPosition" placeholder="e.g. Master, Chief Engineer" autocomplete="off" autocapitalize="words" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="supCert">Certificate of competency</label>
+          <input type="text" id="supCert" placeholder="Type and number" autocomplete="off" autocapitalize="characters" />
+        </div>
+        <div class="field row-2">
+          <div>
+            <label class="field-label" for="supPhone">Phone</label>
+            <input type="tel" inputmode="tel" id="supPhone" autocomplete="off" />
+          </div>
+          <div>
+            <label class="field-label" for="supEmail">Email</label>
+            <input type="email" inputmode="email" id="supEmail" autocomplete="off" autocapitalize="none" />
+          </div>
         </div>
       </div>
 
@@ -823,12 +892,20 @@
   try { var rawTicket = localStorage.getItem(TICKET_STORAGE_KEY); if (rawTicket) ticketState = Object.assign(ticketState, JSON.parse(rawTicket)); } catch (e) {}
   function saveTicketState() { try { localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticketState)); } catch (e) {} }
 
+  // Tickets the user already holds (excluded from "Working towards", listed on the passport card)
+  var HELD_KEY = 'sea-service-held', heldIds = [];
+  try { heldIds = JSON.parse(localStorage.getItem(HELD_KEY) || '[]') || []; } catch (e) { heldIds = []; }
+  function saveHeld() { try { localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); } catch (e) {} }
+  function heldList() { return TICKETS.filter(function (t) { return !t.custom && heldIds.indexOf(t.id) !== -1; }); }
+
   // ---- DOM refs ----
   var $ = function (id) { return document.getElementById(id); };
   var grandTotalEl = $('grandTotal'), summarySection = $('summarySection'), entriesSection = $('entriesSection');
   var modalOverlay = $('modalOverlay'), sheet = $('sheet'), sheetBody = $('sheetBody'), sheetHead = $('sheetHead');
   var vesselNameInput = $('vesselName'), vesselIdInput = $('vesselId'), vesselLengthInput = $('vesselLength'), vesselPowerInput = $('vesselPower');
   var propulsionSelect = $('propulsion'), operationTypeSelect = $('operationType'), modeOfOperationSelect = $('modeOfOperation');
+  var vesselOwnerInput = $('vesselOwner'), supNameInput = $('supName'), supPositionInput = $('supPosition'), supCertInput = $('supCert'), supPhoneInput = $('supPhone'), supEmailInput = $('supEmail');
+  var knownSupField = $('knownSupField'), knownSupSelect = $('knownSupSelect');
   var positionInput = $('position'), dutyCategorySelect = $('dutyCategory'), notesInput = $('notes');
   var daysInput = $('daysInput'), daysHint = $('daysHint'), autoCalcBtn = $('autoCalcBtn');
   var calendarMonthLabel = $('calendarMonthLabel'), calGrid = $('calGrid'), dateRangeLabel = $('dateRangeLabel'), clearDatesBtn = $('clearDatesBtn');
@@ -947,6 +1024,7 @@
     }
     ticketNote.textContent = ticket.note || '';
     var bits = [];
+    if (!isCustom && heldIds.indexOf(ticket.id) !== -1) bits.push('You already hold this ticket \u2713');
     if (!isCustom && q.catDays > q.days) bits.push((q.catDays - q.days) + ' day' + (q.catDays - q.days === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
     if (!isCustom && q.unverified) bits.push(q.unverified + ' day' + (q.unverified === 1 ? '' : 's') + ' counted without vessel length/power on record.');
     ticketFilterNote.textContent = bits.join(' '); ticketFilterNote.style.display = bits.length ? '' : 'none';
@@ -971,7 +1049,7 @@
       var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook;
       var logged = sumFor(t, t.categories);
       return { id: t.id, name: t.name, required: required, logged: logged, ratio: Math.min(1, logged / required) };
-    }).filter(function (t) { return t.logged > 0; })
+    }).filter(function (t) { return t.logged > 0 && heldIds.indexOf(t.id) === -1; })
       .sort(function (a, b) { return b.ratio - a.ratio; });
   }
   function renderWorking() {
@@ -1011,6 +1089,8 @@
     var vesselCount = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
     $('statEntries').textContent = entries.length + (entries.length === 1 ? ' entry' : ' entries');
     $('statVessels').textContent = vesselCount + (vesselCount === 1 ? ' vessel' : ' vessels');
+    var heldN = heldList().length, stT = $('statTickets');
+    stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
     renderWorking();
 
@@ -1054,6 +1134,8 @@
       var detailParts = [];
       if (e.position) detailParts.push(e.position);
       if (e.vesselId) detailParts.push('ID ' + e.vesselId);
+      if (e.owner) detailParts.push(e.owner);
+      if (e.supName) detailParts.push('Supervisor ' + e.supName + (e.supPosition ? ' (' + e.supPosition + ')' : ''));
       if (e.vesselLength || e.vesselPower) {
         detailParts.push((e.vesselLength ? e.vesselLength + 'm' : '') + (e.vesselLength && e.vesselPower ? ', ' : '') + (e.vesselPower ? e.vesselPower + 'kW' : ''));
       }
@@ -1183,7 +1265,7 @@
   function drawPassport(name, T) {
     var W = 1080, H = 1350, PAD = 80;
     var c = document.createElement('canvas'); c.width = W; c.height = H;
-    var x = c.getContext('2d');
+    var x = c.getContext('2d');  // height is set again below once the layout is measured
     var F = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
 
     function rr(px, py, w, h, r) {
@@ -1213,6 +1295,26 @@
       var p1 = monthYear(starts[0]), p2 = monthYear(ends[ends.length - 1]);
       period = p1 === p2 ? p1 : p1 + ' – ' + p2;
     }
+
+    // ---- Layout (measured first so the card grows with the tickets held) ----
+    var list = workingList().sort(function (a, b) {
+      var ad = a.logged >= a.required, bd = b.logged >= b.required;
+      if (ad !== bd) return ad ? 1 : -1;
+      return ad ? b.required - a.required : b.ratio - a.ratio;
+    }).slice(0, 3);
+    var held = heldList(), CH = 52, ROWP = 66, CPAD = 22, CHK = 34, chipRows = [[]], rowX = 0;
+    x.font = '600 26px ' + F;
+    held.forEach(function (t) {
+      var w = x.measureText(t.name).width + CPAD * 2 + CHK;
+      if (rowX && rowX + w > W - PAD * 2) { chipRows.push([]); rowX = 0; }
+      chipRows[chipRows.length - 1].push({ t: t, w: w, x: rowX }); rowX += w + 12;
+    });
+    var yy = 960, heldHeadY = 0, chipsTop = 0, workHeadY = 0, bottom = 876;
+    if (held.length) { heldHeadY = yy; chipsTop = yy + 30; bottom = chipsTop + chipRows.length * ROWP - (ROWP - CH); yy = chipsTop + chipRows.length * ROWP + 52; }
+    var showWork = list.length > 0 || !held.length, workRows = Math.max(1, list.length);
+    if (showWork) { workHeadY = yy; bottom = yy + 60 + (workRows - 1) * 84 + 28; }
+    var dashY = bottom + (showWork ? 20 : 40);
+    H = dashY + 114; c.height = H;
 
     // Background
     var g = x.createLinearGradient(0, 0, W * 0.6, H);
@@ -1261,31 +1363,42 @@
       x.fillStyle = T.muted; x.font = '600 19px ' + F; spaced(t[1], tx + 28, ty + 138, 3);
     });
 
-    // Tickets
-    x.fillStyle = T.accent; x.font = '700 22px ' + F; spaced('WORKING TOWARDS', PAD, 960, 5);
-    var list = workingList().sort(function (a, b) {
-      var ad = a.logged >= a.required, bd = b.logged >= b.required;
-      if (ad !== bd) return ad ? 1 : -1;
-      return ad ? b.required - a.required : b.ratio - a.ratio;
-    }).slice(0, 3);
-    if (!list.length) {
-      x.fillStyle = T.faint; x.font = '500 28px ' + F; x.fillText('Log sea time to see ticket progress.', PAD, 1020);
+    // Tickets held
+    if (held.length) {
+      x.fillStyle = T.accent; x.font = '700 22px ' + F; spaced('TICKETS HELD', PAD, heldHeadY, 5);
+      chipRows.forEach(function (row, ri) {
+        var cy = chipsTop + ri * ROWP;
+        row.forEach(function (ch) {
+          var cx = PAD + ch.x;
+          rr(cx, cy, ch.w, CH, CH / 2); x.fillStyle = T.tileFill; x.fill(); x.strokeStyle = T.tileStroke; x.lineWidth = 1.5; x.stroke();
+          x.fillStyle = T.doneText; x.font = '800 24px ' + F; x.fillText('\u2713', cx + CPAD, cy + 34);
+          x.fillStyle = T.ink; x.font = '600 26px ' + F; x.fillText(ch.t.name, cx + CPAD + CHK, cy + 34);
+        });
+      });
     }
-    list.forEach(function (t, i) {
-      var ry = 1020 + i * 84, done = t.logged >= t.required;
-      x.fillStyle = T.ink; x.font = '600 30px ' + F; x.fillText(t.name, PAD, ry);
-      x.textAlign = 'right'; x.fillStyle = done ? T.doneText : T.ticketVal; x.font = '700 30px ' + F;
-      x.fillText((done ? '✓ ' : '') + t.logged + ' / ' + t.required, W - PAD, ry); x.textAlign = 'left';
-      rr(PAD, ry + 18, W - PAD * 2, 10, 5); x.fillStyle = T.track; x.fill();
-      var bw = Math.max(10, (W - PAD * 2) * t.ratio);
-      var bg = x.createLinearGradient(PAD, 0, PAD + bw, 0);
-      if (done) { bg.addColorStop(0, T.doneA); bg.addColorStop(1, T.doneB); } else { bg.addColorStop(0, T.barA); bg.addColorStop(1, T.barB); }
-      rr(PAD, ry + 18, bw, 10, 5); x.fillStyle = bg; x.fill();
-    });
+
+    // Working towards
+    if (showWork) {
+      x.fillStyle = T.accent; x.font = '700 22px ' + F; spaced('WORKING TOWARDS', PAD, workHeadY, 5);
+      if (!list.length) {
+        x.fillStyle = T.faint; x.font = '500 28px ' + F; x.fillText('Log sea time to see ticket progress.', PAD, workHeadY + 60);
+      }
+      list.forEach(function (t, i) {
+        var ry = workHeadY + 60 + i * 84, done = t.logged >= t.required;
+        x.fillStyle = T.ink; x.font = '600 30px ' + F; x.fillText(t.name, PAD, ry);
+        x.textAlign = 'right'; x.fillStyle = done ? T.doneText : T.ticketVal; x.font = '700 30px ' + F;
+        x.fillText((done ? '\u2713 ' : '') + t.logged + ' / ' + t.required, W - PAD, ry); x.textAlign = 'left';
+        rr(PAD, ry + 18, W - PAD * 2, 10, 5); x.fillStyle = T.track; x.fill();
+        var bw = Math.max(10, (W - PAD * 2) * t.ratio);
+        var bg = x.createLinearGradient(PAD, 0, PAD + bw, 0);
+        if (done) { bg.addColorStop(0, T.doneA); bg.addColorStop(1, T.doneB); } else { bg.addColorStop(0, T.barA); bg.addColorStop(1, T.barB); }
+        rr(PAD, ry + 18, bw, 10, 5); x.fillStyle = bg; x.fill();
+      });
+    }
 
     // Machine-readable strip
     x.strokeStyle = T.dash; x.lineWidth = 2; x.setLineDash([10, 10]);
-    x.beginPath(); x.moveTo(PAD, 1236); x.lineTo(W - PAD, 1236); x.stroke(); x.setLineDash([]);
+    x.beginPath(); x.moveTo(PAD, dashY); x.lineTo(W - PAD, dashY); x.stroke(); x.setLineDash([]);
     function pad(n, l) { return String(n).padStart(l, '0'); }
     function fill(str, len) { while (str.length < len) str += '<'; return str.slice(0, len); }
     var who = (name || 'MARINER').toUpperCase().replace(/[^A-Z0-9]+/g, '<');
@@ -1293,7 +1406,7 @@
     var l2 = fill(pad(total, 4) + 'D<' + pad(entries.length, 3) + 'V<' + pad(vessels, 2) + 'S<' + pad(longest, 3) + 'L', 38);
     var ms = 40; x.font = '500 ' + ms + 'px "SF Mono", Menlo, Courier, monospace';
     while (x.measureText(l1).width > W - PAD * 2 && ms > 16) { ms -= 1; x.font = '500 ' + ms + 'px "SF Mono", Menlo, Courier, monospace'; }
-    x.fillStyle = T.mrz; x.fillText(l1, PAD, 1280); x.fillText(l2, PAD, 1280 + ms + 12);
+    x.fillStyle = T.mrz; x.fillText(l1, PAD, dashY + 44); x.fillText(l2, PAD, dashY + 44 + ms + 12);
     return c;
   }
 
@@ -1365,6 +1478,7 @@
     return [
       ['Vessel name', e.vessel || ''],
       ['Vessel identifier', e.vesselId || ''],
+      ['Owner / operator', e.owner || ''],
       ['Length (m)', e.vesselLength || ''],
       ['Power (kW)', e.vesselPower || ''],
       ['Propulsion type', lookup(PROPULSION_TYPES, e.propulsion)],
@@ -1374,7 +1488,12 @@
       ['Duty category', cat ? cat.name + ' (' + cat.code + ')' : (e.category || '')],
       ['From', auDate(e.start)],
       ['To', auDate(e.end || e.start)],
-      ['Days of sea service', String(e.days || '')]
+      ['Days of sea service', String(e.days || '')],
+      ['Supervisor name', e.supName || ''],
+      ['Supervisor position', e.supPosition || ''],
+      ['Supervisor certificate', e.supCert || ''],
+      ['Supervisor phone', e.supPhone || ''],
+      ['Supervisor email', e.supEmail || '']
     ];
   }
   function sortedEntriesAsc() { return entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }); }
@@ -1495,7 +1614,8 @@
   // ---- Sheet ----
   function resetForm() {
     form = defaultForm(); autoCalc = true; calendarMonth = new Date();
-    vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = '';
+    vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = ''; vesselOwnerInput.value = '';
+    [supNameInput, supPositionInput, supCertInput, supPhoneInput, supEmailInput].forEach(function (el) { el.value = ''; });
     propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU';
     positionInput.value = ''; dutyCategorySelect.value = 'D'; notesInput.value = ''; daysInput.value = 1;
     autoCalcBtn.classList.add('active'); autoCalcBtn.textContent = 'Auto (from dates)';
@@ -1506,7 +1626,7 @@
   function populateKnownVessels() {
     var byName = {};
     entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }).forEach(function (e) {
-      byName[e.vessel] = { vessel: e.vessel, vesselId: e.vesselId || '', vesselLength: e.vesselLength || '', vesselPower: e.vesselPower || '', propulsion: e.propulsion || 'I' };
+      byName[e.vessel] = { vessel: e.vessel, vesselId: e.vesselId || '', vesselLength: e.vesselLength || '', vesselPower: e.vesselPower || '', propulsion: e.propulsion || 'I', owner: e.owner || '' };
     });
     var list = Object.keys(byName).map(function (k) { return byName[k]; }).sort(function (a, b) { return a.vessel.localeCompare(b.vessel); });
     if (list.length > 0) {
@@ -1517,13 +1637,28 @@
       knownVesselSelect.onchange = function () {
         var v = byName[knownVesselSelect.value]; if (!v) return;
         vesselNameInput.value = v.vessel; vesselIdInput.value = v.vesselId; vesselLengthInput.value = v.vesselLength;
-        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; updateSaveButtonState(); fx('tick');
+        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; vesselOwnerInput.value = v.owner; updateSaveButtonState(); fx('tick');
       };
     } else { knownVesselField.style.display = 'none'; }
   }
 
+  function populateKnownSupervisors() {
+    var bySup = {};
+    entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }).forEach(function (e) {
+      if (e.supName) bySup[e.supName] = { supName: e.supName, supPosition: e.supPosition || '', supCert: e.supCert || '', supPhone: e.supPhone || '', supEmail: e.supEmail || '' };
+    });
+    var names = Object.keys(bySup).sort();
+    if (!names.length) { knownSupField.style.display = 'none'; return; }
+    knownSupField.style.display = '';
+    knownSupSelect.innerHTML = '<option value="">Select a supervisor to pre-fill\u2026</option>' + names.map(function (n) { return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
+    knownSupSelect.onchange = function () {
+      var v = bySup[knownSupSelect.value]; if (!v) return;
+      supNameInput.value = v.supName; supPositionInput.value = v.supPosition; supCertInput.value = v.supCert; supPhoneInput.value = v.supPhone; supEmailInput.value = v.supEmail; fx('tick');
+    };
+  }
+
   function openModal() {
-    resetForm(); populateKnownVessels();
+    resetForm(); populateKnownVessels(); populateKnownSupervisors();
     document.body.style.overflow = 'hidden';
     modalOverlay.classList.add('open'); fx('open');
   }
@@ -1580,7 +1715,8 @@
     if (!vessel || !Number(daysInput.value)) return;
     var entry = {
       id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
-      vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value,
+      vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, owner: vesselOwnerInput.value.trim(),
+      supName: supNameInput.value.trim(), supPosition: supPositionInput.value.trim(), supCert: supCertInput.value.trim(), supPhone: supPhoneInput.value.trim(), supEmail: supEmailInput.value.trim(),
       operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, category: dutyCategorySelect.value,
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
@@ -1589,17 +1725,44 @@
     setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 34); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
   });
 
-  // ---- Sound toggle ----
-  var soundBtn = $('soundBtn');
-  var SPEAKER_ON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-  var SPEAKER_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
-  function syncSoundBtn() { soundBtn.innerHTML = soundOn ? SPEAKER_ON : SPEAKER_OFF; soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); soundBtn.title = soundOn ? 'Sounds on' : 'Sounds off'; }
-  soundBtn.addEventListener('click', function () {
-    soundOn = !soundOn;
-    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) {}
-    syncSoundBtn(); if (soundOn) fx('toggle'); else haptic('light');
+  // ---- Settings sheet ----
+  var settingsOverlay = $('settingsOverlay'), settingsSheet = $('settingsSheet'), settingsBody = $('settingsBody');
+  function renderSettings() {
+    var html = '<div class="form-card"><p class="section-title">Feedback</p>' +
+      '<label class="set-row"><span class="n">Sounds<small>Taps, calendar notes and confirmations. Your silent switch still mutes them.</small></span>' +
+      '<input type="checkbox" class="switch" id="soundSwitch" ' + (soundOn ? 'checked' : '') + ' /></label></div>';
+    html += '<div class="form-card"><p class="section-title">Tickets I hold</p><p class="field-hint" style="margin:-6px 0 10px;">Tick tickets you already have. They leave Working towards and appear on your passport card.</p>';
+    ['General', 'Deck', 'Engineering'].forEach(function (g) {
+      html += '<div class="group-label">' + g + '</div>';
+      TICKETS.filter(function (t) { return t.group === g; }).forEach(function (t) {
+        html += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '</span><input type="checkbox" class="switch" data-held="' + t.id + '" ' + (heldIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
+      });
+    });
+    settingsBody.innerHTML = html + '</div>';
+  }
+  settingsBody.addEventListener('change', function (ev) {
+    var el = ev.target;
+    if (el.id === 'soundSwitch') {
+      soundOn = el.checked;
+      try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) {}
+      if (soundOn) fx('toggle'); else haptic('light');
+      return;
+    }
+    var id = el.getAttribute('data-held'); if (!id) return;
+    var i = heldIds.indexOf(id);
+    if (el.checked && i === -1) heldIds.push(id); else if (!el.checked && i !== -1) heldIds.splice(i, 1);
+    saveHeld(); renderMain(); fx('toggle');
   });
-  syncSoundBtn();
+  function openSettings() { renderSettings(); settingsBody.scrollTop = 0; document.body.style.overflow = 'hidden'; settingsOverlay.classList.add('open'); fx('open'); }
+  function closeSettings() {
+    if (settingsOverlay.classList.contains('open')) fx('close');
+    settingsOverlay.classList.remove('open'); settingsSheet.style.transform = ''; document.body.style.overflow = '';
+  }
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('closeSettingsBtn').addEventListener('click', closeSettings);
+  $('settingsDoneBtn').addEventListener('click', closeSettings);
+  settingsOverlay.addEventListener('click', function (e) { if (e.target === settingsOverlay) closeSettings(); });
+  makeDraggable($('settingsHead'), settingsSheet, closeSettings);
 
   // ---- Collapsing nav bar ----
   var navbar = $('navbar'), navShown = false;
