@@ -158,8 +158,18 @@
   function paintDays() { $('days').textContent = days; $('changed').style.display = days !== Number(R.d) ? 'block' : 'none'; }
   function paintRole() { Array.prototype.forEach.call($('roles').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-r') === role); }); $('otherBox').style.display = role === 'other' ? 'block' : 'none'; }
   paintDays(); paintRole();
-  $('inc').onclick = function () { days = Math.min(60, days + 1); paintDays(); };
-  $('dec').onclick = function () { days = Math.max(1, days - 1); paintDays(); };
+  // Days can go up as far as the voyage has calendar days (or what was logged, if that is higher). Hold a button to repeat.
+  var calDays = (R.s && R.e) ? Math.round((new Date(R.e + 'T00:00:00') - new Date(R.s + 'T00:00:00')) / 86400000) + 1 : 0,
+      maxDays = Math.max(Number(R.d) || 1, calDays > 0 ? calDays : 366);
+  function step(dir) { days = Math.min(maxDays, Math.max(1, days + dir)); paintDays(); }
+  function hold(btn, dir) {
+    var t1, t2;
+    function stop() { clearTimeout(t1); clearInterval(t2); }
+    btn.addEventListener('pointerdown', function (e) { e.preventDefault(); step(dir); stop(); t1 = setTimeout(function () { t2 = setInterval(function () { step(dir); }, 80); }, 380); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (n) { btn.addEventListener(n, stop); });
+    btn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); step(dir); } });
+  }
+  hold($('inc'), 1); hold($('dec'), -1);
   $('roles').onclick = function (e) { var b = e.target.closest('[data-r]'); if (!b) return; role = b.getAttribute('data-r'); paintRole(); };
 
   // ---- signature pad: records strokes as small numbers so the reply stays a short link ----

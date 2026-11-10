@@ -559,22 +559,24 @@
   <div class="sheet" id="meSheet" role="dialog" aria-modal="true" aria-label="Your details">
     <div class="sheet-head" id="meHead">
       <div class="grabber"></div>
-      <div class="sheet-title-row"><h2>Before you send</h2>
+      <div class="sheet-title-row"><h2>Your details</h2>
         <button class="close-btn" id="closeMeBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
     </div>
     <div class="sheet-body">
-      <p class="f-intro">Your supervisor sees who is asking. Add your details once and they are saved on this phone.</p>
+      <p class="f-intro"><b style="color:var(--ink);">These are your own details, not your supervisor's.</b> They go in the message so your supervisor knows who is asking and where to send the signed reply. Your supervisor adds their own details on their phone.</p>
       <div class="form-card">
-        <div class="field"><label class="field-label" for="meName">Full name</label><input type="text" id="meName" autocomplete="name" autocapitalize="words" /></div>
+        <p class="section-title">About you</p>
+        <div class="field"><label class="field-label" for="meName">Your full name</label><input type="text" id="meName" autocomplete="name" autocapitalize="words" /></div>
         <div class="field row-2">
-          <div><label class="field-label" for="mePhone">Phone</label><input type="tel" id="mePhone" inputmode="tel" autocomplete="tel" /></div>
-          <div><label class="field-label" for="meEmail">Email</label><input type="email" id="meEmail" inputmode="email" autocomplete="email" autocapitalize="none" /></div>
+          <div><label class="field-label" for="mePhone">Your mobile</label><input type="tel" id="mePhone" inputmode="tel" autocomplete="tel" /></div>
+          <div><label class="field-label" for="meEmail">Your email</label><input type="email" id="meEmail" inputmode="email" autocomplete="email" autocapitalize="none" /></div>
         </div>
-        <p class="field-hint">Your phone and email let your supervisor reply to you in one tap.</p>
+        <p class="field-hint">Your mobile and email let your supervisor reply to you in one tap. Saved on this phone, so you only enter them once.</p>
       </div>
+      <div class="form-card" id="meFor" style="display:none;"><p class="section-title">Sending to your supervisor</p><div id="meForText" style="font-size:14px;"></div></div>
     </div>
-    <div class="sheet-foot"><button class="save-btn" id="meSaveBtn" type="button" disabled>Save and send</button></div>
+    <div class="sheet-foot"><button class="save-btn" id="meSaveBtn" type="button" disabled>Save and send to supervisor</button></div>
   </div>
 </div>
 
@@ -1867,7 +1869,8 @@
   // Ask for the crew member's own details once, only when they first send
   var meOverlay = $('meOverlay'), meSheet = $('meSheet'), meEntry = null;
   function openMe(e) {
-    meEntry = e; $('meName').value = profile.name || ''; $('mePhone').value = profile.phone || ''; $('meEmail').value = profile.email || ''; meCheck();
+    meEntry = e; var mf = $('meFor'); if (e) { mf.style.display = ''; $('meForText').textContent = e.vessel + ' \u00B7 ' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ' \u00B7 ' + e.days + ' days'; } else { mf.style.display = 'none'; }
+    $('meName').value = profile.name || ''; $('mePhone').value = profile.phone || ''; $('meEmail').value = profile.email || ''; meCheck();
     document.body.style.overflow = 'hidden'; meOverlay.classList.add('open'); fx('open');
   }
   function closeMe() { meOverlay.classList.remove('open'); meSheet.style.transform = ''; document.body.style.overflow = ''; }
