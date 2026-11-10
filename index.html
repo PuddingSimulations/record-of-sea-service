@@ -32,6 +32,7 @@
     --good: #2F8F6B;
     --danger: #E5484D;
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(17,24,39,0.06);
+    --primary: #1B2A4A; --on-primary: #FFFFFF;
     --ease: cubic-bezier(.32,.72,0,1);
     --spring: cubic-bezier(.34,1.56,.64,1);
     --sat: env(safe-area-inset-top, 0px);
@@ -50,6 +51,7 @@
       --amber-soft: rgba(212,160,86,0.18);
       --amber: #D4A056;
       --shadow: 0 1px 2px rgba(0,0,0,0.4);
+      --primary: #D4A056; --on-primary: #1B2A4A;
     }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -280,6 +282,28 @@
   .link-btn { width: 100%; border: none; background: none; color: var(--ink-2); font-size: 15px; font-weight: 600; padding: 12px 0 0; cursor: pointer; }
   .link-btn:active { opacity: 0.5; }
 
+  /* Form 771 helper */
+  .section-row { display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; }
+  .section-row .section-heading { margin: 0 0 0 6px; }
+  .pill-btn { display: inline-flex; align-items: center; gap: 6px; border: none; background: var(--amber-soft); color: var(--amber); font-size: 13px; font-weight: 700; padding: 8px 13px; border-radius: 999px; cursor: pointer; transition: transform .25s var(--spring); }
+  .pill-btn:active { transform: scale(0.92); }
+  .open-form { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; text-align: center; border-radius: 14px; padding: 14px; font-size: 16px; font-weight: 700; background: var(--primary); color: var(--on-primary); transition: transform .2s var(--spring); }
+  .open-form:active { transform: scale(0.97); }
+  .f-intro { font-size: 13px; line-height: 1.5; color: var(--ink-2); margin: 0 2px 14px; }
+  .f-card { background: var(--card); border-radius: 20px; padding: 6px 16px 12px; margin-bottom: 14px; }
+  .f-head { padding: 12px 0 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); }
+  .f-head b { font-size: 16px; letter-spacing: -0.01em; }
+  .f-head span { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .copy-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; border: none; background: none; text-align: left; color: inherit; padding: 11px 0; cursor: pointer; border-bottom: 1px solid var(--line); transition: background .3s ease; }
+  .copy-row .lbl { font-size: 12px; color: var(--ink-2); font-weight: 600; flex-shrink: 0; }
+  .copy-row .val { font-size: 15px; font-weight: 600; text-align: right; min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .copy-row .val.empty { color: var(--ink-3); font-weight: 500; }
+  .copy-row.flash { background: var(--amber-soft); }
+  .copy-row:active .val { opacity: .5; }
+  .f-actions { display: flex; gap: 10px; padding-top: 12px; }
+  .f-actions button { flex: 1; border: none; border-radius: 12px; padding: 11px; font-size: 14px; font-weight: 700; background: var(--card-2); color: var(--ink); cursor: pointer; transition: transform .2s var(--spring); }
+  .f-actions button:active { transform: scale(0.95); }
+
   /* Toast */
   .toast { position: fixed; left: 50%; bottom: calc(var(--sab) + 92px); transform: translate(-50%, 30px) scale(0.95); opacity: 0; pointer-events: none; z-index: 60;
     display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; background: rgba(28,28,30,0.92); color: #fff; font-size: 14px; font-weight: 500;
@@ -367,7 +391,13 @@
   <div id="summarySection"></div>
 
   <div class="rise d3">
-    <p class="section-heading">Entries</p>
+    <div class="section-row">
+      <p class="section-heading">Entries</p>
+      <button type="button" class="pill-btn" id="form771Btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+        Form 771
+      </button>
+    </div>
     <div id="entriesSection"></div>
   </div>
 </div>
@@ -402,6 +432,31 @@
     <div class="sheet-foot">
       <button class="save-btn" id="shareBtn">Share card</button>
       <button class="link-btn" id="csvBtn" type="button">Copy entries as CSV</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="formOverlay">
+  <div class="sheet" id="formSheet" role="dialog" aria-modal="true" aria-label="Auto-fill Form 771">
+    <div class="sheet-head" id="formHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>Form 771</h2>
+        <button class="close-btn" id="closeFormBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <p class="f-intro">Your sea service, laid out in the order of AMSA's Record of Sea Service. Open the AMSA form, then tap any value below to copy it and paste it into the matching field.</p>
+      <div id="formList"></div>
+    </div>
+    <div class="sheet-foot">
+      <a class="open-form" id="openAmsaForm" href="https://forms.amsa.gov.au/html/Form/771" target="_blank" rel="noopener noreferrer">
+        Open AMSA Form 771
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+      </a>
+      <button class="link-btn" id="copyTableBtn" type="button">Copy all entries as a table</button>
     </div>
   </div>
 </div>
@@ -1301,6 +1356,87 @@
     try { navigator.clipboard.writeText(csv).then(done, fail); } catch (err) { fail(); }
   });
 
+  // ---- Form 771 helper ----
+  var formOverlay = $('formOverlay'), formSheet = $('formSheet'), formList = $('formList');
+  function auDate(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+  function lookup(list, code) { var m = list.filter(function (i) { return i.code === code; })[0]; return m ? m.name : ''; }
+  function formFields(e) {
+    var cat = DUTY_CATEGORIES.filter(function (c) { return c.code === e.category; })[0];
+    return [
+      ['Vessel name', e.vessel || ''],
+      ['Vessel identifier', e.vesselId || ''],
+      ['Length (m)', e.vesselLength || ''],
+      ['Power (kW)', e.vesselPower || ''],
+      ['Propulsion type', lookup(PROPULSION_TYPES, e.propulsion)],
+      ['Type of operation', lookup(OPERATION_TYPES, e.operationType)],
+      ['Mode of operation', lookup(MODE_OF_OPERATION, e.modeOfOperation)],
+      ['Position on board', e.position || ''],
+      ['Duty category', cat ? cat.name + ' (' + cat.code + ')' : (e.category || '')],
+      ['From', auDate(e.start)],
+      ['To', auDate(e.end || e.start)],
+      ['Days of sea service', String(e.days || '')]
+    ];
+  }
+  function sortedEntriesAsc() { return entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }); }
+
+  function copyText(text, msg) {
+    var ok = function () { showToast(msg || 'Copied'); };
+    var legacy = function () {
+      try {
+        var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;left:-99px;top:0;opacity:0;';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        var done = document.execCommand('copy'); ta.remove();
+        if (done) ok(); else showToast('Copy was blocked here');
+      } catch (err) { showToast('Copy was blocked here'); }
+    };
+    try { navigator.clipboard.writeText(text).then(ok, legacy); } catch (err) { legacy(); }
+  }
+
+  function renderForm771() {
+    if (!entries.length) {
+      formList.innerHTML = '<div class="empty-box"><h3>No entries yet</h3><p>Add some sea service first, then it will appear here ready to copy.</p></div>';
+      return;
+    }
+    var html = '';
+    sortedEntriesAsc().forEach(function (e, idx) {
+      html += '<div class="f-card"><div class="f-head"><b>' + escapeHtml(e.vessel) + '</b><span>' + escapeHtml(auDate(e.start)) + (e.end && e.end !== e.start ? ' – ' + escapeHtml(auDate(e.end)) : '') + '</span></div>';
+      formFields(e).forEach(function (f) {
+        html += '<button type="button" class="copy-row" data-copy="' + escapeHtml(f[1]) + '" data-label="' + escapeHtml(f[0]) + '"><span class="lbl">' + f[0] + '</span><span class="val' + (f[1] ? '' : ' empty') + '">' + (f[1] ? escapeHtml(f[1]) : 'Not entered') + '</span></button>';
+      });
+      html += '<div class="f-actions"><button type="button" data-copy-entry="' + escapeHtml(e.id) + '">Copy this entry</button></div></div>';
+    });
+    formList.innerHTML = html;
+  }
+  formList.addEventListener('click', function (ev) {
+    var row = ev.target.closest('.copy-row');
+    if (row) {
+      var val = row.getAttribute('data-copy');
+      if (!val) { showToast('Nothing entered for ' + row.getAttribute('data-label')); return; }
+      copyText(val, row.getAttribute('data-label') + ' copied'); fx('tick');
+      row.classList.add('flash'); setTimeout(function () { row.classList.remove('flash'); }, 600);
+      return;
+    }
+    var btn = ev.target.closest('[data-copy-entry]');
+    if (btn) {
+      var e = entries.filter(function (x) { return x.id === btn.getAttribute('data-copy-entry'); })[0]; if (!e) return;
+      copyText(formFields(e).map(function (f) { return f[0] + ': ' + f[1]; }).join('\n'), 'Entry copied'); fx('toggle');
+    }
+  });
+  $('copyTableBtn').addEventListener('click', function () {
+    if (!entries.length) { showToast('Nothing to copy yet'); return; }
+    var head = formFields(entries[0]).map(function (f) { return f[0]; }).join('\t');
+    var rows = sortedEntriesAsc().map(function (e) { return formFields(e).map(function (f) { return f[1]; }).join('\t'); });
+    copyText([head].concat(rows).join('\n'), 'Table copied – paste into Sheets or Excel'); fx('toggle');
+  });
+  function openForm771() { renderForm771(); document.body.style.overflow = 'hidden'; formOverlay.classList.add('open'); fx('open'); }
+  function closeForm771() {
+    if (formOverlay.classList.contains('open')) fx('close');
+    formOverlay.classList.remove('open'); formSheet.style.transform = ''; document.body.style.overflow = '';
+  }
+  $('form771Btn').addEventListener('click', openForm771);
+  $('closeFormBtn').addEventListener('click', closeForm771);
+  formOverlay.addEventListener('click', function (e) { if (e.target === formOverlay) closeForm771(); });
+
   // ---- Calendar ----
   var todayIso = isoDate(new Date());
   function renderCalendar() {
@@ -1424,6 +1560,7 @@
   }
   makeDraggable(sheetHead, sheet, closeModal);
   makeDraggable($('shareHead'), shareSheet, closeShare);
+  makeDraggable($('formHead'), formSheet, closeForm771);
 
   $('prevMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); fx('tick'); });
   $('nextMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); fx('tick'); });
