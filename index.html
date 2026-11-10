@@ -251,6 +251,13 @@
 
   /* Share sheet */
   .passport-wrap img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; background: var(--card-2); border-radius: 22px; box-shadow: 0 18px 40px rgba(15,24,48,0.32); -webkit-touch-callout: default; -webkit-user-select: none; user-select: none; }
+  .style-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .style-chip { border: none; background: none; padding: 0; color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .style-chip i { display: block; width: 52px; height: 52px; border-radius: 16px; box-shadow: inset 0 0 0 1px rgba(128,128,128,0.35); transition: transform .25s var(--spring), box-shadow .2s; position: relative; overflow: hidden; }
+  .style-chip i::after { content: ""; position: absolute; left: 9px; right: 9px; bottom: 11px; height: 5px; border-radius: 3px; background: var(--bar); opacity: .95; }
+  .style-chip:active i { transform: scale(0.9); }
+  .style-chip.active { color: var(--ink); }
+  .style-chip.active i { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 5px var(--amber); }
   .link-btn { width: 100%; border: none; background: none; color: var(--ink-2); font-size: 15px; font-weight: 600; padding: 12px 0 0; cursor: pointer; }
   .link-btn:active { opacity: 0.5; }
 
@@ -358,7 +365,8 @@
     </div>
     <div class="sheet-body">
       <div class="passport-wrap"><img id="passportImg" alt="Sea passport card summarising your sea service" /></div>
-      <p class="field-hint" style="text-align:center;margin:10px 0 14px;">Touch and hold the card to save it to Photos.</p>
+      <div class="style-row" id="styleRow" role="radiogroup" aria-label="Card style"></div>
+      <p class="field-hint" style="text-align:center;margin:14px 0 14px;">Touch and hold the card to save it to Photos.</p>
       <div class="form-card">
         <div class="field">
           <label class="field-label" for="holderName">Name on card</label>
@@ -876,14 +884,55 @@
   // ---- Sea passport (shareable card) ----
   var HOLDER_KEY = 'sea-service-holder';
   var holderInput = $('holderName'), passportImg = $('passportImg'), shareOverlay = $('shareOverlay'), shareSheet = $('shareSheet');
-  var passportBlob = null, passportUrl = null, holderTimer = null;
+  var passportBlob = null, passportUrl = null, holderTimer = null; var passportReq = 0;
   try { holderInput.value = localStorage.getItem(HOLDER_KEY) || ''; } catch (e) {}
 
   function monthYear(iso) {
     return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }).toUpperCase();
   }
 
-  function drawPassport(name) {
+  var PASSPORT_STYLES = {
+    navy: { label: 'Navy', swatch: 'linear-gradient(160deg,#2B4170,#0C1428)', bar: '#E3B26B',
+      bg: ['#2B4170', '#1B2A4A', '#0C1428'], glow: '110,145,230', glowA: 0.38, ring: '255,255,255', ringA: 0.09,
+      ink: '#FFFFFF', muted: 'rgba(255,255,255,0.55)', faint: 'rgba(255,255,255,0.45)', ticketVal: 'rgba(255,255,255,0.8)', accent: '#E3B26B',
+      badge: 'rgba(255,255,255,0.12)', tileFill: 'rgba(255,255,255,0.08)', tileStroke: 'rgba(255,255,255,0.14)', track: 'rgba(255,255,255,0.12)',
+      barA: '#C08A3E', barB: '#E3B26B', doneA: '#4FBF92', doneB: '#6FD3A8', doneText: '#6FD3A8', mrz: 'rgba(255,255,255,0.3)', dash: 'rgba(255,255,255,0.18)' },
+    midnight: { label: 'Midnight', swatch: 'linear-gradient(160deg,#1a1a1e,#000)', bar: '#F3D08F',
+      bg: ['#16161A', '#09090B', '#000000'], glow: '227,178,107', glowA: 0.22, ring: '227,178,107', ringA: 0.13,
+      ink: '#F5F5F7', muted: 'rgba(245,245,247,0.55)', faint: 'rgba(245,245,247,0.42)', ticketVal: 'rgba(245,245,247,0.8)', accent: '#E3B26B',
+      badge: 'rgba(227,178,107,0.14)', tileFill: 'rgba(255,255,255,0.05)', tileStroke: 'rgba(227,178,107,0.28)', track: 'rgba(255,255,255,0.1)',
+      barA: '#E3B26B', barB: '#F3D08F', doneA: '#4FBF92', doneB: '#6FD3A8', doneText: '#6FD3A8', mrz: 'rgba(227,178,107,0.38)', dash: 'rgba(227,178,107,0.3)' },
+    paper: { label: 'Paper', swatch: 'linear-gradient(160deg,#FFFFFF,#E4E8F1)', bar: '#C08A3E',
+      bg: ['#FFFFFF', '#F3F5F9', '#E3E8F1'], glow: '192,138,62', glowA: 0.2, ring: '27,42,74', ringA: 0.07,
+      ink: '#1B2A4A', muted: 'rgba(27,42,74,0.6)', faint: 'rgba(27,42,74,0.5)', ticketVal: 'rgba(27,42,74,0.75)', accent: '#B5762A',
+      badge: 'rgba(27,42,74,0.08)', tileFill: 'rgba(27,42,74,0.05)', tileStroke: 'rgba(27,42,74,0.12)', track: 'rgba(27,42,74,0.1)',
+      barA: '#C08A3E', barB: '#DDA95C', doneA: '#2F8F6B', doneB: '#4FBF92', doneText: '#2F8F6B', mrz: 'rgba(27,42,74,0.32)', dash: 'rgba(27,42,74,0.22)' },
+    sunset: { label: 'Sunset', swatch: 'linear-gradient(160deg,#C97A32,#3B1830)', bar: '#FFE2B0',
+      bg: ['#C97A32', '#8E3F2A', '#2E1229'], glow: '255,226,170', glowA: 0.35, ring: '255,255,255', ringA: 0.12,
+      ink: '#FFFFFF', muted: 'rgba(255,255,255,0.78)', faint: 'rgba(255,255,255,0.68)', ticketVal: 'rgba(255,255,255,0.92)', accent: '#FFE2B0',
+      badge: 'rgba(255,255,255,0.18)', tileFill: 'rgba(255,255,255,0.13)', tileStroke: 'rgba(255,255,255,0.28)', track: 'rgba(255,255,255,0.22)',
+      barA: '#FFFFFF', barB: '#FFE2B0', doneA: '#86E3B8', doneB: '#B9F2D6', doneText: '#C4F5DD', mrz: 'rgba(255,255,255,0.42)', dash: 'rgba(255,255,255,0.3)' }
+  };
+  var STYLE_KEY = 'sea-service-passport-style';
+  var passportStyle = 'navy';
+  try { var savedStyle = localStorage.getItem(STYLE_KEY); if (savedStyle && PASSPORT_STYLES[savedStyle]) passportStyle = savedStyle; } catch (e) {}
+
+  function renderStyleRow() {
+    var styleRow = $('styleRow');
+    styleRow.innerHTML = Object.keys(PASSPORT_STYLES).map(function (k) {
+      var st = PASSPORT_STYLES[k];
+      return '<button type="button" class="style-chip' + (k === passportStyle ? ' active' : '') + '" role="radio" aria-checked="' + (k === passportStyle) + '" data-style="' + k + '">' +
+        '<i style="background:' + st.swatch + ';--bar:' + st.bar + '"></i>' + st.label + '</button>';
+    }).join('');
+  }
+  $('styleRow').addEventListener('click', function (ev) {
+    var chip = ev.target.closest('[data-style]'); if (!chip) return;
+    passportStyle = chip.getAttribute('data-style');
+    try { localStorage.setItem(STYLE_KEY, passportStyle); } catch (e) {}
+    renderStyleRow(); refreshPassport(); haptic(6);
+  });
+
+  function drawPassport(name, T) {
     var W = 1080, H = 1350, PAD = 80;
     var c = document.createElement('canvas'); c.width = W; c.height = H;
     var x = c.getContext('2d');
@@ -919,75 +968,75 @@
 
     // Background
     var g = x.createLinearGradient(0, 0, W * 0.6, H);
-    g.addColorStop(0, '#2B4170'); g.addColorStop(0.55, '#1B2A4A'); g.addColorStop(1, '#0C1428');
+    g.addColorStop(0, T.bg[0]); g.addColorStop(0.55, T.bg[1]); g.addColorStop(1, T.bg[2]);
     x.fillStyle = g; x.fillRect(0, 0, W, H);
     var glow = x.createRadialGradient(W, 0, 0, W, 0, 760);
-    glow.addColorStop(0, 'rgba(110,145,230,0.38)'); glow.addColorStop(1, 'rgba(110,145,230,0)');
+    glow.addColorStop(0, 'rgba(' + T.glow + ',' + T.glowA + ')'); glow.addColorStop(1, 'rgba(' + T.glow + ',0)');
     x.fillStyle = glow; x.fillRect(0, 0, W, H);
     x.lineWidth = 2;
     [300, 420, 540, 660].forEach(function (r, i) {
-      x.strokeStyle = 'rgba(255,255,255,' + (0.09 - i * 0.018) + ')';
+      x.strokeStyle = 'rgba(' + T.ring + ',' + (T.ringA - i * T.ringA * 0.2) + ')';
       x.beginPath(); x.arc(W + 40, 470, r, 0, Math.PI * 2); x.stroke();
     });
 
     // Header: anchor badge + title
-    x.fillStyle = 'rgba(255,255,255,0.12)'; x.beginPath(); x.arc(PAD + 40, 118, 40, 0, Math.PI * 2); x.fill();
+    x.fillStyle = T.badge; x.beginPath(); x.arc(PAD + 40, 118, 40, 0, Math.PI * 2); x.fill();
     x.save(); x.translate(PAD + 40 - 14, 118 - 14); x.scale(28 / 24, 28 / 24);
-    x.strokeStyle = '#E3B26B'; x.lineWidth = 1.9; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.strokeStyle = T.accent; x.lineWidth = 1.9; x.lineCap = 'round'; x.lineJoin = 'round';
     x.beginPath(); x.arc(12, 5, 3, 0, Math.PI * 2); x.stroke();
     x.beginPath(); x.moveTo(12, 22); x.lineTo(12, 8); x.stroke();
     x.stroke(new Path2D('M5 12H2a10 10 0 0 0 20 0h-3'));
     x.restore();
     x.textBaseline = 'alphabetic';
-    x.fillStyle = '#FFFFFF'; x.font = '700 30px ' + F; spaced('SEA PASSPORT', PAD + 104, 112, 5);
-    x.fillStyle = 'rgba(255,255,255,0.55)'; x.font = '500 24px ' + F; x.fillText('AMSA Form 771 · Near Coastal', PAD + 104, 148);
-    if (period) { x.fillStyle = 'rgba(255,255,255,0.55)'; x.font = '600 22px ' + F; spaced(period, W - PAD, 118, 3, 'right'); }
+    x.fillStyle = T.ink; x.font = '700 30px ' + F; spaced('SEA PASSPORT', PAD + 104, 112, 5);
+    x.fillStyle = T.muted; x.font = '500 24px ' + F; x.fillText('AMSA Form 771 · Near Coastal', PAD + 104, 148);
+    if (period) { x.fillStyle = T.muted; x.font = '600 22px ' + F; spaced(period, W - PAD, 118, 3, 'right'); }
 
     // Holder
-    x.fillStyle = 'rgba(255,255,255,0.45)'; x.font = '600 22px ' + F; spaced('HOLDER', PAD, 250, 5);
-    x.fillStyle = '#FFFFFF'; var holder = name || 'Mariner';
+    x.fillStyle = T.faint; x.font = '600 22px ' + F; spaced('HOLDER', PAD, 250, 5);
+    x.fillStyle = T.ink; var holder = name || 'Mariner';
     var hs = fit(holder, 700, 60, W - PAD * 2); x.font = '700 ' + hs + 'px ' + F; x.fillText(holder, PAD, 314);
 
     // Hero number
     var numStr = String(total);
     var ns = fit(numStr, 800, 300, W - PAD * 2 - 20);
-    x.font = '800 ' + ns + 'px ' + F; x.fillStyle = '#FFFFFF'; x.fillText(numStr, PAD - 6, 592);
-    x.fillStyle = '#E3B26B'; x.font = '700 28px ' + F; spaced('DAYS AT SEA', PAD, 650, 7);
+    x.font = '800 ' + ns + 'px ' + F; x.fillStyle = T.ink; x.fillText(numStr, PAD - 6, 592);
+    x.fillStyle = T.accent; x.font = '700 28px ' + F; spaced('DAYS AT SEA', PAD, 650, 7);
 
     // Stat tiles
     var gap = 24, tw = (W - PAD * 2 - gap * 2) / 3, ty = 706, th = 170;
     [[entries.length, entries.length === 1 ? 'VOYAGE' : 'VOYAGES'], [vessels, vessels === 1 ? 'VESSEL' : 'VESSELS'], [longest, 'LONGEST (DAYS)']].forEach(function (t, i) {
       var tx = PAD + i * (tw + gap);
-      rr(tx, ty, tw, th, 28); x.fillStyle = 'rgba(255,255,255,0.08)'; x.fill();
-      x.strokeStyle = 'rgba(255,255,255,0.14)'; x.lineWidth = 1.5; x.stroke();
-      x.fillStyle = '#FFFFFF'; x.font = '800 68px ' + F; x.fillText(String(t[0]), tx + 28, ty + 92);
-      x.fillStyle = 'rgba(255,255,255,0.55)'; x.font = '600 19px ' + F; spaced(t[1], tx + 28, ty + 138, 3);
+      rr(tx, ty, tw, th, 28); x.fillStyle = T.tileFill; x.fill();
+      x.strokeStyle = T.tileStroke; x.lineWidth = 1.5; x.stroke();
+      x.fillStyle = T.ink; x.font = '800 68px ' + F; x.fillText(String(t[0]), tx + 28, ty + 92);
+      x.fillStyle = T.muted; x.font = '600 19px ' + F; spaced(t[1], tx + 28, ty + 138, 3);
     });
 
     // Tickets
-    x.fillStyle = '#E3B26B'; x.font = '700 22px ' + F; spaced('WORKING TOWARDS', PAD, 960, 5);
+    x.fillStyle = T.accent; x.font = '700 22px ' + F; spaced('WORKING TOWARDS', PAD, 960, 5);
     var list = workingList().sort(function (a, b) {
       var ad = a.logged >= a.required, bd = b.logged >= b.required;
       if (ad !== bd) return ad ? 1 : -1;
       return ad ? b.required - a.required : b.ratio - a.ratio;
     }).slice(0, 3);
     if (!list.length) {
-      x.fillStyle = 'rgba(255,255,255,0.45)'; x.font = '500 28px ' + F; x.fillText('Log sea time to see ticket progress.', PAD, 1020);
+      x.fillStyle = T.faint; x.font = '500 28px ' + F; x.fillText('Log sea time to see ticket progress.', PAD, 1020);
     }
     list.forEach(function (t, i) {
       var ry = 1020 + i * 84, done = t.logged >= t.required;
-      x.fillStyle = '#FFFFFF'; x.font = '600 30px ' + F; x.fillText(t.name, PAD, ry);
-      x.textAlign = 'right'; x.fillStyle = done ? '#6FD3A8' : 'rgba(255,255,255,0.8)'; x.font = '700 30px ' + F;
+      x.fillStyle = T.ink; x.font = '600 30px ' + F; x.fillText(t.name, PAD, ry);
+      x.textAlign = 'right'; x.fillStyle = done ? T.doneText : T.ticketVal; x.font = '700 30px ' + F;
       x.fillText((done ? '✓ ' : '') + t.logged + ' / ' + t.required, W - PAD, ry); x.textAlign = 'left';
-      rr(PAD, ry + 18, W - PAD * 2, 10, 5); x.fillStyle = 'rgba(255,255,255,0.12)'; x.fill();
+      rr(PAD, ry + 18, W - PAD * 2, 10, 5); x.fillStyle = T.track; x.fill();
       var bw = Math.max(10, (W - PAD * 2) * t.ratio);
       var bg = x.createLinearGradient(PAD, 0, PAD + bw, 0);
-      if (done) { bg.addColorStop(0, '#4FBF92'); bg.addColorStop(1, '#6FD3A8'); } else { bg.addColorStop(0, '#C08A3E'); bg.addColorStop(1, '#E3B26B'); }
+      if (done) { bg.addColorStop(0, T.doneA); bg.addColorStop(1, T.doneB); } else { bg.addColorStop(0, T.barA); bg.addColorStop(1, T.barB); }
       rr(PAD, ry + 18, bw, 10, 5); x.fillStyle = bg; x.fill();
     });
 
     // Machine-readable strip
-    x.strokeStyle = 'rgba(255,255,255,0.18)'; x.lineWidth = 2; x.setLineDash([10, 10]);
+    x.strokeStyle = T.dash; x.lineWidth = 2; x.setLineDash([10, 10]);
     x.beginPath(); x.moveTo(PAD, 1236); x.lineTo(W - PAD, 1236); x.stroke(); x.setLineDash([]);
     function pad(n, l) { return String(n).padStart(l, '0'); }
     function fill(str, len) { while (str.length < len) str += '<'; return str.slice(0, len); }
@@ -996,14 +1045,15 @@
     var l2 = fill(pad(total, 4) + 'D<' + pad(entries.length, 3) + 'V<' + pad(vessels, 2) + 'S<' + pad(longest, 3) + 'L', 38);
     var ms = 40; x.font = '500 ' + ms + 'px "SF Mono", Menlo, Courier, monospace';
     while (x.measureText(l1).width > W - PAD * 2 && ms > 16) { ms -= 1; x.font = '500 ' + ms + 'px "SF Mono", Menlo, Courier, monospace'; }
-    x.fillStyle = 'rgba(255,255,255,0.3)'; x.fillText(l1, PAD, 1280); x.fillText(l2, PAD, 1280 + ms + 12);
+    x.fillStyle = T.mrz; x.fillText(l1, PAD, 1280); x.fillText(l2, PAD, 1280 + ms + 12);
     return c;
   }
 
   function refreshPassport() {
-    var canvas = drawPassport(holderInput.value.trim());
+    var canvas = drawPassport(holderInput.value.trim(), PASSPORT_STYLES[passportStyle]);
+    var req = ++passportReq;
     canvas.toBlob(function (blob) {
-      if (!blob) return;
+      if (!blob || req !== passportReq) return; // ignore out-of-date renders
       passportBlob = blob;
       if (passportUrl) URL.revokeObjectURL(passportUrl);
       passportUrl = URL.createObjectURL(blob); passportImg.src = passportUrl;
@@ -1011,7 +1061,7 @@
   }
 
   function openShare() {
-    refreshPassport();
+    renderStyleRow(); refreshPassport();
     document.body.style.overflow = 'hidden';
     shareOverlay.classList.add('open'); haptic(8);
   }
