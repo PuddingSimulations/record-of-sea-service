@@ -707,6 +707,19 @@
       note: 'Tracks your total logged days against a day count you set yourself.' }
   ];
 
+  // Holding a ticket covers the lower tickets listed here, so they stop showing as "working towards".
+  // Deck ladder: GPH < Coxswain 3 < 2 < 1 < Master <24m < <45m < <100m. Engineering ladder: MED 3 < 2 < 1 < Engineer Class 3.
+  var COVERS = {
+    cox2: ['cox3', 'gph'],
+    cox1: ['cox2', 'cox3', 'gph'],
+    master24: ['inland', 'cox1', 'cox2', 'cox3', 'gph'],
+    master45: ['master24', 'inland', 'cox1', 'cox2', 'cox3', 'gph'],
+    master100: ['master45', 'master24', 'inland', 'cox1', 'cox2', 'cox3', 'gph'],
+    med2: ['med3'],
+    med1: ['med2', 'med3'],
+    eng3: ['med1', 'med2', 'med3']
+  };
+
   // ---- Helpers ----
   function formatDate(iso) {
     if (!iso) return '';
@@ -896,6 +909,14 @@
   var HELD_KEY = 'sea-service-held', heldIds = [];
   try { heldIds = JSON.parse(localStorage.getItem(HELD_KEY) || '[]') || []; } catch (e) { heldIds = []; }
   function saveHeld() { try { localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); } catch (e) {} }
+  // The held ticket (if any) that already covers this one
+  function coveredBy(id) {
+    for (var i = 0; i < TICKETS.length; i++) {
+      var h = TICKETS[i];
+      if (heldIds.indexOf(h.id) !== -1 && COVERS[h.id] && COVERS[h.id].indexOf(id) !== -1) return h;
+    }
+    return null;
+  }
   function heldList() { return TICKETS.filter(function (t) { return !t.custom && heldIds.indexOf(t.id) !== -1; }); }
 
   // ---- DOM refs ----
@@ -1025,6 +1046,7 @@
     ticketNote.textContent = ticket.note || '';
     var bits = [];
     if (!isCustom && heldIds.indexOf(ticket.id) !== -1) bits.push('You already hold this ticket \u2713');
+    else if (!isCustom && coveredBy(ticket.id)) bits.push('Covered by your ' + coveredBy(ticket.id).name + ' \u2713');
     if (!isCustom && q.catDays > q.days) bits.push((q.catDays - q.days) + ' day' + (q.catDays - q.days === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
     if (!isCustom && q.unverified) bits.push(q.unverified + ' day' + (q.unverified === 1 ? '' : 's') + ' counted without vessel length/power on record.');
     ticketFilterNote.textContent = bits.join(' '); ticketFilterNote.style.display = bits.length ? '' : 'none';
@@ -1049,7 +1071,7 @@
       var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook;
       var logged = sumFor(t, t.categories);
       return { id: t.id, name: t.name, required: required, logged: logged, ratio: Math.min(1, logged / required) };
-    }).filter(function (t) { return t.logged > 0 && heldIds.indexOf(t.id) === -1; })
+    }).filter(function (t) { return t.logged > 0 && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); })
       .sort(function (a, b) { return b.ratio - a.ratio; });
   }
   function renderWorking() {
@@ -1735,10 +1757,17 @@
     ['General', 'Deck', 'Engineering'].forEach(function (g) {
       html += '<div class="group-label">' + g + '</div>';
       TICKETS.filter(function (t) { return t.group === g; }).forEach(function (t) {
-        html += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '</span><input type="checkbox" class="switch" data-held="' + t.id + '" ' + (heldIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
+        html += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '<small data-cov="' + t.id + '"></small></span><input type="checkbox" class="switch" data-held="' + t.id + '" ' + (heldIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
       });
     });
     settingsBody.innerHTML = html + '</div>';
+    updateCoverHints();
+  }
+  function updateCoverHints() {
+    Array.prototype.forEach.call(settingsBody.querySelectorAll('[data-cov]'), function (el) {
+      var id = el.getAttribute('data-cov'), c = heldIds.indexOf(id) === -1 ? coveredBy(id) : null;
+      el.textContent = c ? 'Covered by ' + c.name : '';
+    });
   }
   settingsBody.addEventListener('change', function (ev) {
     var el = ev.target;
@@ -1751,7 +1780,7 @@
     var id = el.getAttribute('data-held'); if (!id) return;
     var i = heldIds.indexOf(id);
     if (el.checked && i === -1) heldIds.push(id); else if (!el.checked && i !== -1) heldIds.splice(i, 1);
-    saveHeld(); renderMain(); fx('toggle');
+    saveHeld(); updateCoverHints(); renderMain(); fx('toggle');
   });
   function openSettings() { renderSettings(); settingsBody.scrollTop = 0; document.body.style.overflow = 'hidden'; settingsOverlay.classList.add('open'); fx('open'); }
   function closeSettings() {
