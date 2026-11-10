@@ -302,6 +302,22 @@
   .chk { font-size: 10px; font-weight: 700; color: var(--yellow); border: 1px solid var(--yellow); border-radius: 999px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; letter-spacing: 0.02em; white-space: nowrap; }
   .req-foot { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; margin: 6px 0 0; }
 
+  /* Tickets tab: ready / in progress / not started */
+  .ready-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+  .chip-ready { border: none; background: var(--green-soft, rgba(48,209,88,0.16)); color: var(--good); font-weight: 700; font-size: 13px; padding: 9px 13px; border-radius: 999px; cursor: pointer; transition: transform .25s var(--spring); }
+  .chip-ready:active { transform: scale(0.94); }
+  .working-hint { font-size: 12px; color: var(--ink-3); margin: 6px 0 4px; line-height: 1.45; }
+  .working-title.second { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .more-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; border: none; border-top: 1px solid var(--line); background: none; color: var(--ink-2); font-size: 13px; font-weight: 700; padding: 14px 0 8px; margin-top: 12px; cursor: pointer; }
+  .more-toggle svg { transition: transform .35s var(--ease); }
+  .more-toggle.open svg { transform: rotate(180deg); }
+  .ns-row { display: block; width: 100%; text-align: left; border: none; background: none; color: inherit; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .ns-row b { display: block; font-size: 14px; font-weight: 600; }
+  .ns-row span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; line-height: 1.4; }
+  .hold-btn { margin-top: 14px; width: 100%; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; background: var(--card-2); color: var(--ink); cursor: pointer; transition: transform .25s var(--spring); }
+  .hold-btn:active { transform: scale(0.97); }
+  .hold-btn.on { background: var(--green-soft, rgba(48,209,88,0.16)); color: var(--good); }
+
   /* Settings */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
   .set-row:first-child { border-top: none; }
@@ -491,6 +507,7 @@
 
     <p class="ticket-note" id="ticketFilterNote" style="display:none;color:var(--yellow);"></p>
     <p class="ticket-note" id="ticketNote"></p>
+    <button type="button" class="hold-btn" id="holdBtn">Mark as held</button>
   </section>
 
   <section class="card req-card rise d3" id="reqCard">
@@ -1255,6 +1272,11 @@
       ticketSubProgress.style.display = 'none';
     }
     ticketNote.textContent = ticket.note || '';
+    var hb = $('holdBtn');
+    if (isCustom) { hb.style.display = 'none'; } else {
+      var held = heldIds.indexOf(ticket.id) !== -1; hb.style.display = ''; hb.classList.toggle('on', held);
+      hb.textContent = held ? '\u2713 You hold this ticket (tap to undo)' : 'Mark as held';
+    }
     var bits = [];
     if (!isCustom && heldIds.indexOf(ticket.id) !== -1) bits.push('You already hold this ticket \u2713');
     else if (!isCustom && coveredBy(ticket.id)) bits.push('Covered by your ' + coveredBy(ticket.id).name + ' \u2713');
@@ -1324,24 +1346,50 @@
     }).filter(function (t) { return t.logged > 0 && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); })
       .sort(function (a, b) { return b.ratio - a.ratio; });
   }
+  // What kind of days count toward a ticket, in plain words
+  var DAY_WORDS = { D: 'deck work', DE: 'deck and engineering work', GPH: 'general purpose hand', INW: 'in charge of a navigational watch', C: 'coxswain or master', 'AE/ED': 'assistant to an engineer or engine driver', 'E/ED': 'engineer or engine driver', EW: 'engineer watchkeeper', EIC: 'engineer in charge', AEIC: 'assistant to the engineer in charge' };
+  function ticketHint(t, catDays) {
+    if (catDays > 0) return 'You have ' + catDays + ' matching day' + (catDays === 1 ? '' : 's') + ', but on vessels that do not meet this ticket’s size, power, engine or commercial rule.';
+    var what = t.categories ? t.categories.map(function (c) { return DAY_WORDS[c] || c; }).join(', ') : 'any duties';
+    var extra = [];
+    if (t.minLength) extra.push(t.minLength + 'm or longer'); if (t.minPower) extra.push(t.minPower + 'kW or more'); if (t.inboard) extra.push('inboard engine');
+    if (t.commercial === 'always') extra.push('commercial');
+    return 'Counts days as ' + what + (extra.length ? ' on a ' + extra.join(', ') + ' vessel' : '') + '.';
+  }
+  var notStartedOpen = false;
   function renderWorking() {
-    var list = workingList();
-
-    if (!list.length) { workingSection.innerHTML = ''; return; }
-    var html = '<div class="working"><p class="working-title">Working towards</p>';
-    list.forEach(function (t) {
-      var done = t.logged >= t.required;
-      html += '<button type="button" class="work-row" data-ticket="' + t.id + '">' +
-        '<div class="work-top"><span class="work-name">' + escapeHtml(t.name) + '</span>' +
-        '<span class="work-count' + (done ? ' done' : '') + '">' + (done ? '\u2713 ' : '') + t.logged + ' / ' + t.required + '</span></div>' +
-        '<div class="work-track"><div class="work-fill' + (done ? ' complete' : '') + '" data-w="' + Math.round(t.ratio * 100) + '"></div></div></button>';
+    if (!entries.length) { workingSection.innerHTML = ''; return; }
+    var states = TICKETS.filter(function (t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
+      var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook, q = qualifying(t, t.categories);
+      return { t: t, id: t.id, name: t.name, required: required, logged: q.days, catDays: q.catDays, ratio: Math.min(1, q.days / required) };
     });
+    var ready = states.filter(function (x) { return x.logged >= x.required; }).sort(function (a, b) { return b.required - a.required; });
+    var prog = states.filter(function (x) { return x.logged > 0 && x.logged < x.required; }).sort(function (a, b) { return b.ratio - a.ratio; });
+    var none = states.filter(function (x) { return x.logged === 0; });
+    var html = '<div class="working">';
+    if (ready.length) {
+      html += '<p class="working-title">Ready to apply</p><div class="ready-chips">' + ready.map(function (x) { return '<button type="button" class="chip-ready" data-ticket="' + x.id + '">✓ ' + escapeHtml(x.name.replace(/ NC$/, '')) + '</button>'; }).join('') + '</div>' +
+        '<p class="working-hint">You have enough days for these. Tap one to see what else you need, and mark it as held once you have the certificate.</p>';
+    }
+    if (prog.length) {
+      html += '<p class="working-title' + (ready.length ? ' second' : '') + '">In progress</p>';
+      prog.forEach(function (t) {
+        html += '<button type="button" class="work-row" data-ticket="' + t.id + '"><div class="work-top"><span class="work-name">' + escapeHtml(t.name) + '</span><span class="work-count">' + t.logged + ' / ' + t.required + '</span></div>' +
+          '<div class="work-track"><div class="work-fill" data-w="' + Math.round(t.ratio * 100) + '"></div></div></button>';
+      });
+    }
+    if (!ready.length && !prog.length) html += '<p class="working-title">Working towards</p><p class="working-hint" style="margin-top:2px;">No ticket has qualifying days yet. Open Not started below to see what counts toward each one.</p>';
+    if (none.length) {
+      html += '<button type="button" class="more-toggle' + (notStartedOpen ? ' open' : '') + '" id="notStartedToggle"><span>Not started (' + none.length + ')</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>';
+      if (notStartedOpen) none.forEach(function (x) { html += '<button type="button" class="ns-row" data-ticket="' + x.id + '"><b>' + escapeHtml(x.name) + '</b><span>' + escapeHtml(ticketHint(x.t, x.catDays)) + '</span></button>'; });
+    }
     workingSection.innerHTML = html + '</div>';
     requestAnimationFrame(function () { requestAnimationFrame(function () {
       Array.prototype.forEach.call(workingSection.querySelectorAll('.work-fill'), function (el) { el.style.width = el.getAttribute('data-w') + '%'; });
     }); });
   }
   workingSection.addEventListener('click', function (ev) {
+    if (ev.target.closest('#notStartedToggle')) { notStartedOpen = !notStartedOpen; fx('toggle'); renderWorking(); return; }
     var row = ev.target.closest('[data-ticket]'); if (!row) return;
     ticketState.ticketId = row.getAttribute('data-ticket'); ticketSelect.value = ticketState.ticketId;
     saveTicketState(); wasComplete = null; renderTicketProgress(); fx('tick');
@@ -2335,6 +2383,11 @@
       el.textContent = c ? 'Covered by ' + c.name : '';
     });
   }
+  $('holdBtn').addEventListener('click', function () {
+    var id = ticketState.ticketId, i = heldIds.indexOf(id);
+    if (i === -1) { heldIds.push(id); showToast('Marked as held. Lower tickets it covers are tucked away.'); fx('success'); } else { heldIds.splice(i, 1); fx('undo'); }
+    saveHeld(); renderMain();
+  });
   settingsBody.addEventListener('click', function (ev) {
     if (ev.target.id === 'empSendBtn') sendProgress();
     else if (ev.target.id === 'pasteReplyBtn') takePasted($('pasteReply').value);
