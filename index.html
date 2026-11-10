@@ -360,6 +360,7 @@
       <div class="bar-track"><div class="bar-fill" id="ticketSubProgressFill"></div></div>
     </div>
 
+    <p class="ticket-note" id="ticketFilterNote" style="display:none;color:var(--amber);"></p>
     <p class="ticket-note" id="ticketNote"></p>
   </section>
 
@@ -542,25 +543,43 @@
     { code: 'NUE', name: 'Not underway – engine or refit work' }
   ];
 
-  // Day requirements sourced from AMSA's own certificate pages (amsa.gov.au), Nov 2026.
-  // Figures can change and some certificates have additional conditions (vessel size,
-  // propulsion type, etc.) this app can't track automatically — always confirm against
-  // AMSA before relying on these for an application.
+  // Day requirements from AMSA's near coastal certificate pages and guidance notices (amsa.gov.au),
+  // read Nov 2026. Where a certificate has several pathways (depending on the certificate you held
+  // while gaining the service), the most common pathway is used and the others are in the note.
+  // Some conditions can't be tracked automatically, so always confirm with AMSA before applying.
+  //   categories : duty categories that count      subCategories : the "of which" days
+  //   minLength (m) / minPower (kW) : vessel must meet this (blank vessel details count, flagged as unverified)
+  //   inboard : vessel must be inboard           commercial : 'always' or 'with' (only needed with a task book)
+  var DECK_ROLE = ['D', 'DE'];
+  var ENGINE_ROLE = ['AEIC', 'AE/ED', 'E/ED', 'EW', 'EIC'];
   var TICKETS = [
-    { id: 'gph', name: 'General Purpose Hand (GPH) NC', categories: null, withTaskBook: 5, withoutTaskBook: 5,
+    { id: 'gph', group: 'General', name: 'General Purpose Hand (GPH) NC', categories: null, withTaskBook: 5, withoutTaskBook: 5, commercial: 'always',
       note: '5 days of sea service on commercial vessels of any size. No task book reduction applies.' },
-    { id: 'cox2', name: 'Coxswain Grade 2 NC', categories: ['D', 'DE'], withTaskBook: 10, withoutTaskBook: 50,
+    { id: 'cox3', group: 'Deck', name: 'Coxswain Grade 3 NC', categories: null, withTaskBook: 1, withoutTaskBook: 1, commercial: 'always',
+      note: 'Just 1 day on a commercial vessel, plus on-water tasks witnessed and signed off on AMSA form 1882.' },
+    { id: 'cox2', group: 'Deck', name: 'Coxswain Grade 2 NC', categories: DECK_ROLE, withTaskBook: 10, withoutTaskBook: 50, commercial: 'with',
       note: 'Deck, or deck and engineering duties.' },
-    { id: 'cox1', name: 'Coxswain Grade 1 NC', categories: ['D', 'DE'], withTaskBook: 30, withoutTaskBook: 150,
-      note: 'Deck, or deck and engineering duties, on vessels at least 5m long.' },
-    { id: 'med3', name: 'Marine Engine Driver Grade 3 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'C'], withTaskBook: 20, withoutTaskBook: 60,
-      note: 'As GPH, Coxswain 1/2, or assistant to an engineer/engine driver, on vessels ≥75kW. At least half (10 or 30 days) must be on an inboard diesel engine — this app doesn’t track that split, so check it yourself.' },
-    { id: 'med2', name: 'Marine Engine Driver Grade 2 NC', categories: ['GPH', 'AE/ED', 'AEIC'], withTaskBook: 180, withoutTaskBook: 360,
-      note: 'As GPH, or assistant to an engine driver/chief/second engineer, on vessels ≥150kW with inboard diesel engines.' },
-    { id: 'master45', name: 'Master <45m NC', categories: ['D', 'DE', 'GPH', 'INW', 'C'], withTaskBook: 180, withoutTaskBook: 360,
+    { id: 'cox1', group: 'Deck', name: 'Coxswain Grade 1 NC', categories: DECK_ROLE, withTaskBook: 30, withoutTaskBook: 150, minLength: 5, commercial: 'with',
+      note: 'Deck, or deck and engineering duties, on vessels at least 5m long. Without a task book the days can be on commercial or recreational vessels.' },
+    { id: 'inland', group: 'Deck', name: 'Master (Inland Waters) NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 30, withoutTaskBook: 150, commercial: 'with',
+      note: 'Deck duties. Without a task book the days can be on commercial or recreational vessels.' },
+    { id: 'master24', group: 'Deck', name: 'Master <24m NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 120, withoutTaskBook: 360, minLength: 7.5, commercial: 'with',
+      note: 'Deck, or deck and engineering duties, on vessels at least 7.5m long. Without a task book at least half must be on commercial vessels.' },
+    { id: 'master45', group: 'Deck', name: 'Master <45m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 12, commercial: 'always',
       subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
-      note: 'On commercial vessels ≥12m long, while holding a Master <24m or Mate <80m.' },
-    { id: 'custom', name: 'Custom / other ticket', categories: null, custom: true,
+      note: 'On commercial vessels ≥12m long while holding Master <24m. Only days in charge of a navigational watch (INW) or as coxswain/master (C) are counted here; plain deck work (D) is not.' },
+    { id: 'master100', group: 'Deck', name: 'Master <100m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 24, commercial: 'always',
+      subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 120, subLabel: 'In charge of navigational watch',
+      note: 'For Master <45m holders, on commercial vessels ≥24m long. Other routes (Mate <80m holders) need 360/720 days with 120/240 on watch. Check AMSA.' },
+    { id: 'med3', group: 'Engineering', name: 'Marine Engine Driver Grade 3 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'C'], withTaskBook: 20, withoutTaskBook: 60, minPower: 75, commercial: 'always',
+      note: 'As GPH, Coxswain 1/2, or assistant to an engineer/engine driver, on vessels ≥75kW. At least half (10 or 30 days) must be on an inboard diesel engine — this app doesn’t track that split, so check it yourself.' },
+    { id: 'med2', group: 'Engineering', name: 'Marine Engine Driver Grade 2 NC', categories: ['GPH', 'AE/ED', 'AEIC'], withTaskBook: 180, withoutTaskBook: 360, minPower: 150, inboard: true, commercial: 'always',
+      note: 'As GPH, or assistant to an engine driver/chief/second engineer, on commercial vessels ≥150kW with inboard diesel engines. With a workshop skill equivalent qualification it is 90 / 180 days.' },
+    { id: 'med1', group: 'Engineering', name: 'Marine Engine Driver Grade 1 NC', categories: ENGINE_ROLE, withTaskBook: 120, withoutTaskBook: 240, minPower: 375, inboard: true, commercial: 'always',
+      note: 'Engineering duties on commercial vessels ≥375kW with inboard diesel engines, while holding Marine Engine Driver Grade 2. With a workshop skill equivalent qualification it is 90 / 180 days. AMSA’s published figures are hard to read, so double-check.' },
+    { id: 'eng3', group: 'Engineering', name: 'Engineer Class 3 NC', categories: ENGINE_ROLE, withTaskBook: 180, withoutTaskBook: 360, minPower: 400, inboard: true, commercial: 'always',
+      note: 'Engineering duties on commercial vessels ≥400kW with inboard diesel engines, while holding Marine Engine Driver Grade 1. Workshop skill equivalent: 120 / 240 days. Engineer Watchkeeper holders: 90 days on watch.' },
+    { id: 'custom', group: 'Other', name: 'Custom / other ticket', categories: null, custom: true,
       note: 'Tracks your total logged days against a day count you set yourself.' }
   ];
 
@@ -762,7 +781,7 @@
   var ticketSelect = $('ticketSelect'), taskBookToggle = $('taskBookToggle'), customDaysField = $('customDaysField'), customDaysInput = $('customDaysInput');
   var ring = $('ring'), ringBar = $('ringBar'), ticketPct = $('ticketPct'), ticketLogged = $('ticketLogged'), ticketRequired = $('ticketRequired'), ticketRemaining = $('ticketRemaining');
   var ticketSubProgress = $('ticketSubProgress'), ticketSubDaysLabel = $('ticketSubDaysLabel'), ticketSubProgressFill = $('ticketSubProgressFill'), ticketSubLabel = $('ticketSubLabel');
-  var ticketNote = $('ticketNote'), toast = $('toast'), toastMsg = $('toastMsg'), toastAction = $('toastAction');
+  var ticketFilterNote = $('ticketFilterNote'), ticketNote = $('ticketNote'), toast = $('toast'), toastMsg = $('toastMsg'), toastAction = $('toastAction');
 
   // ---- Static selects ----
   function fillSelect(selectEl, items) {
@@ -778,8 +797,12 @@
   fillSelect(modeOfOperationSelect, MODE_OF_OPERATION);
   fillSelect(dutyCategorySelect, DUTY_CATEGORIES);
 
-  TICKETS.forEach(function (t) {
-    var opt = document.createElement('option'); opt.value = t.id; opt.textContent = t.name; ticketSelect.appendChild(opt);
+  ['General', 'Deck', 'Engineering', 'Other'].forEach(function (g) {
+    var og = document.createElement('optgroup'); og.label = g;
+    TICKETS.filter(function (t) { return t.group === g; }).forEach(function (t) {
+      var opt = document.createElement('option'); opt.value = t.id; opt.textContent = t.name; og.appendChild(opt);
+    });
+    ticketSelect.appendChild(og);
   });
   ticketSelect.value = ticketState.ticketId;
   customDaysInput.value = ticketState.customDays;
@@ -810,10 +833,25 @@
   });
 
   // ---- Ticket progress ----
-  function sumDaysForCategories(categories) {
-    var list = categories ? entries.filter(function (e) { return categories.indexOf(e.category) !== -1; }) : entries;
-    return list.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
+  // Days that count toward a ticket: right duty category AND the vessel meets the ticket's rules.
+  function qualifying(ticket, categories) {
+    var res = { days: 0, catDays: 0, unverified: 0 };
+    entries.forEach(function (e) {
+      if (categories && categories.indexOf(e.category) === -1) return;
+      var d = Number(e.days) || 0; res.catDays += d;
+      var len = e.vesselLength === '' || e.vesselLength == null ? null : Number(e.vesselLength);
+      var pow = e.vesselPower === '' || e.vesselPower == null ? null : Number(e.vesselPower);
+      if (ticket.minLength && len !== null && len < ticket.minLength) return;
+      if (ticket.minPower && pow !== null && pow < ticket.minPower) return;
+      if (ticket.inboard && e.propulsion && e.propulsion !== 'I') return;
+      var needCommercial = ticket.commercial === 'always' || (ticket.commercial === 'with' && ticketState.taskBook === 'with');
+      if (needCommercial && e.operationType && e.operationType !== 'C') return;
+      res.days += d;
+      if ((ticket.minLength && len === null) || (ticket.minPower && pow === null)) res.unverified += d;
+    });
+    return res;
   }
+  function sumFor(ticket, categories) { return qualifying(ticket, categories).days; }
   var wasComplete = null, completedThisRender = false;
   var RING_LEN = 2 * Math.PI * 43;
 
@@ -825,7 +863,7 @@
 
     var required = isCustom ? (Number(customDaysInput.value) || 1)
       : (ticketState.taskBook === 'with' ? ticket.withTaskBook : ticket.withoutTaskBook);
-    var logged = sumDaysForCategories(ticket.categories);
+    var q = qualifying(ticket, ticket.categories), logged = isCustom ? entries.reduce(function (n, e) { return n + Number(e.days); }, 0) : q.days;
     var ratio = Math.min(1, logged / required);
     var pct = Math.round(ratio * 100);
     var complete = logged >= required;
@@ -843,7 +881,7 @@
 
     if (!isCustom && ticket.subCategories) {
       var subRequired = ticketState.taskBook === 'with' ? ticket.subWithTaskBook : ticket.subWithoutTaskBook;
-      var subLogged = sumDaysForCategories(ticket.subCategories);
+      var subLogged = sumFor(ticket, ticket.subCategories);
       ticketSubProgress.style.display = '';
       ticketSubDaysLabel.textContent = subLogged + ' / ' + subRequired + ' days';
       ticketSubProgressFill.style.width = Math.min(100, Math.round((subLogged / subRequired) * 100)) + '%';
@@ -853,6 +891,10 @@
       ticketSubProgress.style.display = 'none';
     }
     ticketNote.textContent = ticket.note || '';
+    var bits = [];
+    if (!isCustom && q.catDays > q.days) bits.push((q.catDays - q.days) + ' day' + (q.catDays - q.days === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
+    if (!isCustom && q.unverified) bits.push(q.unverified + ' day' + (q.unverified === 1 ? '' : 's') + ' counted without vessel length/power on record.');
+    ticketFilterNote.textContent = bits.join(' '); ticketFilterNote.style.display = bits.length ? '' : 'none';
   }
 
   ticketSelect.addEventListener('change', function () {
@@ -872,7 +914,7 @@
   function workingList() {
     return TICKETS.filter(function (t) { return !t.custom; }).map(function (t) {
       var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook;
-      var logged = sumDaysForCategories(t.categories);
+      var logged = sumFor(t, t.categories);
       return { id: t.id, name: t.name, required: required, logged: logged, ratio: Math.min(1, logged / required) };
     }).filter(function (t) { return t.logged > 0; })
       .sort(function (a, b) { return b.ratio - a.ratio; });
