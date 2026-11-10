@@ -46,7 +46,8 @@
   .stepper { display: flex; align-items: center; gap: 14px; }
   .stepper button { width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--card-2); color: var(--ink); font-size: 22px; font-weight: 600; cursor: pointer; transition: transform .25s var(--spring); }
   .stepper button:active { transform: scale(0.86); }
-  .stepper output { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+  .stepper input.daysin { width: 96px; padding: 0; background: transparent; border-radius: 10px; font-size: 34px; font-weight: 800; letter-spacing: -0.04em; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+  .stepper input.daysin::-webkit-outer-spin-button, .stepper input.daysin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .note { font-size: 12.5px; color: var(--yellow); margin: -4px 0 12px; display: none; }
   .label { font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin: 24px 2px 10px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -95,7 +96,7 @@
     <div class="card rise" id="facts" style="animation-delay:.1s"></div>
 
     <div class="card rise" style="animation-delay:.15s">
-      <div class="days"><b>Days at sea</b><div class="stepper"><button id="dec" aria-label="Fewer days">−</button><output id="days"></output><button id="inc" aria-label="More days">+</button></div></div>
+      <div class="days"><b>Days at sea</b><div class="stepper"><button id="dec" aria-label="Fewer days">−</button><input id="days" class="daysin" type="number" inputmode="numeric" min="1" max="9999" aria-label="Days at sea" /><button id="inc" aria-label="More days">+</button></div></div>
     </div>
     <p class="note" id="changed">Different from what was logged. Your number will replace it.</p>
 
@@ -155,20 +156,27 @@
   facts.forEach(function (r) { var row = document.createElement('div'); row.className = 'kv'; var a = document.createElement('span'), b = document.createElement('span'); a.textContent = r[0]; b.textContent = r[1]; row.appendChild(a); row.appendChild(b); $('facts').appendChild(row); });
   ['sn', 'sp', 'sc', 'sph', 'sem'].forEach(function (k) { $(k).value = R[k] || ''; });
   var g = (R.sp || '').toLowerCase(); role = /master|skipper|captain/.test(g) ? 'master' : /engineer/.test(g) ? 'engineer' : /owner/.test(g) ? 'owner' : '';
-  function paintDays() { $('days').textContent = days; $('changed').style.display = days !== Number(R.d) ? 'block' : 'none'; }
+  var calDays = (R.s && R.e) ? Math.round((new Date(R.e + 'T00:00:00') - new Date(R.s + 'T00:00:00')) / 86400000) + 1 : 0;
+  function paintDays(fromTyping) {
+    if (!fromTyping) $('days').value = days;
+    var note = $('changed');
+    if (calDays > 0 && days > calDays) { note.textContent = 'That is more days than the dates cover (' + calDays + '). AMSA counts one day for each 24 hours, so check the dates.'; note.style.display = 'block'; }
+    else if (days !== Number(R.d)) { note.textContent = 'Different from what was logged. Your number will replace it.'; note.style.display = 'block'; }
+    else { note.style.display = 'none'; }
+  }
   function paintRole() { Array.prototype.forEach.call($('roles').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-r') === role); }); $('otherBox').style.display = role === 'other' ? 'block' : 'none'; }
   paintDays(); paintRole();
-  // Days can go up as far as the voyage has calendar days (or what was logged, if that is higher). Hold a button to repeat.
-  var calDays = (R.s && R.e) ? Math.round((new Date(R.e + 'T00:00:00') - new Date(R.s + 'T00:00:00')) / 86400000) + 1 : 0,
-      maxDays = Math.max(Number(R.d) || 1, calDays > 0 ? calDays : 366);
-  function step(dir) { days = Math.min(maxDays, Math.max(1, days + dir)); paintDays(); }
+  // Any number works. Tap the number to type it, or tap and hold + and - to run through it quickly.
+  function step(dir) { days = Math.min(9999, Math.max(1, days + dir)); paintDays(); }
   function hold(btn, dir) {
     var t1, t2;
     function stop() { clearTimeout(t1); clearInterval(t2); }
-    btn.addEventListener('pointerdown', function (e) { e.preventDefault(); step(dir); stop(); t1 = setTimeout(function () { t2 = setInterval(function () { step(dir); }, 80); }, 380); });
+    btn.addEventListener('pointerdown', function (e) { e.preventDefault(); step(dir); stop(); t1 = setTimeout(function () { t2 = setInterval(function () { step(dir); }, 70); }, 380); });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (n) { btn.addEventListener(n, stop); });
     btn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); step(dir); } });
   }
+  $('days').addEventListener('input', function () { var v = parseInt($('days').value, 10); if (isNaN(v)) return; days = Math.min(9999, Math.max(1, v)); paintDays(true); });
+  $('days').addEventListener('blur', function () { paintDays(); });
   hold($('inc'), 1); hold($('dec'), -1);
   $('roles').onclick = function (e) { var b = e.target.closest('[data-r]'); if (!b) return; role = b.getAttribute('data-r'); paintRole(); };
 
