@@ -52,6 +52,8 @@
   .label { font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin: 24px 2px 10px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .grid .full { grid-column: 1 / -1; }
+  .grid > * { min-width: 0; }
+  input[type=date] { min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; min-height: 52px; }
   input { width: 100%; border: none; border-radius: 14px; padding: 15px 14px; font-size: 16px; font-family: inherit; color: var(--ink); background: var(--card); outline: none; transition: box-shadow .2s; }
   input::placeholder { color: var(--ink-3); }
   input:focus { box-shadow: 0 0 0 2px var(--blue); }
@@ -94,6 +96,11 @@
     <p class="lead rise" id="lead" style="animation-delay:.05s"></p>
 
     <div class="card rise" id="facts" style="animation-delay:.1s"></div>
+
+    <div class="card rise" id="datesEdit" style="display:none;padding:14px 18px 16px;">
+      <div class="grid"><div><div class="small" style="margin:0 2px 6px;">From</div><input id="dFrom" type="date"></div><div><div class="small" style="margin:0 2px 6px;">To</div><input id="dTo" type="date"></div></div>
+    </div>
+    <p class="note" id="datesNote"></p>
 
     <div class="card rise" style="animation-delay:.15s">
       <div class="days"><b>Days at sea</b><div class="stepper"><button id="dec" aria-label="Fewer days">−</button><input id="days" class="daysin" type="number" inputmode="numeric" min="1" max="9999" aria-label="Days at sea" /><button id="inc" aria-label="More days">+</button></div></div>
@@ -151,12 +158,35 @@
   $('title').textContent = who + ' asks you to confirm sea service';
   $('lead').textContent = 'Check the details, sign, and send it back. About 30 seconds.';
   $('firstName').textContent = (R.n || 'them').split(' ')[0];
-  var facts = [['Vessel', R.ve], ['Dates', au(R.s) + (R.e && R.e !== R.s ? ' to ' + au(R.e) : '')], ['Position', R.p || ''], ['Duty', DUTY[R.c] || R.c || '']].filter(function (r) { return r[1]; });
+  var curS = R.s || '', curE = R.e || '';
+  function datesText() { return curS ? au(curS) + (curE && curE !== curS ? ' to ' + au(curE) : '') : 'Not set'; }
+  var facts = [['Vessel', R.ve], ['Dates', ' '], ['Position', R.p || ''], ['Duty', DUTY[R.c] || R.c || '']].filter(function (r) { return r[1]; });
   $('facts').innerHTML = '';
-  facts.forEach(function (r) { var row = document.createElement('div'); row.className = 'kv'; var a = document.createElement('span'), b = document.createElement('span'); a.textContent = r[0]; b.textContent = r[1]; row.appendChild(a); row.appendChild(b); $('facts').appendChild(row); });
+  facts.forEach(function (r) {
+    var row = document.createElement('div'); row.className = 'kv'; var a = document.createElement('span'), b = document.createElement('span'); a.textContent = r[0];
+    if (r[0] === 'Dates') {
+      var t = document.createElement('span'); t.id = 'datesVal'; t.textContent = datesText();
+      var ch = document.createElement('button'); ch.className = 'link'; ch.id = 'datesChange'; ch.type = 'button'; ch.textContent = 'Change'; ch.style.marginLeft = '10px';
+      b.appendChild(t); b.appendChild(ch);
+    } else { b.textContent = r[1]; }
+    row.appendChild(a); row.appendChild(b); $('facts').appendChild(row);
+  });
   ['sn', 'sp', 'sc', 'sph', 'sem'].forEach(function (k) { $(k).value = R[k] || ''; });
   var g = (R.sp || '').toLowerCase(); role = /master|skipper|captain/.test(g) ? 'master' : /engineer/.test(g) ? 'engineer' : /owner/.test(g) ? 'owner' : '';
-  var calDays = (R.s && R.e) ? Math.round((new Date(R.e + 'T00:00:00') - new Date(R.s + 'T00:00:00')) / 86400000) + 1 : 0;
+  function spanDays(s, e) { return s && e ? Math.round((new Date(e + 'T00:00:00') - new Date(s + 'T00:00:00')) / 86400000) + 1 : 0; }
+  var calDays = spanDays(curS, curE);
+  $('datesChange').onclick = function () { var box = $('datesEdit'), open = box.style.display === 'none'; box.style.display = open ? '' : 'none'; $('datesChange').textContent = open ? 'Done' : 'Change'; $('dFrom').value = curS; $('dTo').value = curE; };
+  function onDates(ev) {
+    var ns = $('dFrom').value, ne = $('dTo').value;
+    if (ns && ne && ne < ns) { if (ev.target.id === 'dFrom') { ne = ns; $('dTo').value = ne; } else { ns = ne; $('dFrom').value = ns; } }
+    var oldSpan = spanDays(curS, curE); curS = ns; curE = ne; calDays = spanDays(curS, curE);
+    if (calDays && (days === oldSpan || !oldSpan)) days = calDays;      // days follow the dates unless they were set separately
+    $('datesVal').textContent = datesText();
+    var ch = curS !== (R.s || '') || curE !== (R.e || ''), n = $('datesNote');
+    n.textContent = ch ? 'Dates changed from ' + (R.s ? au(R.s) + (R.e && R.e !== R.s ? ' to ' + au(R.e) : '') : 'not set') + '. Your dates will be replaced.' : ''; n.style.display = ch ? 'block' : 'none';
+    paintDays();
+  }
+  $('dFrom').onchange = onDates; $('dTo').onchange = onDates;
   function paintDays(fromTyping) {
     if (!fromTyping) $('days').value = days;
     var note = $('changed');
@@ -202,7 +232,7 @@
 
   // ---- send the signed reply back as a link ----
   function reply() {
-    var resp = { v: 1, id: R.id, d: days, dl: Number(R.d), sn: $('sn').value.trim(), sp: $('sp').value.trim(), sc: $('sc').value.trim(), sph: $('sph').value.trim(), sem: $('sem').value.trim(),
+    var resp = { v: 1, id: R.id, d: days, dl: Number(R.d), s: curS, e: curE, sn: $('sn').value.trim(), sp: $('sp').value.trim(), sc: $('sc').value.trim(), sph: $('sph').value.trim(), sem: $('sem').value.trim(),
       r: role, ro: $('ro').value.trim(), t: new Date().toISOString(), a: Math.round(1000 * Hh / W), g: strokes.filter(function (s) { return s.length >= 4; }) };
     var base = R.b || (location.href.replace(/sign\.html.*$/, '')), payload = enc(resp);
     lastPayload = payload;
