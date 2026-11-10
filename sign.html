@@ -69,6 +69,10 @@
   .go { width: 100%; margin-top: 18px; border: none; border-radius: 18px; padding: 18px; font: inherit; font-size: 17px; font-weight: 700; background: var(--primary); color: var(--on-primary); cursor: pointer; transition: transform .25s var(--spring), opacity .2s; }
   .go:active { transform: scale(0.97); }
   .go:disabled { opacity: 0.3; }
+  a.go { display: block; text-align: center; text-decoration: none; }
+  .go.alt { background: var(--card); color: var(--ink); }
+  .sendgrid { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .sendgrid .go { margin-top: 0; }
   .fine { font-size: 12.5px; color: var(--ink-3); text-align: center; margin: 16px 8px 0; line-height: 1.5; }
   .preview { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--yellow); background: rgba(255,214,10,0.14); padding: 4px 10px; border-radius: 999px; margin-bottom: 14px; }
   .done { text-align: center; padding-top: 40px; }
@@ -119,9 +123,9 @@
     <div class="tick"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
     <h1>All signed</h1>
     <p class="lead" id="doneLead"></p>
-    <button class="go" id="again" style="margin-top:8px;">Send the reply again</button>
-    <div class="copybox" id="copybox"></div>
-    <button class="link" id="copyLink" style="margin-top:10px;">Copy link</button>
+    <div class="sendgrid" id="sendGrid"></div>
+    <button class="link" id="copyLink" style="margin-top:18px;">Copy the reply link instead</button>
+    <div class="copybox" id="copybox" style="display:none;"></div>
   </section>
 </main>
 
@@ -191,14 +195,29 @@
     lastUrl = reply();
     var text = 'Signed. ' + ($('sn').value.trim() || 'Your supervisor') + ' confirmed ' + days + ' days for ' + (R.ve || 'your sea service') + '. Open this link on your phone to add it to your Form 771:';
     $('form').style.display = 'none'; $('doneBox').style.display = 'block'; window.scrollTo(0, 0);
-    $('doneLead').textContent = 'Send the reply to ' + (R.n || 'them') + ' and you are finished.';
+    $('doneLead').textContent = 'One more tap to send it to ' + (R.n || 'them').split(' ')[0] + '.';
     $('copybox').textContent = lastUrl;
     if (window.__DEMO && window.parent !== window) { window.parent.postMessage({ sea: 'signed', payload: lastPayload }, '*'); return; }
-    if (navigator.share) { navigator.share({ title: 'Signed sea service', text: text, url: lastUrl }).catch(function () {}); }
+    buildSendButtons(text);
+  }
+  // The reply is pre-addressed: Alex's number and email travel in the request, so these open ready to send.
+  function intl(p) { p = (p || '').replace(/[^\d+]/g, ''); if (!p) return ''; if (p[0] === '+') return p; if (/^0\d{9}$/.test(p)) return '+61' + p.slice(1); return p; }
+  function buildSendButtons(text) {
+    var box = $('sendGrid'), num = intl(R.rp), mail = (R.re || '').trim(), first = (R.n || 'them').split(' ')[0], body = text + ' ' + lastUrl, n = 0;
+    var apple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document);
+    box.innerHTML = '';
+    function add(label, href, onclick) {
+      var a = document.createElement(href ? 'a' : 'button'); a.className = 'go' + (n++ ? ' alt' : ''); a.textContent = label;
+      if (href) a.href = href; if (onclick) a.onclick = onclick; box.appendChild(a);
+    }
+    if (num) add('Text ' + first, 'sms:' + num + (apple ? '&' : '?') + 'body=' + encodeURIComponent(body));
+    if (mail) add('Email ' + first, 'mailto:' + mail + '?subject=' + encodeURIComponent('Signed sea service') + '&body=' + encodeURIComponent(body));
+    if (num) add('WhatsApp', 'https://wa.me/' + num.replace('+', '') + '?text=' + encodeURIComponent(body));
+    if (navigator.share) add(n ? 'More ways to send' : 'Send the reply', '', function () { navigator.share({ title: 'Signed sea service', text: text, url: lastUrl }).catch(function () {}); });
+    if (!n) { $('copybox').style.display = 'block'; }
   }
   $('go').onclick = send;
-  $('again').onclick = function () { if (navigator.share) { navigator.share({ title: 'Signed sea service', text: 'Signed. Open this link on your phone to add it to your Form 771:', url: lastUrl }).catch(function () {}); } else { copy(); } };
-  function copy() { try { navigator.clipboard.writeText(lastUrl).then(function () { $('copyLink').textContent = 'Copied'; }, function () { $('copyLink').textContent = 'Press and hold the link above to copy'; }); } catch (e) { $('copyLink').textContent = 'Press and hold the link above to copy'; } }
+  function copy() { $('copybox').style.display = 'block'; try { navigator.clipboard.writeText(lastUrl).then(function () { $('copyLink').textContent = 'Copied'; }, function () { $('copyLink').textContent = 'Press and hold the link above to copy'; }); } catch (e) { $('copyLink').textContent = 'Press and hold the link above to copy'; } }
   $('copyLink').onclick = copy;
 })();
 </script>

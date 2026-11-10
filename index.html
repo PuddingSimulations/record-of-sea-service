@@ -613,6 +613,7 @@
           <div><label class="field-label" for="pfDob">Date of birth</label><input type="date" id="pfDob" /></div>
           <div><label class="field-label" for="pfPhone">Phone</label><input type="tel" id="pfPhone" inputmode="tel" autocomplete="tel" /></div>
         </div>
+        <div class="field"><label class="field-label" for="pfEmail">Email</label><input type="email" id="pfEmail" inputmode="email" autocomplete="email" autocapitalize="none" /><p class="field-hint">Your phone and email let your supervisor reply to you in one tap. They only travel in the link you send.</p></div>
         <div class="field">
           <div class="sig-row"><label class="field-label" style="margin:0;">Your signature</label><button type="button" class="link" id="mySigClear">Clear</button></div>
           <div class="sigpad"><canvas id="mySigCv"></canvas><div class="x"></div><div class="hint" id="mySigHint">Sign with your finger</div></div>
@@ -1797,7 +1798,7 @@
   formOverlay.addEventListener('click', function (e) { if (e.target === formOverlay) closeForm771(); });
 
   // ---- AMSA Form 771 PDF: place answers and signatures onto AMSA's own form ----
-  var PROFILE_KEY = 'sea-service-profile', profile = { name: '', dob: '', phone: '', sig: '' };
+  var PROFILE_KEY = 'sea-service-profile', profile = { name: '', dob: '', phone: '', email: '', sig: '' };
   try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch (e) {}
   function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {} }
 
@@ -1901,12 +1902,12 @@
     var base = appBase();
     if (window.SEA_SIGN_HTML) { /* test mode in the artifact: show the supervisor's side right here */
       var tr = { v: 1, id: e.id, n: profile.name.trim(), ve: e.vessel, s: e.start, e: e.end || e.start, d: Number(e.days), p: e.position || '', c: e.category,
-        sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base };
+        sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base, rp: profile.phone || '', re: profile.email || '' };
       e.sentAt = new Date().toISOString(); saveEntries(); showSentNote(e); openSupervisorDemo(tr); return;
     }
     if (baseIsPrivate(base)) { showToast('Supervisors cannot open links from this address. Put the app on a public address first.'); return; }
     var req = { v: 1, id: e.id, n: profile.name.trim(), ve: e.vessel, s: e.start, e: e.end || e.start, d: Number(e.days), p: e.position || '', c: e.category,
-      sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base };
+      sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base, rp: profile.phone || '', re: profile.email || '' };
     var url = base + 'sign.html#r=' + b64enc(req), first = (e.supName || '').split(' ')[0];
     var text = 'Hi' + (first ? ' ' + first : '') + ', could you confirm my sea service on ' + e.vessel + ' (' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ', ' + e.days + ' days)? It takes about 30 seconds on your phone. No account needed.';
     e.sentAt = new Date().toISOString(); saveEntries(); showSentNote(e);
@@ -2023,7 +2024,7 @@
   }
   function openPdfSheet(id) {
     pdfEntry = entries.filter(function (e) { return e.id === id; })[0]; if (!pdfEntry) return;
-    $('pfName').value = profile.name; $('pfDob').value = profile.dob; $('pfPhone').value = profile.phone;
+    $('pfName').value = profile.name; $('pfDob').value = profile.dob; $('pfPhone').value = profile.phone; $('pfEmail').value = profile.email || '';
     $('pfEngines').value = pdfEntry.numEngines || ''; $('pfRoleOther').value = pdfEntry.supRoleOther || '';
     var role = pdfEntry.supRole || guessRole(pdfEntry); syncRole(role); showSentNote(pdfEntry);
     $('pdfMsg').textContent = 'Building the form…'; $('pdfMsg').style.display = ''; $('pdfCanvas').style.display = 'none'; $('pdfStatus').textContent = '';
@@ -2047,7 +2048,7 @@
     var b = ev.target.closest('[data-role]'); if (!b || !pdfEntry) return;
     pdfEntry.supRole = b.getAttribute('data-role'); saveEntries(); syncRole(pdfEntry.supRole); fx('tick'); schedulePdf();
   });
-  [['pfName', 'name'], ['pfDob', 'dob'], ['pfPhone', 'phone']].forEach(function (m) { $(m[0]).addEventListener('input', function () { profile[m[1]] = $(m[0]).value; saveProfile(); schedulePdf(); }); });
+  [['pfName', 'name'], ['pfDob', 'dob'], ['pfPhone', 'phone'], ['pfEmail', 'email']].forEach(function (m) { $(m[0]).addEventListener('input', function () { profile[m[1]] = $(m[0]).value; saveProfile(); schedulePdf(); }); });
   $('pfEngines').addEventListener('input', function () { if (pdfEntry) { pdfEntry.numEngines = $('pfEngines').value; saveEntries(); schedulePdf(); } });
   $('pfRoleOther').addEventListener('input', function () { if (pdfEntry) { pdfEntry.supRoleOther = $('pfRoleOther').value; saveEntries(); schedulePdf(); } });
   $('mySigClear').addEventListener('click', function () { if (mySig) { mySig.clear(); fx('undo'); } });
