@@ -642,8 +642,8 @@
         </div>
       </div>
 
-      <div class="form-card">
-        <p class="section-title">This sea service</p>
+      <div class="form-card" id="seaCard">
+        <p class="section-title">Still needed for the form</p>
         <div class="field"><label class="field-label" for="pfEngines">Number of propulsion engines</label><input type="number" inputmode="numeric" min="0" id="pfEngines" /></div>
         <div class="field"><span class="field-label">Supervisor role</span>
           <div class="role-chips" id="roleChips">
@@ -705,9 +705,15 @@
             <input type="number" inputmode="decimal" min="0" id="vesselPower" />
           </div>
         </div>
-        <div class="field">
-          <label class="field-label" for="propulsion">Propulsion type</label>
-          <div class="select-wrap" style="margin:0;"><select id="propulsion"></select></div>
+        <div class="field row-2">
+          <div>
+            <label class="field-label" for="propulsion">Propulsion type</label>
+            <div class="select-wrap" style="margin:0;"><select id="propulsion"></select></div>
+          </div>
+          <div>
+            <label class="field-label" for="vesselEngines">Engines</label>
+            <input type="number" inputmode="numeric" min="1" id="vesselEngines" placeholder="e.g. 2" />
+          </div>
         </div>
         <div class="field">
           <label class="field-label" for="vesselOwner">Owner / operator</label>
@@ -1123,7 +1129,7 @@
   var modalOverlay = $('modalOverlay'), sheet = $('sheet'), sheetBody = $('sheetBody'), sheetHead = $('sheetHead');
   var vesselNameInput = $('vesselName'), vesselIdInput = $('vesselId'), vesselLengthInput = $('vesselLength'), vesselPowerInput = $('vesselPower');
   var propulsionSelect = $('propulsion'), operationTypeSelect = $('operationType'), modeOfOperationSelect = $('modeOfOperation');
-  var vesselOwnerInput = $('vesselOwner'), supNameInput = $('supName'), supPositionInput = $('supPosition'), supCertInput = $('supCert'), supPhoneInput = $('supPhone'), supEmailInput = $('supEmail');
+  var vesselEnginesInput = $('vesselEngines'), vesselOwnerInput = $('vesselOwner'), supNameInput = $('supName'), supPositionInput = $('supPosition'), supCertInput = $('supCert'), supPhoneInput = $('supPhone'), supEmailInput = $('supEmail');
   var knownSupField = $('knownSupField'), knownSupSelect = $('knownSupSelect');
   var positionInput = $('position'), dutyCategorySelect = $('dutyCategory'), notesInput = $('notes');
   var daysInput = $('daysInput'), daysHint = $('daysHint'), autoCalcBtn = $('autoCalcBtn');
@@ -2019,6 +2025,7 @@
     $('pfName').value = profile.name; $('pfDob').value = profile.dob; $('pfPhone').value = profile.phone; $('pfEmail').value = profile.email || '';
     $('pfEngines').value = pdfEntry.numEngines || ''; $('pfRoleOther').value = pdfEntry.supRoleOther || '';
     var role = pdfEntry.supRole || guessRole(pdfEntry); syncRole(role); showSentNote(pdfEntry);
+    $('seaCard').style.display = (!pdfEntry.numEngines || !role) ? '' : 'none';   // hide it when there is nothing left to fill in
     $('pdfMsg').textContent = 'Building the form…'; $('pdfMsg').style.display = ''; $('pdfCanvas').style.display = 'none'; $('pdfStatus').textContent = '';
     supSigPad = null; $('inPersonBox').style.display = pdfEntry.supSig ? '' : 'none'; updateSignCard();
     document.body.style.overflow = 'hidden'; pdfOverlay.classList.add('open'); fx('open');
@@ -2140,7 +2147,7 @@
   // ---- Sheet ----
   function resetForm() {
     form = defaultForm(); autoCalc = true; calendarMonth = new Date();
-    vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = ''; vesselOwnerInput.value = '';
+    vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = ''; vesselEnginesInput.value = ''; vesselOwnerInput.value = '';
     [supNameInput, supPositionInput, supCertInput, supPhoneInput, supEmailInput].forEach(function (el) { el.value = ''; });
     propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU';
     positionInput.value = ''; dutyCategorySelect.value = 'D'; notesInput.value = ''; daysInput.value = 1;
@@ -2152,7 +2159,7 @@
   function populateKnownVessels() {
     var byName = {};
     entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }).forEach(function (e) {
-      byName[e.vessel] = { vessel: e.vessel, vesselId: e.vesselId || '', vesselLength: e.vesselLength || '', vesselPower: e.vesselPower || '', propulsion: e.propulsion || 'I', owner: e.owner || '' };
+      byName[e.vessel] = { vessel: e.vessel, vesselId: e.vesselId || '', vesselLength: e.vesselLength || '', vesselPower: e.vesselPower || '', propulsion: e.propulsion || 'I', owner: e.owner || '', numEngines: e.numEngines || '' };
     });
     var list = Object.keys(byName).map(function (k) { return byName[k]; }).sort(function (a, b) { return a.vessel.localeCompare(b.vessel); });
     if (list.length > 0) {
@@ -2163,7 +2170,7 @@
       knownVesselSelect.onchange = function () {
         var v = byName[knownVesselSelect.value]; if (!v) return;
         vesselNameInput.value = v.vessel; vesselIdInput.value = v.vesselId; vesselLengthInput.value = v.vesselLength;
-        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; vesselOwnerInput.value = v.owner; updateSaveButtonState(); fx('tick');
+        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; vesselOwnerInput.value = v.owner; vesselEnginesInput.value = v.numEngines; updateSaveButtonState(); fx('tick');
       };
     } else { knownVesselField.style.display = 'none'; }
   }
@@ -2240,7 +2247,7 @@
     if (!vessel || !Number(daysInput.value)) return;
     var entry = {
       id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
-      vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, owner: vesselOwnerInput.value.trim(),
+      vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, numEngines: vesselEnginesInput.value, owner: vesselOwnerInput.value.trim(),
       supName: supNameInput.value.trim(), supPosition: supPositionInput.value.trim(), supCert: supCertInput.value.trim(), supPhone: supPhoneInput.value.trim(), supEmail: supEmailInput.value.trim(),
       operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, category: dutyCategorySelect.value,
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
