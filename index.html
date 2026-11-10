@@ -26,20 +26,21 @@
     --ink-3: #6F6F77;
     --line: rgba(255,255,255,0.09);
     --glass: rgba(20,20,22,0.78);
-    --blue: #86A5C8;
-    --green: #86B49B;
-    --red: #CC8A8A;
-    --yellow: #D6C081;
+    --blue: #2A93FF;
+    --green: #30D158;
+    --red: #FF5A52;
+    --yellow: #FFD60A;
     --accent: var(--blue);
-    --accent-soft: rgba(134,165,200,0.16);
+    --accent-soft: rgba(42,147,255,0.2);
     --good: var(--green);
-    --danger: #C47D7D;
+    --danger: #FF5A52;
     --hero-1: #3C3F47;
     --hero-2: #222327;
     --primary: #ECECE8;
     --on-primary: #19191C;
     --icon: #D9D9D5;
     --shadow: 0 1px 2px rgba(0,0,0,0.45);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
     --ease: cubic-bezier(.32,.72,0,1);
     --spring: cubic-bezier(.34,1.56,.64,1);
     --sat: env(safe-area-inset-top, 0px);
@@ -49,7 +50,7 @@
   html { background: var(--bg); -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-family: var(--font);
     -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none;
     -webkit-touch-callout: none; overscroll-behavior-y: none;
   }
@@ -82,7 +83,7 @@
 
   /* Hero */
   .hero { position: relative; overflow: hidden; border-radius: 26px; padding: 22px 22px 20px; color: #fff; margin-bottom: 16px;
-    background: radial-gradient(120% 140% at 100% 0%, rgba(134,165,200,0.32) 0%, rgba(134,165,200,0) 55%), linear-gradient(160deg, var(--hero-1), var(--hero-2) 70%);
+    background: radial-gradient(120% 140% at 100% 0%, rgba(42,147,255,0.42) 0%, rgba(42,147,255,0) 55%), linear-gradient(160deg, var(--hero-1), var(--hero-2) 70%);
     box-shadow: 0 14px 34px rgba(0,0,0,0.5); }
   .hero::after { content: ""; position: absolute; right: -40px; bottom: -60px; width: 200px; height: 200px; border-radius: 50%;
     border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 0 0 28px rgba(255,255,255,0.03), 0 0 0 56px rgba(255,255,255,0.02); pointer-events: none; }
@@ -142,7 +143,7 @@
   .bar-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
   .bar-label span:last-child { color: var(--ink-2); font-weight: 500; }
   .bar-track { height: 8px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
-  .bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #7491B3, #A3BCD8); transition: width .9s var(--ease); }
+  .bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #1E7FF0, #5DB1FF); transition: width .9s var(--ease); }
   .bar-fill.complete { background: var(--good); }
   .ticket-note { font-size: 12px; line-height: 1.45; color: var(--ink-3); margin: 14px 0 0; }
   .custom-days-field { display: none; margin-bottom: 16px; }
@@ -161,7 +162,7 @@
   .work-count { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
   .work-count.done { color: var(--good); }
   .work-track { height: 5px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
-  .work-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #7491B3, #A3BCD8); transition: width .9s var(--ease); }
+  .work-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #1E7FF0, #5DB1FF); transition: width .9s var(--ease); }
   .work-fill.complete { background: var(--good); }
 
   /* Duty summary */
@@ -249,7 +250,7 @@
   .day-cell.inrange::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; bottom: 2px; background: var(--accent-soft); }
   .day-cell.rstart::before { content: ""; position: absolute; left: 50%; right: 0; top: 2px; bottom: 2px; background: var(--accent-soft); }
   .day-cell.rend::before { content: ""; position: absolute; left: 0; right: 50%; top: 2px; bottom: 2px; background: var(--accent-soft); }
-  .day-cell.endpoint span { background: var(--accent); color: var(--bg); font-weight: 700; transform: scale(1.02); }
+  .day-cell.endpoint span { background: var(--accent); color: #fff; font-weight: 700; transform: scale(1.02); }
   .day-cell.rstart.rend::before { display: none; }
   .cal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); min-height: 40px; }
   .cal-footer span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
@@ -314,7 +315,7 @@
     display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; background: rgba(58,58,64,0.95); color: #fff; font-size: 14px; font-weight: 500;
     -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform .45s var(--spring), opacity .25s ease; white-space: nowrap; }
   .toast.show { transform: translate(-50%, 0) scale(1); opacity: 1; pointer-events: auto; }
-  .toast button { border: none; background: none; color: #A3BCD8; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; }
+  .toast button { border: none; background: none; color: #6DB8FF; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-delay: 0s !important; }
@@ -373,7 +374,7 @@
         <svg viewBox="0 0 100 100">
           <defs>
             <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#A3BCD8"/><stop offset="1" stop-color="#7491B3"/>
+              <stop offset="0" stop-color="#5DB1FF"/><stop offset="1" stop-color="#1E7FF0"/>
             </linearGradient>
           </defs>
           <circle class="track" cx="50" cy="50" r="43"/>
@@ -646,7 +647,7 @@
     { code: 'C', name: 'Coxswain grade 1 or 2 or 3', group: 'Deck' }
   ];
 
-  var GROUP_COLORS = { 'Deck': '#86A5C8', 'Engineering': '#D6C081', 'Deck & Engineering': '#86B49B', 'Other': '#8A8A92' };
+  var GROUP_COLORS = { 'Deck': '#3D9BFF', 'Engineering': '#FFD60A', 'Deck & Engineering': '#30D158', 'Other': '#8A8A92' };
 
   var PROPULSION_TYPES = [ { code: 'I', name: 'Inboard' }, { code: 'O', name: 'Outboard' }, { code: 'S', name: 'Steam' } ];
   var OPERATION_TYPES = [ { code: 'C', name: 'Commercial' }, { code: 'R', name: 'Recreational' }, { code: 'M', name: 'Military' } ];
@@ -837,7 +838,7 @@
     }
     var dpr = Math.min(2, window.devicePixelRatio || 1);
     confCanvas.width = innerWidth * dpr; confCanvas.height = innerHeight * dpr;
-    var colors = ['#86A5C8', '#86B49B', '#D6C081', '#CC8A8A', '#F1F1EE', '#A3BCD8'];
+    var colors = ['#2A93FF', '#30D158', '#FFD60A', '#FF5A52', '#F1F1EE', '#5DB1FF'];
     for (var i = 0; i < n; i++) {
       var a = Math.random() * Math.PI * 2, sp = 4 + Math.random() * 9;
       parts.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 5, w: 5 + Math.random() * 6, h: 3 + Math.random() * 4,
@@ -1130,7 +1131,7 @@
     }
 
     if (entries.length === 0) {
-      entriesSection.innerHTML = '<div class="empty-box"><div class="emoji"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#86A5C8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div><h3>No sea time yet</h3><p>Tap <b>Add</b> to log your first stretch of sea service.</p></div>';
+      entriesSection.innerHTML = '<div class="empty-box"><div class="emoji"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2A93FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div><h3>No sea time yet</h3><p>Tap <b>Add</b> to log your first stretch of sea service.</p></div>';
       return;
     }
 
@@ -1233,21 +1234,21 @@
   }
 
   function darkStyle(label, swatch, bar, bg, glow, ring, accent, barA, barB) {
-    return { label: label, swatch: swatch, bar: bar, bg: bg, glow: glow, glowA: 0.3, ring: ring, ringA: 0.09,
-      ink: '#F1F1EE', muted: 'rgba(241,241,238,0.58)', faint: 'rgba(241,241,238,0.46)', ticketVal: 'rgba(241,241,238,0.82)', accent: accent,
-      badge: 'rgba(255,255,255,0.1)', tileFill: 'rgba(255,255,255,0.06)', tileStroke: 'rgba(255,255,255,0.12)', track: 'rgba(255,255,255,0.1)',
-      barA: barA, barB: barB, doneA: '#6F9C84', doneB: '#9CC7AF', doneText: '#9CC7AF', mrz: 'rgba(255,255,255,0.28)', dash: 'rgba(255,255,255,0.16)' };
+    return { label: label, swatch: swatch, bar: bar, bg: bg, glow: glow, glowA: 0.38, ring: ring, ringA: 0.1,
+      ink: '#FFFFFF', muted: 'rgba(255,255,255,0.66)', faint: 'rgba(255,255,255,0.52)', ticketVal: 'rgba(255,255,255,0.88)', accent: accent,
+      badge: 'rgba(255,255,255,0.12)', tileFill: 'rgba(255,255,255,0.07)', tileStroke: 'rgba(255,255,255,0.14)', track: 'rgba(255,255,255,0.12)',
+      barA: barA, barB: barB, doneA: '#24B84B', doneB: '#5BE585', doneText: '#4FE07B', mrz: 'rgba(255,255,255,0.3)', dash: 'rgba(255,255,255,0.18)' };
   }
   var PASSPORT_STYLES = {
-    slate: darkStyle('Slate', 'linear-gradient(160deg,#3C3F47,#141416)', '#A3BCD8', ['#3C3F47', '#25262B', '#121214'], '134,165,200', '255,255,255', '#A3BCD8', '#7491B3', '#A3BCD8'),
-    sage: darkStyle('Sage', 'linear-gradient(160deg,#37453E,#121614)', '#A9CDB8', ['#37453E', '#222B26', '#111513'], '134,180,155', '134,180,155', '#A9CDB8', '#6F9C84', '#A9CDB8'),
-    clay: darkStyle('Clay', 'linear-gradient(160deg,#4B3738,#161212)', '#E0B0B0', ['#4B3738', '#2E2324', '#151111'], '204,138,138', '204,138,138', '#E0B0B0', '#B87979', '#E0B0B0'),
-    dune: darkStyle('Dune', 'linear-gradient(160deg,#474030,#151410)', '#E6D4A0', ['#474030', '#2C281D', '#141310'], '214,192,129', '214,192,129', '#E6D4A0', '#B9A464', '#E6D4A0'),
-    paper: { label: 'Paper', swatch: 'linear-gradient(160deg,#FFFFFF,#E4E4E1)', bar: '#7C9CBF',
-      bg: ['#FFFFFF', '#F5F5F3', '#E6E6E3'], glow: '134,165,200', glowA: 0.22, ring: '35,35,40', ringA: 0.06,
-      ink: '#232328', muted: 'rgba(35,35,40,0.6)', faint: 'rgba(35,35,40,0.5)', ticketVal: 'rgba(35,35,40,0.75)', accent: '#5E7FA3',
-      badge: 'rgba(35,35,40,0.07)', tileFill: 'rgba(35,35,40,0.05)', tileStroke: 'rgba(35,35,40,0.12)', track: 'rgba(35,35,40,0.1)',
-      barA: '#7C9CBF', barB: '#A3BCD8', doneA: '#5F9078', doneB: '#86B49B', doneText: '#4C7D66', mrz: 'rgba(35,35,40,0.3)', dash: 'rgba(35,35,40,0.2)' }
+    slate: darkStyle('Slate', 'linear-gradient(160deg,#2F5FA8,#15161A)', '#5DB1FF', ['#1F4E94', '#1B2230', '#0F1014'], '42,147,255', '255,255,255', '#5DB1FF', '#1E7FF0', '#5DB1FF'),
+    sage: darkStyle('Sage', 'linear-gradient(160deg,#1F8A43,#0E1511)', '#5BE585', ['#17703A', '#16261D', '#0C110E'], '48,209,88', '48,209,88', '#5BE585', '#24B84B', '#5BE585'),
+    clay: darkStyle('Clay', 'linear-gradient(160deg,#B2372F,#160D0D)', '#FF8A80', ['#9E2F29', '#2C1615', '#130B0B'], '255,90,82', '255,90,82', '#FF8A80', '#E5443C', '#FF8A80'),
+    dune: darkStyle('Dune', 'linear-gradient(160deg,#B89000,#151205)', '#FFE066', ['#8A6D00', '#2A2406', '#120F04'], '255,214,10', '255,214,10', '#FFE066', '#FFC400', '#FFE066'),
+    paper: { label: 'Paper', swatch: 'linear-gradient(160deg,#FFFFFF,#E4E4E1)', bar: '#2A93FF',
+      bg: ['#FFFFFF', '#F5F5F3', '#E6E6E3'], glow: '42,147,255', glowA: 0.22, ring: '35,35,40', ringA: 0.06,
+      ink: '#1B1B1F', muted: 'rgba(27,27,31,0.62)', faint: 'rgba(27,27,31,0.5)', ticketVal: 'rgba(27,27,31,0.78)', accent: '#0A72E8',
+      badge: 'rgba(27,27,31,0.07)', tileFill: 'rgba(27,27,31,0.05)', tileStroke: 'rgba(27,27,31,0.12)', track: 'rgba(27,27,31,0.1)',
+      barA: '#1E7FF0', barB: '#5DB1FF', doneA: '#1FA84F', doneB: '#43C870', doneText: '#16883E', mrz: 'rgba(27,27,31,0.3)', dash: 'rgba(27,27,31,0.2)' }
   };
   var STYLE_KEY = 'sea-service-passport-style';
   var passportStyle = 'slate';
@@ -1272,7 +1273,7 @@
     var W = 1080, H = 1350, PAD = 80;
     var c = document.createElement('canvas'); c.width = W; c.height = H;
     var x = c.getContext('2d');  // height is set again below once the layout is measured
-    var F = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+    var F = (getComputedStyle(document.documentElement).getPropertyValue('--font') || '').trim() || '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
 
     function rr(px, py, w, h, r) {
       x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r);
