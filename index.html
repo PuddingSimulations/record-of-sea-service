@@ -1171,10 +1171,11 @@
 
   // ---- Ticket progress ----
   // Days that count toward a ticket: right duty category AND the vessel meets the ticket's rules.
-  function qualifying(ticket, categories) {
+  function qualifying(ticket, categories, opts) {
     var res = { days: 0, catDays: 0, unverified: 0 };
     entries.forEach(function (e) {
       if (categories && categories.indexOf(e.category) === -1) return;
+      if (opts && opts.verifiedOnly && !e.supSig) return;   // only days a supervisor has signed
       var d = Number(e.days) || 0; res.catDays += d;
       var len = e.vesselLength === '' || e.vesselLength == null ? null : Number(e.vesselLength);
       var pow = e.vesselPower === '' || e.vesselPower == null ? null : Number(e.vesselPower);
@@ -1798,7 +1799,7 @@
   formOverlay.addEventListener('click', function (e) { if (e.target === formOverlay) closeForm771(); });
 
   // ---- AMSA Form 771 PDF: place answers and signatures onto AMSA's own form ----
-  var PROFILE_KEY = 'sea-service-profile', profile = { name: '', dob: '', phone: '', email: '', sig: '' };
+  var PROFILE_KEY = 'sea-service-profile', profile = { name: '', dob: '', phone: '', email: '', company: '', uid: '', sig: '' };
   try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch (e) {}
   function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {} }
 
@@ -1922,11 +1923,12 @@
   }
   $('sendSupBtn').addEventListener('click', function () { if (pdfEntry) { fx('open'); sendToSupervisor(pdfEntry); } });
 
+  function openDemoFrame(html, inject, label) {
+    $('demoFrame').srcdoc = html.replace('<head>', function () { return '<head>' + inject; });
+    $('demoWho').textContent = label; $('demoOverlay').classList.add('open');
+  }
   function openSupervisorDemo(req) {
-    var inject = '<script>window.__REQ=' + JSON.stringify(b64enc(req)) + ';window.__DEMO=true;<\/script>';
-    $('demoFrame').srcdoc = window.SEA_SIGN_HTML.replace('<head>', function () { return '<head>' + inject; });
-    $('demoWho').textContent = 'Test mode: this is ' + ((req.sn || 'your supervisor') + '\u2019s phone');
-    $('demoOverlay').classList.add('open');
+    openDemoFrame(window.SEA_SIGN_HTML, '<script>window.__REQ=' + JSON.stringify(b64enc(req)) + ';window.__DEMO=true;<\/script>', 'Test mode: this is ' + ((req.sn || 'your supervisor') + '\u2019s phone'));
   }
   function closeSupervisorDemo() { $('demoOverlay').classList.remove('open'); $('demoFrame').srcdoc = ''; }
   $('demoClose').addEventListener('click', closeSupervisorDemo);
@@ -1934,6 +1936,29 @@
     var d = ev.data; if (!d || d.sea !== 'signed' || !d.payload) return;
     closeSupervisorDemo(); setTimeout(function () { handleSignedPayload(d.payload); }, 250);
   });
+
+  // ---- Share progress with an employer: a small summary in a link, opened on the employer's dashboard ----
+  function buildSnapshot() {
+    if (!profile.uid) { profile.uid = 'u' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); saveProfile(); }
+    var total = entries.reduce(function (n, e) { return n + (Number(e.days) || 0); }, 0), verified = entries.reduce(function (n, e) { return n + (e.supSig ? (Number(e.days) || 0) : 0); }, 0);
+    var tk = TICKETS.filter(function (t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
+      var all = qualifying(t, t.categories).days, ver = qualifying(t, t.categories, { verifiedOnly: true }).days;
+      return { i: t.id, l: all, v: ver, r: ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook };
+    }).filter(function (x) { return x.l > 0; });
+    var vessels = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
+    return { v: 1, k: 'snap', u: profile.uid, n: profile.name.trim(), co: (profile.company || '').trim(), t: new Date().toISOString(), ed: total, vd: verified,
+      held: heldList().map(function (t) { return t.id; }), tb: ticketState.taskBook, tk: tk, ve: vessels };
+  }
+  function sendProgress() {
+    if (!profile.name.trim()) { showToast('Add your name first'); var n = $('empName'); if (n) n.focus(); return; }
+    var snap = buildSnapshot(), payload = b64enc(snap);
+    if (window.SEA_DASH_HTML) { closeSettings(); setTimeout(function () { openDemoFrame(window.SEA_DASH_HTML, '<script>window.__SNAP=' + JSON.stringify(payload) + ';<\/script>', 'Test mode: this is your employer\u2019s dashboard'); }, 300); return; }
+    var base = appBase();
+    if (baseIsPrivate(base)) { showToast('Employers cannot open links from this address. Put the app on a public address first.'); return; }
+    var url = base + 'dashboard.html#s=' + payload, text = profile.name.trim() + '\u2019s sea service progress' + (profile.company ? ' (' + profile.company.trim() + ')' : '') + '. Open the link to add it to your crew dashboard.';
+    if (navigator.share) { navigator.share({ title: 'Sea service progress', text: text, url: url }).catch(function () {}); }
+    else { try { navigator.clipboard.writeText(text + '\n' + url).then(function () { showToast('Message and link copied'); }, function () { showToast('Could not copy the link'); }); } catch (err) { showToast('Could not copy the link'); } }
+  }
 
   // Draw the supervisor's stroke data back into a PNG for the form
   function strokesToPng(g, a) {
@@ -2249,6 +2274,10 @@
     var html = '<div class="form-card"><p class="section-title">Feedback</p>' +
       '<label class="set-row"><span class="n">Sounds<small>Taps, calendar notes and confirmations. Your silent switch still mutes them.</small></span>' +
       '<input type="checkbox" class="switch" id="soundSwitch" ' + (soundOn ? 'checked' : '') + ' /></label></div>';
+    html += '<div class="form-card"><p class="section-title">Employer</p><p class="field-hint" style="margin:-6px 0 12px;">Send your employer a summary of your progress. They see your name, the tickets you are working on, and how many days are signed. They do not see your date of birth, phone, email, vessels or medical details.</p>' +
+      '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
+      '<div class="field"><label class="field-label" for="empCompany">Company</label><input type="text" id="empCompany" autocomplete="organization" autocapitalize="words" placeholder="Who you work for" value="' + escapeHtml(profile.company || '') + '" /></div>' +
+      '<button type="button" class="save-btn" id="empSendBtn" style="margin-top:6px;">Send progress to employer</button></div>';
     html += '<div class="form-card"><p class="section-title">Supervisor links</p><div class="field"><label class="field-label" for="baseInput">Web address of this app</label><input type="text" id="baseInput" placeholder="https://yourname.github.io/record-of-sea-service/" autocapitalize="none" autocomplete="off" value="' + escapeHtml(appBaseOverride) + '" /><p class="field-hint">Links you send must open on your supervisor\u2019s phone. Leave this blank if the app is already on a public address.</p></div></div>';
     html += '<div class="form-card"><p class="section-title">Tickets I hold</p><p class="field-hint" style="margin:-6px 0 10px;">Tick tickets you already have. They leave Working towards and appear on your passport card.</p>';
     ['General', 'Deck', 'Engineering'].forEach(function (g) {
@@ -2266,7 +2295,10 @@
       el.textContent = c ? 'Covered by ' + c.name : '';
     });
   }
+  settingsBody.addEventListener('click', function (ev) { if (ev.target.id === 'empSendBtn') sendProgress(); });
   settingsBody.addEventListener('input', function (ev) {
+    if (ev.target.id === 'empName') { profile.name = ev.target.value; saveProfile(); return; }
+    if (ev.target.id === 'empCompany') { profile.company = ev.target.value; saveProfile(); return; }
     if (ev.target.id !== 'baseInput') return;
     appBaseOverride = ev.target.value.trim(); try { localStorage.setItem(BASE_KEY, appBaseOverride); } catch (e) {}
   });

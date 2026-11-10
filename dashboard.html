@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#141416" />
+<meta name="robots" content="noindex" />
+<meta name="description" content="See how far your crew are towards their next ticket, and who is waiting on a signature." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Sea Service" />
+<meta property="og:title" content="Crew dashboard" />
+<meta property="og:description" content="See how far your crew are towards their next ticket, and who is waiting on a signature." />
+<meta property="og:image" content="https://flagmantle.github.io/record-of-sea-service/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<title>Crew dashboard</title>
+<style>
+  /* Employer view: each crew member sends a progress link; this page keeps the roster in this browser. */
+  :root {
+    color-scheme: dark;
+    --bg: #141416; --card: #202024; --card-2: #2A2A2F; --ink: #F1F1EE; --ink-2: #A6A6AE; --ink-3: #6F6F77;
+    --line: rgba(255,255,255,0.09); --blue: #2A93FF; --blue-soft: rgba(42,147,255,0.18); --green: #30D158; --green-soft: rgba(48,209,88,0.16);
+    --yellow: #FFD60A; --yellow-soft: rgba(255,214,10,0.14); --red: #FF5A52;
+    --primary: #ECECE8; --on-primary: #19191C;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+    --spring: cubic-bezier(.34,1.56,.64,1); --ease: cubic-bezier(.32,.72,0,1);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+    padding: calc(env(safe-area-inset-top, 0px) + 22px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 50px) max(16px, env(safe-area-inset-left, 0px)); }
+  button, input, select { font-family: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-size: 30px; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 4px; }
+  .sub { color: var(--ink-2); font-size: 14px; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
+  .pill.blue { background: var(--blue-soft); color: var(--blue); }
+  .pill.green { background: var(--green-soft); color: var(--green); }
+  .pill.yellow { background: var(--yellow-soft); color: var(--yellow); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .tile { background: var(--card); border-radius: 18px; padding: 16px 18px; }
+  .tile b { display: block; font-size: 32px; letter-spacing: -0.04em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .tile span { font-size: 13px; color: var(--ink-2); }
+  .panel { background: var(--card); border-radius: 22px; padding: 18px; margin-bottom: 18px; }
+  .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  select, input[type=text] { background: var(--card-2); color: var(--ink); border: none; border-radius: 12px; padding: 11px 13px; font-size: 15px; outline: none; }
+  input[type=text] { flex: 1; min-width: 180px; }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .btn { border: none; border-radius: 12px; padding: 11px 16px; font-weight: 700; font-size: 14px; background: var(--primary); color: var(--on-primary); cursor: pointer; transition: transform .2s var(--spring); }
+  .btn:active { transform: scale(0.95); }
+  .btn.ghost { background: var(--card-2); color: var(--ink); }
+  .btn.sm { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+  .chk { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 14px; }
+  .tblwrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px; font-weight: 700; }
+  td { padding: 12px 10px; border-top: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
+  tr.row { cursor: pointer; }
+  tr.row:hover td { background: rgba(255,255,255,0.025); }
+  td .nm { font-weight: 700; }
+  td .mt { color: var(--ink-3); font-size: 12.5px; }
+  .bar { height: 9px; background: var(--card-2); border-radius: 99px; overflow: hidden; min-width: 100px; position: relative; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
+  .bar i.un { background: rgba(42,147,255,0.35); }
+  .bar i.ve { background: linear-gradient(90deg, #1E7FF0, #5DB1FF); }
+  .bar.done i.ve { background: var(--green); }
+  .bar.done i.un { background: rgba(48,209,88,0.35); }
+  tr.detail td { background: rgba(255,255,255,0.02); padding: 10px 10px 16px; }
+  .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px 22px; }
+  .drow { font-size: 13px; }
+  .drow .row { display: flex; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
+  .pipe { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .pipe .p { display: grid; grid-template-columns: minmax(120px, 210px) 1fr 34px; gap: 12px; align-items: center; font-size: 14px; }
+  .pipe .pb { height: 14px; background: var(--card-2); border-radius: 99px; overflow: hidden; }
+  .pipe .pb i { display: block; height: 100%; background: var(--blue); border-radius: 99px; }
+  h2 { font-size: 18px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 12.5px; color: var(--ink-3); }
+  .empty { text-align: center; padding: 34px 16px; }
+  .empty h2 { font-size: 20px; margin-bottom: 8px; }
+  .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); transform: translate(-50%, 30px); opacity: 0; pointer-events: none; background: rgba(58,58,64,0.96); color: #fff; padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; transition: transform .45s var(--spring), opacity .25s; z-index: 10; max-width: calc(100% - 32px); }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+  .link { border: none; background: none; color: var(--blue); font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1 id="coName">Crew dashboard</h1>
+      <div class="sub" id="subLine">Progress your crew have shared with you</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn ghost sm" id="csvBtn">Download CSV</button>
+      <button class="btn ghost sm" id="clearBtn">Clear roster</button>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="panel" id="emptyBox" style="display:none;">
+    <div class="empty">
+      <h2>No crew yet</h2>
+      <p class="muted" style="max-width:52ch;margin:0 auto 16px;">Ask each crew member to open Settings in their app and tap <b>Send progress to employer</b>. When you open the link they send, they appear here. Each new link updates their row.</p>
+      <button class="btn" id="exampleBtn">Show example crew</button>
+    </div>
+  </div>
+
+  <div class="panel" id="listBox">
+    <div class="tools">
+      <label class="muted" for="fltr">Working towards</label><select id="fltr"></select>
+      <label class="chk"><input type="checkbox" id="onlyUn"> Only with unsigned days</label>
+    </div>
+    <div class="tblwrap"><table><thead><tr><th>Crew</th><th>Closest ticket</th><th>Progress</th><th>Unsigned</th><th>Updated</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    <p class="small" style="margin:10px 0 0;">Solid bars are days a supervisor has signed. Lighter bars are days logged but not yet signed. Tap a row for every ticket.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Upskilling pipeline</h2>
+    <p class="small" style="margin:0;">Crew with time logged toward each ticket they do not hold yet.</p>
+    <div class="pipe" id="pipe"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Add a crew member from a link</h2>
+    <p class="small" style="margin:0 0 10px;">Opening the link they send adds them automatically. If you copied it instead, paste it here.</p>
+    <div class="tools" style="margin:0;"><input type="text" id="paste" placeholder="Paste a progress link" autocomplete="off" autocapitalize="none"><button class="btn" id="addBtn">Add</button></div>
+    <p class="small" style="margin:12px 0 0;">This roster is stored in this browser only. Download the CSV to keep a copy or open it in a spreadsheet.</p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var ROSTER_KEY = 'sea-dash-roster', NAME = { gph: 'General Purpose Hand', cox3: 'Coxswain Grade 3', cox2: 'Coxswain Grade 2', cox1: 'Coxswain Grade 1', inland: 'Master (Inland Waters)', master24: 'Master <24m', master45: 'Master <45m', master100: 'Master <100m', med3: 'Marine Engine Driver 3', med2: 'Marine Engine Driver 2', med1: 'Marine Engine Driver 1', eng3: 'Engineer Class 3' };
+  function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var roster = {}, open = {};
+  try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; }
+  function save() { try { localStorage.setItem(ROSTER_KEY, JSON.stringify(roster)); } catch (e) {} }
+  var toastT; function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 3200); }
+
+  function valid(s) { return s && s.k === 'snap' && s.u && s.n && Array.isArray(s.tk); }
+  function addSnapshot(s) {
+    if (!valid(s)) { toast('That link could not be read'); return false; }
+    Object.keys(roster).forEach(function (k) { if (roster[k].ex) delete roster[k]; });   // real data replaces the examples
+    var had = !!roster[s.u]; roster[s.u] = s; save(); render(); toast((had ? 'Updated ' : 'Added ') + s.n); return true;
+  }
+
+  // ---- derived numbers for one crew member ----
+  function tickets(s) { return s.tk.map(function (t) { return { id: t.i, name: NAME[t.i] || t.i, l: t.l, v: t.v, r: t.r, done: t.l >= t.r, signed: t.v >= t.r }; }); }
+  function closest(s) {
+    var ts = tickets(s), open = ts.filter(function (t) { return !t.done; }).sort(function (a, b) { return b.l / b.r - a.l / a.r; });
+    if (open.length) return open[0];
+    return ts.sort(function (a, b) { return b.r - a.r; })[0] || null;
+  }
+  function ago(iso) {
+    var d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d < 60 ? d + ' days ago' : Math.round(d / 30) + ' months ago';
+  }
+
+  function render() {
+    var list = Object.keys(roster).map(function (k) { return roster[k]; });
+    var empty = !list.length;
+    $('emptyBox').style.display = empty ? '' : 'none'; $('listBox').style.display = empty ? 'none' : '';
+    var co = (list.filter(function (s) { return s.co; })[0] || {}).co;
+    $('coName').textContent = co || 'Crew dashboard';
+    $('subLine').textContent = empty ? 'Progress your crew have shared with you' : list.length + ' crew · ' + (list.some(function (s) { return s.ex; }) ? 'example data' : 'shared by them');
+
+    var ready = 0, needSig = 0, unsigned = 0, near = 0;
+    list.forEach(function (s) {
+      var ts = tickets(s); if (ts.some(function (t) { return t.signed; })) ready++;
+      else if (ts.some(function (t) { return t.done; })) needSig++;
+      unsigned += Math.max(0, (s.ed || 0) - (s.vd || 0));
+      if (ts.some(function (t) { return !t.done && t.l / t.r >= 0.75; })) near++;
+    });
+    $('tiles').innerHTML = [[list.length, 'Crew sharing'], [ready, 'Ready to apply'], [needSig, 'Done but need signatures'], [near, 'Over 75% of a ticket'], [unsigned, 'Days waiting on a signature']]
+      .map(function (t) { return '<div class="tile"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('');
+
+    // filter options from the tickets present
+    var present = {}; list.forEach(function (s) { s.tk.forEach(function (t) { present[t.i] = 1; }); });
+    var cur = $('fltr').value || 'all';
+    $('fltr').innerHTML = '<option value="all">All tickets</option>' + Object.keys(NAME).filter(function (k) { return present[k]; }).map(function (k) { return '<option value="' + k + '">' + NAME[k] + '</option>'; }).join('');
+    $('fltr').value = $('fltr').querySelector('option[value="' + cur + '"]') ? cur : 'all';
+    var f = $('fltr').value, onlyUn = $('onlyUn').checked;
+
+    var rows = list.filter(function (s) {
+      if (f !== 'all' && !s.tk.some(function (t) { return t.i === f; })) return false;
+      if (onlyUn && !((s.ed || 0) - (s.vd || 0) > 0)) return false; return true;
+    }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+
+    $('rows').innerHTML = rows.map(function (s) {
+      var t = f === 'all' ? closest(s) : tickets(s).filter(function (x) { return x.id === f; })[0], un = Math.max(0, (s.ed || 0) - (s.vd || 0));
+      var pctL = t ? Math.min(100, t.l / t.r * 100) : 0, pctV = t ? Math.min(100, t.v / t.r * 100) : 0;
+      var html = '<tr class="row" data-u="' + esc(s.u) + '"><td><div class="nm">' + esc(s.n) + '</div><div class="mt">' + esc((s.held && s.held.length ? s.held.length + ' ticket' + (s.held.length === 1 ? '' : 's') + ' held · ' : '') + (s.ve || 0) + ' vessel' + (s.ve === 1 ? '' : 's')) + '</div></td>' +
+        '<td>' + (t ? esc(t.name) + (t.signed ? ' <span class="pill green">Ready</span>' : t.done ? ' <span class="pill yellow">Needs signatures</span>' : '') : '<span class="muted">None yet</span>') + '</td>' +
+        '<td>' + (t ? '<div style="display:flex;align-items:center;gap:10px;"><div class="bar' + (t.done ? ' done' : '') + '" style="flex:1;"><i class="un" style="width:' + pctL + '%"></i><i class="ve" style="width:' + pctV + '%"></i></div><span style="font-size:13px;min-width:66px;">' + t.l + ' / ' + t.r + '</span></div>' : '') + '</td>' +
+        '<td>' + (un ? '<span class="pill blue">' + un + ' days</span>' : '<span class="pill green">All signed</span>') + '</td>' +
+        '<td class="muted">' + ago(s.t) + '</td><td style="text-align:right;"><button class="btn ghost sm" data-rm="' + esc(s.u) + '">Remove</button></td></tr>';
+      if (open[s.u]) html += '<tr class="detail"><td colspan="6"><div class="dgrid">' + tickets(s).map(function (x) {
+        return '<div class="drow"><div class="row"><span>' + esc(x.name) + '</span><span class="muted">' + x.l + ' / ' + x.r + (x.v < x.l ? ' · ' + (x.l - x.v) + ' unsigned' : '') + '</span></div><div class="bar' + (x.done ? ' done' : '') + '"><i class="un" style="width:' + Math.min(100, x.l / x.r * 100) + '%"></i><i class="ve" style="width:' + Math.min(100, x.v / x.r * 100) + '%"></i></div></div>';
+      }).join('') + (s.held && s.held.length ? '<div class="drow muted">Holds: ' + esc(s.held.map(function (h) { return NAME[h] || h; }).join(', ')) + '</div>' : '') + '</div></td></tr>';
+      return html;
+    }).join('') || '<tr><td colspan="6" class="muted">Nobody matches those filters.</td></tr>';
+
+    var counts = {}; list.forEach(function (s) { s.tk.forEach(function (t) { counts[t.i] = (counts[t.i] || 0) + 1; }); });
+    var max = Math.max.apply(null, Object.keys(counts).map(function (k) { return counts[k]; }).concat([1]));
+    $('pipe').innerHTML = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (k) { return '<div class="p"><span>' + esc(NAME[k] || k) + '</span><div class="pb"><i style="width:' + (counts[k] / max * 100) + '%"></i></div><b>' + counts[k] + '</b></div>'; }).join('') || '<span class="small">Nothing yet.</span>';
+  }
+  $('rows').addEventListener('click', function (e) {
+    var rm = e.target.closest('[data-rm]');
+    if (rm) { e.stopPropagation(); delete roster[rm.getAttribute('data-rm')]; save(); render(); return; }
+    var r = e.target.closest('tr.row'); if (!r) return; var u = r.getAttribute('data-u'); open[u] = !open[u]; render();
+  });
+  $('fltr').addEventListener('change', render); $('onlyUn').addEventListener('change', render);
+
+  // ---- adding crew ----
+  function fromText(v) { var m = (v || '').match(/#s=([A-Za-z0-9_-]+)/), p = m ? m[1] : (/^[A-Za-z0-9_-]{20,}$/.test((v || '').trim()) ? v.trim() : ''); return p ? dec(p) : null; }
+  $('addBtn').addEventListener('click', function () { var s = fromText($('paste').value); if (addSnapshot(s)) $('paste').value = ''; });
+  // A link can arrive on page load, or while the dashboard is already open (another crew member's link tapped in the same tab).
+  function takeLink(raw) {
+    if (!raw) return; var snap = dec(raw);
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    setTimeout(function () { addSnapshot(snap); }, 60);
+  }
+  takeLink(window.__SNAP || ((location.hash.match(/^#s=(.+)$/) || [])[1]));
+  window.addEventListener('hashchange', function () { takeLink((location.hash.match(/^#s=(.+)$/) || [])[1]); });
+
+  // ---- examples, export, clear ----
+  $('exampleBtn').addEventListener('click', function () {
+    var now = new Date().toISOString(), mk = function (u, n, ed, vd, held, tk, ve) { return { v: 1, k: 'snap', u: u, n: n, co: 'Bay Ferries Pty Ltd', t: now, ed: ed, vd: vd, held: held, tk: tk, ve: ve, ex: true }; };
+    [mk('x1', 'Ava Nguyen', 41, 35, ['gph', 'cox3', 'cox2'], [{ i: 'cox1', l: 24, v: 18, r: 30 }, { i: 'master24', l: 41, v: 35, r: 120 }], 2),
+     mk('x2', 'Liam Patel', 12, 12, ['gph'], [{ i: 'cox3', l: 12, v: 12, r: 1 }, { i: 'cox2', l: 9, v: 9, r: 10 }], 1),
+     mk('x3', 'Mia Thompson', 130, 118, ['gph', 'cox3', 'cox2', 'cox1'], [{ i: 'master24', l: 104, v: 98, r: 120 }], 4),
+     mk('x4', 'Noah Williams', 210, 190, ['gph', 'cox3', 'cox2', 'cox1', 'master24'], [{ i: 'master45', l: 88, v: 68, r: 180 }], 5),
+     mk('x5', 'Zoe Anderson', 20, 16, ['gph'], [{ i: 'med3', l: 20, v: 16, r: 20 }], 1),
+     mk('x6', 'Ethan Brown', 3, 0, [], [{ i: 'gph', l: 3, v: 0, r: 5 }, { i: 'cox3', l: 3, v: 0, r: 1 }, { i: 'cox2', l: 3, v: 0, r: 10 }], 1),
+     mk('x7', 'Isla Wilson', 150, 120, ['gph', 'med3'], [{ i: 'med2', l: 140, v: 112, r: 180 }], 3),
+     mk('x8', 'Lucas Taylor', 30, 30, ['gph', 'cox3', 'cox2'], [{ i: 'cox1', l: 30, v: 30, r: 30 }], 2)
+    ].forEach(function (s) { roster[s.u] = s; }); save(); render();
+  });
+  $('clearBtn').addEventListener('click', function () { if ($('clearBtn').getAttribute('data-sure') === '1') { roster = {}; save(); render(); $('clearBtn').textContent = 'Clear roster'; $('clearBtn').removeAttribute('data-sure'); } else { $('clearBtn').setAttribute('data-sure', '1'); $('clearBtn').textContent = 'Tap again to clear'; setTimeout(function () { $('clearBtn').textContent = 'Clear roster'; $('clearBtn').removeAttribute('data-sure'); }, 3000); } });
+  $('csvBtn').addEventListener('click', function () {
+    var list = Object.keys(roster).map(function (k) { return roster[k]; }); if (!list.length) { toast('Nothing to export yet'); return; }
+    var cell = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var head = ['Name', 'Company', 'Days logged', 'Days signed', 'Days unsigned', 'Vessels', 'Tickets held', 'Ticket', 'Logged', 'Signed', 'Required', 'Updated'], rows = [head.join(',')];
+    list.forEach(function (s) { (s.tk.length ? s.tk : [{}]).forEach(function (t) { rows.push([s.n, s.co, s.ed, s.vd, (s.ed || 0) - (s.vd || 0), s.ve, (s.held || []).map(function (h) { return NAME[h] || h; }).join('; '), NAME[t.i] || '', t.l, t.v, t.r, s.t].map(cell).join(',')); }); });
+    var csv = rows.join('\n');
+    try { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'crew-progress.csv'; document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded crew-progress.csv'); }
+    catch (e) { try { navigator.clipboard.writeText(csv).then(function () { toast('CSV copied'); }); } catch (e2) { toast('Could not export here'); } }
+  });
+  render();
+})();
+</script>
+</body>
+</html>

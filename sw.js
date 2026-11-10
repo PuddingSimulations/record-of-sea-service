@@ -1,6 +1,6 @@
 // Offline support: cache the app shell, serve cache first, refresh in background.
-var CACHE = 'sea-service-v4';
-var ASSETS = ['./', 'index.html', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'AMSA_771.pdf', 'pdf-lib.min.js', 'sign.html'];
+var CACHE = 'sea-service-v5';
+var ASSETS = ['./', 'index.html', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'AMSA_771.pdf', 'pdf-lib.min.js', 'sign.html', 'dashboard.html'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }).then(function () { return self.skipWaiting(); }));
