@@ -309,6 +309,20 @@
   .group-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 18px 0 2px; }
   .group-label:first-child { margin-top: 0; }
 
+  #signedOverlay { z-index: 70; }
+  .kv { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .kv:first-child, .sig-img + .kv { border-top: none; }
+  .kv span:first-child { color: var(--ink-2); flex-shrink: 0; }
+  .kv span:last-child { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+
+  /* Test mode: the supervisor's phone, shown inside the artifact */
+  .demo { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; padding: 12px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .demo.open { display: flex; animation: rise .45s var(--ease) both; }
+  .demo-wrap { width: 100%; max-width: 430px; height: min(880px, 100%); background: #000; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 0 1px var(--line), 0 30px 80px rgba(0,0,0,0.6); }
+  .demo-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; background: var(--yellow); color: #1A1500; font-size: 12.5px; font-weight: 700; }
+  .demo-bar button { border: none; background: rgba(0,0,0,0.12); color: #1A1500; font: inherit; font-weight: 700; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .demo-wrap iframe { flex: 1; width: 100%; border: 0; background: #141416; }
+
   /* Send to supervisor */
   .send-btn { display: flex; align-items: center; gap: 14px; width: 100%; border: none; border-radius: 16px; padding: 14px 16px; background: var(--accent); color: #fff; text-align: left; cursor: pointer; transition: transform .25s var(--spring); }
   .send-btn:active { transform: scale(0.97); }
@@ -537,6 +551,13 @@
       </a>
       <button class="link-btn" id="copyTableBtn" type="button">Copy all entries as a table</button>
     </div>
+  </div>
+</div>
+
+<div class="demo" id="demoOverlay" role="dialog" aria-modal="true" aria-label="Supervisor's phone (test mode)">
+  <div class="demo-wrap">
+    <div class="demo-bar"><span id="demoWho">Test mode: this is your supervisor's phone</span><button type="button" id="demoClose">Close</button></div>
+    <iframe id="demoFrame" title="Supervisor's phone"></iframe>
   </div>
 </div>
 
@@ -1864,6 +1885,11 @@
   function sendToSupervisor(e) {
     if (!profile.name.trim()) { showToast('Add your full name first'); $('pfName').focus(); return; }
     var base = appBase();
+    if (window.SEA_SIGN_HTML) { /* test mode in the artifact: show the supervisor's side right here */
+      var tr = { v: 1, id: e.id, n: profile.name.trim(), ve: e.vessel, s: e.start, e: e.end || e.start, d: Number(e.days), p: e.position || '', c: e.category,
+        sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base };
+      e.sentAt = new Date().toISOString(); saveEntries(); showSentNote(e); openSupervisorDemo(tr); return;
+    }
     if (baseIsPrivate(base)) { showToast('Supervisors cannot open links from this address. Put the app on a public address first.'); return; }
     var req = { v: 1, id: e.id, n: profile.name.trim(), ve: e.vessel, s: e.start, e: e.end || e.start, d: Number(e.days), p: e.position || '', c: e.category,
       sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base };
@@ -1881,6 +1907,19 @@
   }
   $('sendSupBtn').addEventListener('click', function () { if (pdfEntry) { fx('open'); sendToSupervisor(pdfEntry); } });
 
+  function openSupervisorDemo(req) {
+    var inject = '<script>window.__REQ=' + JSON.stringify(b64enc(req)) + ';window.__DEMO=true;<\/script>';
+    $('demoFrame').srcdoc = window.SEA_SIGN_HTML.replace('<head>', function () { return '<head>' + inject; });
+    $('demoWho').textContent = 'Test mode: this is ' + ((req.sn || 'your supervisor') + '\u2019s phone');
+    $('demoOverlay').classList.add('open');
+  }
+  function closeSupervisorDemo() { $('demoOverlay').classList.remove('open'); $('demoFrame').srcdoc = ''; }
+  $('demoClose').addEventListener('click', closeSupervisorDemo);
+  window.addEventListener('message', function (ev) {
+    var d = ev.data; if (!d || d.sea !== 'signed' || !d.payload) return;
+    closeSupervisorDemo(); setTimeout(function () { handleSignedPayload(d.payload); }, 250);
+  });
+
   // Draw the supervisor's stroke data back into a PNG for the form
   function strokesToPng(g, a) {
     var W = 600, H = Math.max(80, Math.round(W * (a || 300) / 1000)), c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -1894,7 +1933,11 @@
   var signedOverlay = $('signedOverlay'), signedSheet = $('signedSheet'), signedReply = null, signedEntry = null;
   function handleSignedLink() {
     var m = location.hash.match(/^#signed=(.+)$/); if (!m) return;
-    var r = b64dec(m[1]); history.replaceState(null, '', location.pathname + location.search);
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (err) {}
+    handleSignedPayload(m[1]);
+  }
+  function handleSignedPayload(payload) {
+    var r = b64dec(payload);
     if (!r || !r.id) { showToast('That link could not be read'); return; }
     var e = entries.filter(function (x) { return x.id === r.id; })[0];
     if (!e) { showToast('That reply belongs to a different phone. Open it on the phone you sent the request from.'); return; }

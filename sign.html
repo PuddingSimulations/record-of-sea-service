@@ -126,7 +126,7 @@
   var DUTY = { D: 'Deck work', DE: 'Deck and engineering', GPH: 'General purpose hand', INW: 'In charge of navigation watch', C: 'Coxswain', AEIC: 'Assistant to engineer in charge', 'AE/ED': 'Assistant to engineer or engine driver', 'E/ED': 'Engineer or engine driver', EW: 'Engineer watchkeeper', EIC: 'Engineer in charge' };
 
   // ---- the request lives in the link ----
-  var m = location.hash.match(/^#r=(.+)$/), R = m && dec(m[1]), demo = false;
+  var m = location.hash.match(/^#r=(.+)$/), raw = window.__REQ || (m && m[1]), R = raw && dec(raw), demo = false;
   if (!R || !R.id) {
     demo = true;
     R = { v: 1, id: 'demo', n: 'Alex Marlow', ve: 'Coral Trader', s: '2026-08-01', e: '2026-09-02', d: 33, p: 'Mate', c: 'INW', sn: 'Sam Rivera', sp: 'Master', sc: '', sph: '', sem: '', b: '' };
@@ -173,16 +173,18 @@
   function reply() {
     var resp = { v: 1, id: R.id, d: days, dl: Number(R.d), sn: $('sn').value.trim(), sp: $('sp').value.trim(), sc: $('sc').value.trim(), sph: $('sph').value.trim(), sem: $('sem').value.trim(),
       r: role, ro: $('ro').value.trim(), t: new Date().toISOString(), a: Math.round(1000 * Hh / W), g: strokes.filter(function (s) { return s.length >= 4; }) };
-    var base = R.b || (location.href.replace(/sign\.html.*$/, ''));
-    return base + '#signed=' + enc(resp);
+    var base = R.b || (location.href.replace(/sign\.html.*$/, '')), payload = enc(resp);
+    lastPayload = payload;
+    return base + '#signed=' + payload;
   }
-  var lastUrl = '';
+  var lastUrl = '', lastPayload = '';
   function send() {
     lastUrl = reply();
     var text = 'Signed. ' + ($('sn').value.trim() || 'Your supervisor') + ' confirmed ' + days + ' days for ' + (R.ve || 'your sea service') + '. Open this link on your phone to add it to your Form 771:';
     $('form').style.display = 'none'; $('doneBox').style.display = 'block'; window.scrollTo(0, 0);
     $('doneLead').textContent = 'Send the reply to ' + (R.n || 'them') + ' and you are finished.';
     $('copybox').textContent = lastUrl;
+    if (window.__DEMO && window.parent !== window) { window.parent.postMessage({ sea: 'signed', payload: lastPayload }, '*'); return; }
     if (navigator.share) { navigator.share({ title: 'Signed sea service', text: text, url: lastUrl }).catch(function () {}); }
   }
   $('go').onclick = send;
