@@ -142,6 +142,20 @@
   .field-label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin: 0 0 6px 2px; }
   .field-hint { font-size: 12px; line-height: 1.4; color: var(--ink-3); margin: 6px 2px 0; }
 
+  /* Working towards */
+  .working { background: var(--card); border-radius: 18px; padding: 12px 16px 6px; margin-bottom: 16px; box-shadow: var(--shadow); animation: rise .5s var(--ease) both; }
+  .working-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin: 0 0 4px; }
+  .work-row { display: block; width: 100%; text-align: left; border: none; background: none; color: inherit; padding: 9px 0; cursor: pointer; transition: opacity .15s; }
+  .work-row + .work-row { border-top: 1px solid var(--line); }
+  .work-row:active { opacity: 0.55; }
+  .work-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .work-name { font-size: 14px; font-weight: 600; min-width: 0; }
+  .work-count { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .work-count.done { color: var(--good); }
+  .work-track { height: 5px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
+  .work-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--amber), #E3B26B); transition: width .9s var(--ease); }
+  .work-fill.complete { background: var(--good); }
+
   /* Duty summary */
   .summary-row { padding: 9px 0; }
   .summary-row + .summary-row { border-top: 1px solid var(--line); }
@@ -269,7 +283,9 @@
     </div>
   </section>
 
-  <section class="card rise d2">
+  <div id="workingSection"></div>
+
+  <section class="card rise d2" id="ticketCard">
     <p class="section-heading">Ticket progress</p>
     <div class="select-wrap"><select id="ticketSelect" aria-label="Ticket"></select></div>
 
@@ -659,11 +675,42 @@
   });
   Array.prototype.forEach.call(taskBookToggle.querySelectorAll('button'), function (btn) {
     btn.addEventListener('click', function () {
-      ticketState.taskBook = btn.getAttribute('data-tb'); syncToggle(); saveTicketState(); renderTicketProgress(); haptic(6);
+      ticketState.taskBook = btn.getAttribute('data-tb'); syncToggle(); saveTicketState(); renderTicketProgress(); renderWorking(); haptic(6);
     });
   });
   customDaysInput.addEventListener('input', function () {
     ticketState.customDays = Number(customDaysInput.value) || 1; saveTicketState(); renderTicketProgress();
+  });
+
+  // ---- Working towards (tickets with any qualifying sea time) ----
+  var workingSection = $('workingSection');
+  function renderWorking() {
+    var list = TICKETS.filter(function (t) { return !t.custom; }).map(function (t) {
+      var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook;
+      var logged = sumDaysForCategories(t.categories);
+      return { id: t.id, name: t.name, required: required, logged: logged, ratio: Math.min(1, logged / required) };
+    }).filter(function (t) { return t.logged > 0; })
+      .sort(function (a, b) { return b.ratio - a.ratio; });
+
+    if (!list.length) { workingSection.innerHTML = ''; return; }
+    var html = '<div class="working"><p class="working-title">Working towards</p>';
+    list.forEach(function (t) {
+      var done = t.logged >= t.required;
+      html += '<button type="button" class="work-row" data-ticket="' + t.id + '">' +
+        '<div class="work-top"><span class="work-name">' + escapeHtml(t.name) + '</span>' +
+        '<span class="work-count' + (done ? ' done' : '') + '">' + (done ? '\u2713 ' : '') + t.logged + ' / ' + t.required + '</span></div>' +
+        '<div class="work-track"><div class="work-fill' + (done ? ' complete' : '') + '" data-w="' + Math.round(t.ratio * 100) + '"></div></div></button>';
+    });
+    workingSection.innerHTML = html + '</div>';
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      Array.prototype.forEach.call(workingSection.querySelectorAll('.work-fill'), function (el) { el.style.width = el.getAttribute('data-w') + '%'; });
+    }); });
+  }
+  workingSection.addEventListener('click', function (ev) {
+    var row = ev.target.closest('[data-ticket]'); if (!row) return;
+    ticketState.ticketId = row.getAttribute('data-ticket'); ticketSelect.value = ticketState.ticketId;
+    saveTicketState(); wasComplete = null; renderTicketProgress(); haptic(6);
+    $('ticketCard').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   });
 
   // ---- Main render ----
@@ -676,6 +723,7 @@
     $('statEntries').textContent = entries.length + (entries.length === 1 ? ' entry' : ' entries');
     $('statVessels').textContent = vesselCount + (vesselCount === 1 ? ' vessel' : ' vessels');
     renderTicketProgress();
+    renderWorking();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
