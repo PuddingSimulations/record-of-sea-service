@@ -672,7 +672,7 @@
     <div class="sheet-head" id="sheetHead">
       <div class="grabber"></div>
       <div class="sheet-title-row">
-        <h2>Add Sea Service</h2>
+        <h2 id="sheetTitle">Add Sea Service</h2>
         <button class="close-btn" id="closeModalBtn" aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -680,6 +680,7 @@
     </div>
 
     <div class="sheet-body" id="sheetBody">
+      <p class="sent-note" id="editNote" style="display:none;margin:0 2px 12px;"></p>
       <div class="form-card">
         <p class="section-title">Vessel details</p>
         <div class="field" id="knownVesselField" style="display:none;">
@@ -808,7 +809,7 @@
       </div>
     </div>
 
-    <div class="sheet-foot"><button class="save-btn" id="saveEntryBtn" disabled>Save entry</button></div>
+    <div class="sheet-foot"><button class="save-btn" id="saveEntryBtn" disabled>Save entry</button><button class="link-btn" id="editFormLink" type="button" style="display:none;">Open the Form 771 PDF</button></div>
   </div>
 </div>
 
@@ -856,12 +857,14 @@
     { id: 'gph', group: 'General', name: 'General Purpose Hand (GPH) NC', categories: null, withTaskBook: 5, withoutTaskBook: 5, commercial: 'always',
       note: '5 days of sea service on commercial vessels of any size. No task book reduction applies.' },
     { id: 'cox3', group: 'Deck', name: 'Coxswain Grade 3 NC', categories: null, withTaskBook: 1, withoutTaskBook: 1, commercial: 'always',
-      note: 'Just 1 day on a commercial vessel, plus on-water tasks witnessed and signed off on AMSA form 1882.' },
-    { id: 'cox2', group: 'Deck', name: 'Coxswain Grade 2 NC', categories: DECK_ROLE, withTaskBook: 10, withoutTaskBook: 50, commercial: 'with',
+      note: 'If you use a state or territory recreational boat licence, you need 1 day on a commercial vessel plus on-water tasks signed off on AMSA form 1882. If you complete an approved training course instead, there is no sea service day requirement.' },
+    { id: 'cox2', group: 'Deck', name: 'Coxswain Grade 2 NC', categories: DECK_ROLE, withTaskBook: 10, withoutTaskBook: 50,
+      verify: 'AMSA\u2019s recent wording allows commercial or recreational vessels, but an older source asked for commercial vessels with a task book. This app counts both.',
       note: 'Deck, or deck and engineering duties.' },
     { id: 'cox1', group: 'Deck', name: 'Coxswain Grade 1 NC', categories: DECK_ROLE, withTaskBook: 30, withoutTaskBook: 150, minLength: 5, commercial: 'with',
       note: 'Deck, or deck and engineering duties, on vessels at least 5m long. Without a task book the days can be on commercial or recreational vessels.' },
     { id: 'inland', group: 'Deck', name: 'Master (Inland Waters) NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 30, withoutTaskBook: 150, commercial: 'with',
+      verify: 'Only one AMSA source gave these figures. Confirm the days and the role with AMSA.',
       note: 'Deck duties. Without a task book the days can be on commercial or recreational vessels.' },
     { id: 'master24', group: 'Deck', name: 'Master <24m NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 120, withoutTaskBook: 360, minLength: 7.5, commercial: 'with',
       note: 'Deck, or deck and engineering duties, on vessels at least 7.5m long. Without a task book at least half must be on commercial vessels.' },
@@ -869,12 +872,13 @@
       subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
       note: 'On commercial vessels ≥12m long while holding Master <24m. Only days in charge of a navigational watch (INW) or as coxswain/master (C) are counted here; plain deck work (D) is not.' },
     { id: 'master100', group: 'Deck', name: 'Master <100m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 24, commercial: 'always',
-      subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 120, subLabel: 'In charge of navigational watch',
-      note: 'For Master <45m holders, on commercial vessels ≥24m long. Other routes (Mate <80m holders) need 360/720 days with 120/240 on watch. Check AMSA.' },
+      subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
+      verify: 'AMSA\u2019s page says 240 watch days without a task book, but its older guidance PDF says 120. This app uses the page. Confirm with AMSA.',
+      note: 'For Master <45m holders, on commercial vessels \u226524m long. Other routes (Mate <80m holders) need 360/720 days with 120/240 on watch.' },
     { id: 'med3', group: 'Engineering', name: 'Marine Engine Driver Grade 3 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'C'], withTaskBook: 20, withoutTaskBook: 60, minPower: 75, commercial: 'always',
       note: 'As GPH, Coxswain 1/2, or assistant to an engineer/engine driver, on vessels ≥75kW. At least half (10 or 30 days) must be on an inboard diesel engine — this app doesn’t track that split, so check it yourself.' },
-    { id: 'med2', group: 'Engineering', name: 'Marine Engine Driver Grade 2 NC', categories: ['GPH', 'AE/ED', 'AEIC'], withTaskBook: 180, withoutTaskBook: 360, minPower: 150, inboard: true, commercial: 'always',
-      note: 'As GPH, or assistant to an engine driver/chief/second engineer, on commercial vessels ≥150kW with inboard diesel engines. With a workshop skill equivalent qualification it is 90 / 180 days.' },
+    { id: 'med2', group: 'Engineering', name: 'Marine Engine Driver Grade 2 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'E/ED', 'EW', 'EIC'], withTaskBook: 180, withoutTaskBook: 360, minPower: 150, inboard: true, commercial: 'always',
+      note: 'As GPH, engineer, engine driver, or assistant to an engine driver/chief/second engineer, on commercial vessels \u2265150kW with inboard diesel engines. With a workshop skill equivalent qualification it is 90 / 180 days, and you include a copy of that qualification.' },
     { id: 'med1', group: 'Engineering', name: 'Marine Engine Driver Grade 1 NC', categories: ENGINE_ROLE, withTaskBook: 120, withoutTaskBook: 240, minPower: 375, inboard: true, commercial: 'always',
       note: 'Engineering duties on commercial vessels ≥375kW with inboard diesel engines, while holding Marine Engine Driver Grade 2. With a workshop skill equivalent qualification it is 90 / 180 days. AMSA’s published figures are hard to read, so double-check.' },
     { id: 'eng3', group: 'Engineering', name: 'Engineer Class 3 NC', categories: ENGINE_ROLE, withTaskBook: 180, withoutTaskBook: 360, minPower: 400, inboard: true, commercial: 'always',
@@ -908,15 +912,15 @@
   var ORAL_TXT = 'You must pass an AMSA oral examination before this certificate is issued.';
   var REQS = {
     gph: { course: 'Certificate I in Maritime Operations (General Purpose Hand NC) from a registered training organisation.', eyes: 'deck' },
-    cox3: { course: 'Course and assessment details were not confirmed. Check the AMSA page.', courseUnsure: true, tasks: 'Practical on-water tasks witnessed and signed off by an observer on AMSA form 1882.', firstAidUnsure: true, eyes: 'deck' },
-    cox2: { course: 'Certificate I in Maritime Operations (Coxswain Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, firstAidUnsure: true, eyes: 'deck' },
+    cox3: { course: 'Either an approved training course (such as the units MARI003, MARK007 and MARN008, an Australian Sailing Powerboat Handling course, an RYA Level 2 Powerboat course or an IYT Small Powerboat & RIB Master certificate), or a state or territory recreational boat licence.', tasks: 'Only on the licence route: practical on-water tasks witnessed and signed off by an observer on AMSA form 1882.', eyes: 'deck' },
+    cox2: { course: 'Certificate I in Maritime Operations (Coxswain Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'deck' },
     cox1: { course: 'Certificate II in Maritime Operations (Coxswain Grade 1 NC) from a registered training organisation.', ampa: 'AMSA Mandated Practical Assessment (AMPA) on a vessel over 5m long, with a registered training organisation.', radio: RADIO_S, eyes: 'deck' },
     inland: { course: 'Course details were not confirmed. Check the AMSA page.', courseUnsure: true, firstAidUnsure: true, eyes: 'deck' },
     master24: { course: 'Certificate III in Maritime Operations (Master <24m NC) from a registered training organisation.', ampa: AMPA_TXT, radio: RADIO_L, eyes: 'deck' },
     master45: { course: 'Certificate IV level Master <45m course from a registered training organisation. Confirm the exact course name with AMSA.', courseUnsure: true, ampa: 'An approved final assessment, or 60 days of sea service in the 6 months before you apply.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
     master100: { course: 'Diploma level Master <100m course from a registered training organisation. Confirm the exact course name with AMSA.', courseUnsure: true, radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
     med3: { course: 'Certificate II in Maritime Operations (Marine Engine Driver Grade 3 NC) from a registered training organisation.', ampa: AMPA_TXT + ' It covers engine room tasks, deck machinery and low-voltage electrical systems.', eyes: 'eng' },
-    med2: { course: 'Course details were not confirmed. Check the AMSA page.', courseUnsure: true, ampaUnsure: true, ampa: 'A practical assessment may apply. Check the AMSA page.', eyes: 'eng' },
+    med2: { course: 'Certificate III in Maritime Operations (Marine Engine Driver Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'eng' },
     med1: { course: 'Certificate IV in Maritime Operations (Marine Engine Driver Grade 1 NC) from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' },
     eng3: { course: 'Diploma of Marine Engineering (or the Engineer Class 3 NC course) from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' }
   };
@@ -1253,6 +1257,7 @@
     if (!isCustom && heldIds.indexOf(ticket.id) !== -1) bits.push('You already hold this ticket \u2713');
     else if (!isCustom && coveredBy(ticket.id)) bits.push('Covered by your ' + coveredBy(ticket.id).name + ' \u2713');
     if (!isCustom && q.catDays > q.days) bits.push((q.catDays - q.days) + ' day' + (q.catDays - q.days === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
+    if (!isCustom && ticket.verify) bits.push('\u26A0 Check this one: ' + ticket.verify);
     if (!isCustom && q.unverified) bits.push(q.unverified + ' day' + (q.unverified === 1 ? '' : 's') + ' counted without vessel length/power on record.');
     ticketFilterNote.textContent = bits.join(' '); ticketFilterNote.style.display = bits.length ? '' : 'none';
     renderReqs(ticket, logged, required, isCustom);
@@ -1281,7 +1286,7 @@
       if (on) done++;
       html += '<div class="req-row' + (on ? ' done' : '') + (it.auto !== undefined ? ' auto' : '') + '" data-req="' + it.k + '"><span class="tick">' + TICK_SVG + '</span><div><div class="rt">' + it.t + (it.unsure ? '<span class="chk">check with AMSA</span>' : '') + '</div><div class="rd">' + escapeHtml(it.d) + '</div></div></div>';
     });
-    html += '<p class="req-foot">Taken from AMSA\u2019s published pages and may have changed. Confirm every item with AMSA or your training organisation before you apply.</p>';
+    html += '<p class="req-foot">Checked against AMSA’s published pages in November 2026. Rules change, so confirm every item with AMSA or your training organisation before you apply.</p>';
     $('reqList').innerHTML = html;
     $('reqCount').textContent = done + ' of ' + items.length + ' ready';
   }
@@ -1881,7 +1886,7 @@
     var find = function (id) { return entries.filter(function (x) { return x.id === id; })[0]; };
     if (sb) { var e1 = find(sb.getAttribute('data-send')); if (e1) { fx('tick'); sendToSupervisor(e1); } return; }
     if (pb) { openPdfSheet(pb.getAttribute('data-pdf')); return; }
-    if (ob) openPdfSheet(ob.getAttribute('data-open'));
+    if (ob) openEdit(ob.getAttribute('data-open'));
   });
 
   // Tabs: Sea service | Tickets
@@ -2190,7 +2195,28 @@
     };
   }
 
+  var editingId = null;
+  function openEdit(id) {
+    var e = entries.filter(function (x) { return x.id === id; })[0]; if (!e) return;
+    editingId = id; resetForm();
+    vesselNameInput.value = e.vessel || ''; vesselIdInput.value = e.vesselId || ''; vesselLengthInput.value = e.vesselLength || ''; vesselPowerInput.value = e.vesselPower || '';
+    vesselEnginesInput.value = e.numEngines || ''; vesselOwnerInput.value = e.owner || '';
+    propulsionSelect.value = e.propulsion || 'I'; operationTypeSelect.value = e.operationType || 'C'; modeOfOperationSelect.value = e.modeOfOperation || 'VU';
+    positionInput.value = e.position || ''; dutyCategorySelect.value = e.category || 'D'; notesInput.value = e.notes || '';
+    supNameInput.value = e.supName || ''; supPositionInput.value = e.supPosition || ''; supCertInput.value = e.supCert || ''; supPhoneInput.value = e.supPhone || ''; supEmailInput.value = e.supEmail || '';
+    form.start = e.start || ''; form.end = e.end || ''; form.days = e.days;
+    autoCalc = !!(e.start && e.end) && daysBetween(e.start, e.end) === Number(e.days);
+    daysInput.value = e.days; autoCalcBtn.classList.toggle('active', autoCalc); autoCalcBtn.textContent = autoCalc ? 'Auto (from dates)' : 'Manual';
+    calendarMonth = e.start ? new Date(e.start + 'T00:00:00') : new Date();
+    knownVesselField.style.display = 'none'; knownSupField.style.display = 'none';
+    $('sheetTitle').textContent = 'Edit Sea Service'; saveEntryBtn.textContent = 'Save changes'; $('editFormLink').style.display = '';
+    var note = $('editNote');
+    if (e.supSig) { note.textContent = 'This entry is signed. Changing the vessel, dates, days, duty or position clears the signature so it can be signed again.'; note.style.display = ''; } else { note.style.display = 'none'; }
+    renderCalendar(); updateSaveButtonState();
+    document.body.style.overflow = 'hidden'; modalOverlay.classList.add('open'); fx('open');
+  }
   function openModal() {
+    editingId = null; $('sheetTitle').textContent = 'Add Sea Service'; saveEntryBtn.textContent = 'Save entry'; $('editFormLink').style.display = 'none'; $('editNote').style.display = 'none';
     resetForm(); populateKnownVessels(); populateKnownSupervisors();
     document.body.style.overflow = 'hidden';
     modalOverlay.classList.add('open'); fx('open');
@@ -2242,9 +2268,26 @@
   daysInput.addEventListener('input', function () { form.days = daysInput.value; });
   vesselNameInput.addEventListener('input', updateSaveButtonState);
 
+  function saveEdit(vessel) {
+    var e = entries.filter(function (x) { return x.id === editingId; })[0]; if (!e) { closeModal(); return; }
+    var before = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.position || ''].join('|');
+    e.vessel = vessel; e.vesselId = vesselIdInput.value.trim(); e.position = positionInput.value.trim(); e.vesselLength = vesselLengthInput.value; e.vesselPower = vesselPowerInput.value;
+    e.propulsion = propulsionSelect.value; e.numEngines = vesselEnginesInput.value; e.owner = vesselOwnerInput.value.trim();
+    e.supName = supNameInput.value.trim(); e.supPosition = supPositionInput.value.trim(); e.supCert = supCertInput.value.trim(); e.supPhone = supPhoneInput.value.trim(); e.supEmail = supEmailInput.value.trim();
+    e.operationType = operationTypeSelect.value; e.modeOfOperation = modeOfOperationSelect.value; e.category = dutyCategorySelect.value;
+    e.start = form.start; e.end = form.end; e.days = Number(daysInput.value); e.notes = notesInput.value.trim();
+    var after = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.position || ''].join('|');
+    var cleared = !!e.supSig && before !== after;
+    if (cleared) { e.supSig = ''; e.supDate = ''; e.sentAt = ''; }
+    saveEntries(); closeModal(true);
+    setTimeout(function () { renderMain(); fx('success'); showToast(cleared ? 'Saved. The signature was cleared, so send it again to sign.' : 'Changes saved'); }, 250);
+    editingId = null;
+  }
+  $('editFormLink').addEventListener('click', function () { var id = editingId; closeModal(true); if (id) setTimeout(function () { openPdfSheet(id); }, 300); });
   saveEntryBtn.addEventListener('click', function () {
     var vessel = vesselNameInput.value.trim();
     if (!vessel || !Number(daysInput.value)) return;
+    if (editingId) { saveEdit(vessel); return; }
     var entry = {
       id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
       vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, numEngines: vesselEnginesInput.value, owner: vesselOwnerInput.value.trim(),
