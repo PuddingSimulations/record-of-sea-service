@@ -310,6 +310,10 @@
   .group-label:first-child { margin-top: 0; }
 
   #signedOverlay { z-index: 70; }
+  .paste-row { display: flex; gap: 8px; margin: 0 0 14px; }
+  .paste-row input { flex: 1; min-width: 0; }
+  .paste-row button { border: none; border-radius: 12px; padding: 0 16px; font-weight: 700; font-size: 14px; background: var(--card-2); color: var(--ink); cursor: pointer; }
+  .paste-row button:active { transform: scale(0.95); }
   .kv { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
   .kv:first-child, .sig-img + .kv { border-top: none; }
   .kv span:first-child { color: var(--ink-2); flex-shrink: 0; }
@@ -542,6 +546,7 @@
     </div>
     <div class="sheet-body">
       <p class="f-intro">Your sea service, laid out in the order of AMSA's Record of Sea Service. Open the AMSA form, then tap any value below to copy it and paste it into the matching field.</p>
+      <div class="paste-row"><input type="text" id="pasteReply" placeholder="Paste a signed reply link" autocomplete="off" autocapitalize="none" /><button type="button" id="pasteReplyBtn">Add</button></div>
       <div id="formList"></div>
     </div>
     <div class="sheet-foot">
@@ -1930,7 +1935,7 @@
     });
     return c.toDataURL('image/png');
   }
-  var signedOverlay = $('signedOverlay'), signedSheet = $('signedSheet'), signedReply = null, signedEntry = null;
+  var signedOverlay = $('signedOverlay'), signedSheet = $('signedSheet'), signedReply = null, signedEntry = null, signedMode = 'add';
   function handleSignedLink() {
     var m = location.hash.match(/^#signed=(.+)$/); if (!m) return;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (err) {}
@@ -1940,7 +1945,13 @@
     var r = b64dec(payload);
     if (!r || !r.id) { showToast('That link could not be read'); return; }
     var e = entries.filter(function (x) { return x.id === r.id; })[0];
-    if (!e) { showToast('That reply belongs to a different phone. Open it on the phone you sent the request from.'); return; }
+    if (!e) {
+      signedMode = 'copy'; signedReply = r; signedEntry = null; signedReply.payload = payload;
+      $('signedBody').innerHTML = '<p class="f-intro">' + escapeHtml(r.sn || 'Your supervisor') + ' signed your sea service, but the entry is saved in a different copy of the app. That is usually the one on your home screen.</p>' +
+        '<div class="form-card"><p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2);">Tap <b style="color:var(--ink);">Copy reply link</b>, open the app from your home screen, go to Form 771 and paste it into <b style="color:var(--ink);">Paste a signed reply link</b>.</p></div>';
+      $('signedAddBtn').textContent = 'Copy reply link'; document.body.style.overflow = 'hidden'; signedOverlay.classList.add('open'); return;
+    }
+    signedMode = 'add'; $('signedAddBtn').textContent = 'Add to my Form 771';
     signedReply = r; signedEntry = e;
     var png = strokesToPng(r.g, r.a), changed = Number(r.d) !== Number(e.days);
     var kv = function (l, v) { return v ? '<div class="kv"><span>' + l + '</span><span>' + escapeHtml(v) + '</span></div>' : ''; };
@@ -1955,6 +1966,11 @@
   $('closeSignedBtn').addEventListener('click', closeSigned); $('signedLaterBtn').addEventListener('click', closeSigned);
   signedOverlay.addEventListener('click', function (ev) { if (ev.target === signedOverlay) closeSigned(); });
   $('signedAddBtn').addEventListener('click', function () {
+    if (signedMode === 'copy' && signedReply) {
+      var link = location.origin + location.pathname + '#signed=' + signedReply.payload;
+      try { navigator.clipboard.writeText(link).then(function () { showToast('Copied. Open the app from your home screen and paste it.'); }, function () { showToast('Could not copy the link'); }); } catch (err) { showToast('Could not copy the link'); }
+      return;
+    }
     var r = signedReply, e = signedEntry; if (!r || !e) return;
     e.supName = r.sn || e.supName; e.supPosition = r.sp || e.supPosition; e.supCert = r.sc || e.supCert; e.supPhone = r.sph || e.supPhone; e.supEmail = r.sem || e.supEmail;
     e.supRole = r.r || e.supRole; e.supRoleOther = r.ro || ''; e.supSig = r.png; e.supDate = (r.t || '').slice(0, 10) || isoDate(new Date());
@@ -1963,6 +1979,11 @@
     setTimeout(function () { openPdfSheet(e.id); }, 350);
   });
   window.addEventListener('hashchange', handleSignedLink);
+  $('pasteReplyBtn').addEventListener('click', function () {
+    var v = $('pasteReply').value.trim(), m = v.match(/#signed=([A-Za-z0-9_-]+)/), payload = m ? m[1] : (/^[A-Za-z0-9_-]{20,}$/.test(v) ? v : '');
+    if (!payload) { showToast('That does not look like a signed reply link'); return; }
+    $('pasteReply').value = ''; closeForm771(); setTimeout(function () { handleSignedPayload(payload); }, 300);
+  });
 
   var pdfOverlay = $('pdfOverlay'), pdfSheet = $('pdfSheet'), pdfEntry = null, pdfBytes = null, pdfTimer = null, pdfSeq = 0, mySig = null, supSigPad = null;
   function loadScript(src) {
