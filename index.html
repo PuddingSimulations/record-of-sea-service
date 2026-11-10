@@ -4,238 +4,430 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Sea Service" />
+<meta name="format-detection" content="telephone=no" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" href="icon-192.png" />
 <title>Record of Sea Service</title>
 <style>
   :root {
     --navy: #1B2A4A;
+    --navy-2: #2B4170;
     --amber: #C08A3E;
-    --amber-light: #C08A3E22;
-    --gray-500: #6B7280;
-    --gray-400: #9CA3AF;
-    --gray-200: #E5E7EB;
-    --ink: #2A2A2A;
-    --deck: #3D6B6B;
-    --engineering: #C08A3E;
-    --deck-eng: #7A5C8E;
+    --amber-soft: rgba(192,138,62,0.14);
+    --bg: #F2F2F7;
+    --card: #FFFFFF;
+    --card-2: #F2F2F7;
+    --ink: #111827;
+    --ink-2: #6B7280;
+    --ink-3: #9CA3AF;
+    --line: rgba(60,60,67,0.12);
+    --glass: rgba(242,242,247,0.78);
+    --good: #2F8F6B;
+    --danger: #E5484D;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(17,24,39,0.06);
+    --ease: cubic-bezier(.32,.72,0,1);
+    --spring: cubic-bezier(.34,1.56,.64,1);
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1C1C1E;
+      --card-2: #2C2C2E;
+      --ink: #F5F5F7;
+      --ink-2: #A1A1AA;
+      --ink-3: #6B6B73;
+      --line: rgba(255,255,255,0.10);
+      --glass: rgba(0,0,0,0.72);
+      --amber-soft: rgba(212,160,86,0.18);
+      --amber: #D4A056;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; background: #FFFFFF; }
-  body { font-family: -apple-system, system-ui, sans-serif; color: var(--ink); }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 112px; }
-  header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-  .badge { width: 44px; height: 44px; border-radius: 999px; background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  h1 { font-size: 24px; font-weight: 700; color: var(--navy); margin: 0; letter-spacing: 0.01em; }
-  .subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray-500); margin: 2px 0 0; }
-  .total-card { background: var(--navy); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
-  .total-card .label { font-size: 14px; color: #C9BFA0; }
-  .total-card .value { font-size: 30px; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums; }
-  .section-heading { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray-500); margin: 0 0 8px 4px; }
-  .summary-box { border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
-  .summary-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid #E8E0C8; }
-  .summary-row:first-child { border-top: none; }
-  .summary-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .dot-bar { width: 6px; height: 24px; border-radius: 999px; flex-shrink: 0; }
-  .summary-name { font-size: 14px; }
-  .summary-code { font-size: 12px; color: var(--gray-500); }
-  .summary-total { font-size: 14px; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; flex-shrink: 0; padding-left: 8px; }
-  .empty-box { border: 1px dashed var(--gray-200); border-radius: 12px; padding: 32px 16px; text-align: center; }
-  .empty-box p { font-size: 14px; color: var(--gray-500); margin: 0; }
-  .entries-list { display: flex; flex-direction: column; gap: 8px; }
-  .entry-card { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .entry-main { min-width: 0; }
-  .entry-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .entry-vessel { font-size: 14px; font-weight: 600; }
-  .entry-code { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
-  .entry-dates { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-  .entry-details { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
-  .entry-notes { font-size: 12px; color: var(--gray-400); font-style: italic; margin-top: 4px; }
-  .delete-btn { flex-shrink: 0; padding: 6px; border-radius: 999px; border: none; background: transparent; cursor: pointer; }
-  .delete-btn:active { background: rgba(0,0,0,0.05); }
-  .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 999px; background: var(--amber); border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.2); cursor: pointer; z-index: 40; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(27,42,74,0.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
-  .modal-overlay.open { display: flex; }
-  .modal { width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: #FFFFFF; border-radius: 16px; padding: 20px; }
-  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .modal-header h2 { font-size: 18px; font-weight: 600; color: var(--navy); margin: 0; }
-  .close-btn { padding: 4px; border-radius: 999px; border: none; background: transparent; cursor: pointer; }
-  .close-btn:active { background: rgba(0,0,0,0.05); }
-  .form-section { padding-top: 16px; border-top: 1px solid var(--gray-200); }
-  .form-section:first-child { padding-top: 0; border-top: none; }
-  .form-section + .form-section { margin-top: 20px; }
-  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--navy); margin: 0 0 12px; }
-  .field { margin-bottom: 12px; }
-  .field:last-child { margin-bottom: 0; }
-  .field-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); margin-bottom: 4px; }
-  .field-hint { font-size: 11px; color: var(--gray-400); margin: 4px 0 0; }
-  input[type=text], input[type=number], select, textarea {
-    width: 100%; border: 1px solid var(--gray-200); border-radius: 8px; padding: 8px 12px;
-    font-size: 14px; color: var(--ink); background: #FFFFFF; font-family: inherit; outline: none;
+  html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; overscroll-behavior-y: none;
   }
+  input, textarea, select { -webkit-user-select: text; user-select: text; }
+  button { font-family: inherit; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: calc(var(--sat) + 12px) 16px calc(var(--sab) + 120px); }
+
+  /* Header */
+  header { display: flex; align-items: flex-end; justify-content: space-between; padding: 8px 4px 18px; }
+  h1 { font-size: 34px; line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; margin: 0; }
+  .subtitle { font-size: 13px; color: var(--ink-2); margin: 6px 0 0; font-weight: 500; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 999px; border: none; background: var(--card); color: var(--navy);
+    display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); cursor: pointer; transition: transform .2s var(--spring); }
+  .icon-btn:active { transform: scale(0.88); }
+  @media (prefers-color-scheme: dark) { .icon-btn { color: var(--amber); } }
+
+  /* Entrance animation */
+  .rise { opacity: 0; transform: translateY(14px); animation: rise .6s var(--ease) forwards; }
+  .rise.d1 { animation-delay: .05s; } .rise.d2 { animation-delay: .12s; } .rise.d3 { animation-delay: .19s; } .rise.d4 { animation-delay: .26s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* Hero */
+  .hero { position: relative; overflow: hidden; border-radius: 26px; padding: 22px 22px 20px; color: #fff; margin-bottom: 16px;
+    background: radial-gradient(120% 140% at 100% 0%, #3A5594 0%, rgba(58,85,148,0) 55%), linear-gradient(160deg, var(--navy-2), var(--navy) 70%);
+    box-shadow: 0 14px 34px rgba(27,42,74,0.35); }
+  .hero::after { content: ""; position: absolute; right: -40px; bottom: -60px; width: 200px; height: 200px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 0 0 28px rgba(255,255,255,0.03), 0 0 0 56px rgba(255,255,255,0.02); pointer-events: none; }
+  .hero-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.65); }
+  .hero-value { font-size: 68px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; margin: 8px 0 14px; font-variant-numeric: tabular-nums; }
+  .hero-value small { font-size: 20px; font-weight: 600; letter-spacing: 0; color: rgba(255,255,255,0.65); margin-left: 6px; }
+  .hero-stats { display: flex; gap: 8px; position: relative; z-index: 1; }
+  .pill { font-size: 12px; font-weight: 600; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,0.12); color: #fff;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 22px; padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .section-heading { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 0 0 10px 6px; letter-spacing: 0.01em; }
+  .card .section-heading { margin: 0 0 12px; }
+
+  .select-wrap { position: relative; margin-bottom: 12px; }
+  .select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
+    border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); pointer-events: none; }
+  select, input[type=text], input[type=number], textarea {
+    width: 100%; border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; color: var(--ink);
+    background: var(--card-2); font-family: inherit; outline: none; -webkit-appearance: none; appearance: none;
+    transition: box-shadow .2s ease, background .2s ease; }
+  select { padding-right: 38px; font-weight: 600; }
+  input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 2px var(--amber); }
   textarea { resize: none; }
-  input:disabled { opacity: 0.6; }
+  input:disabled { opacity: 0.5; }
+
+  /* Segmented control with sliding thumb */
+  .segmented { position: relative; display: flex; background: var(--card-2); border-radius: 12px; padding: 3px; margin-bottom: 18px; }
+  .segmented .thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px; background: var(--card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12); transition: transform .35s var(--ease); }
+  .segmented.right .thumb { transform: translateX(100%); }
+  .segmented button { position: relative; z-index: 1; flex: 1; border: none; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 9px 4px; cursor: pointer; transition: color .2s; }
+  .segmented button.active { color: var(--ink); }
+
+  /* Progress ring */
+  .ring-row { display: flex; align-items: center; gap: 18px; }
+  .ring { position: relative; width: 112px; height: 112px; flex-shrink: 0; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .track { fill: none; stroke: var(--card-2); stroke-width: 11; }
+  .ring .bar { fill: none; stroke: url(#ringGrad); stroke-width: 11; stroke-linecap: round; stroke-dasharray: 270; stroke-dashoffset: 270; transition: stroke-dashoffset 1s var(--ease); }
+  .ring.complete .bar { stroke: var(--good); }
+  .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-pct { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .ring-pct sup { font-size: 13px; font-weight: 700; color: var(--ink-2); vertical-align: top; position: relative; top: 4px; }
+  .ring.complete .ring-center::before { content: "\2713"; position: absolute; top: 20px; font-size: 14px; color: var(--good); font-weight: 800; }
+  .ring-info { min-width: 0; }
+  .ring-days { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .ring-days > span:last-child { font-size: 15px; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
+  .ring-sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .sub-progress { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .bar-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .bar-label span:last-child { color: var(--ink-2); font-weight: 500; }
+  .bar-track { height: 8px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
+  .bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--amber), #E3B26B); transition: width .9s var(--ease); }
+  .bar-fill.complete { background: var(--good); }
+  .ticket-note { font-size: 12px; line-height: 1.45; color: var(--ink-3); margin: 14px 0 0; }
+  .custom-days-field { display: none; margin-bottom: 16px; }
+  .field-label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin: 0 0 6px 2px; }
+  .field-hint { font-size: 12px; line-height: 1.4; color: var(--ink-3); margin: 6px 2px 0; }
+
+  /* Duty summary */
+  .summary-row { padding: 9px 0; }
+  .summary-row + .summary-row { border-top: 1px solid var(--line); }
+  .summary-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+  .summary-name { font-size: 14px; font-weight: 600; }
+  .summary-code { font-size: 12px; color: var(--ink-3); font-weight: 500; margin-left: 4px; }
+  .summary-total { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .summary-track { height: 6px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
+  .summary-fill { height: 100%; width: 0; border-radius: 999px; transition: width .9s var(--ease); }
+
+  /* Entries */
+  .empty-box { text-align: center; padding: 44px 24px; background: var(--card); border-radius: 22px; box-shadow: var(--shadow); }
+  .empty-box .emoji { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; background: var(--amber-soft); display: flex; align-items: center; justify-content: center; }
+  .empty-box h3 { margin: 0 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+  .empty-box p { font-size: 14px; color: var(--ink-2); margin: 0; line-height: 1.45; }
+  .entries-list { display: flex; flex-direction: column; gap: 10px; }
+  .swipe { position: relative; border-radius: 20px; overflow: hidden; background: transparent; transition: opacity .3s ease, transform .3s var(--ease), max-height .35s var(--ease), margin .35s var(--ease); max-height: 400px; }
+  .swipe.swiping, .swipe.removing { background: var(--danger); }
+  .swipe.removing { opacity: 0; transform: translateX(-30%); max-height: 0; margin-top: -10px; }
+  .swipe-action { position: absolute; inset: 0 0 0 auto; width: 100px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; gap: 6px; }
+  .entry-card { position: relative; background: var(--card); border-radius: 20px; padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; touch-action: pan-y; will-change: transform; box-shadow: var(--shadow); }
+  .entry-card.snap { transition: transform .35s var(--ease); }
+  .swipe.new { animation: pop .6s var(--spring); }
+  @keyframes pop { from { transform: scale(0.92); opacity: 0; } to { transform: none; opacity: 1; } }
+  .entry-main { min-width: 0; flex: 1; }
+  .entry-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .entry-vessel { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .entry-code { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+  .entry-dates { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+  .entry-details { font-size: 12px; color: var(--ink-3); margin-top: 6px; line-height: 1.4; }
+  .entry-notes { font-size: 12px; color: var(--ink-2); font-style: italic; margin-top: 6px; }
+  .entry-days { text-align: center; flex-shrink: 0; min-width: 44px; }
+  .entry-days b { display: block; font-size: 24px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .entry-days span { font-size: 11px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* FAB */
+  .fab { position: fixed; right: 20px; bottom: calc(var(--sab) + 20px); height: 58px; padding: 0 24px 0 18px; border-radius: 999px; border: none;
+    background: linear-gradient(180deg, #D4A056, var(--amber)); color: #1B2A4A; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 10px 28px rgba(192,138,62,0.5), 0 2px 6px rgba(0,0,0,0.15); cursor: pointer; z-index: 40; transition: transform .25s var(--spring), box-shadow .25s ease; }
+  .fab:active { transform: scale(0.92); box-shadow: 0 4px 12px rgba(192,138,62,0.4); }
+
+  /* Bottom sheet */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0); z-index: 50; display: flex; align-items: flex-end; justify-content: center; visibility: hidden;
+    transition: background .4s ease, visibility 0s linear .45s; -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px); }
+  .overlay.open { background: rgba(0,0,0,0.42); visibility: visible; transition: background .4s ease, visibility 0s; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .sheet { width: 100%; max-width: 560px; max-height: 92vh; max-height: 92dvh; display: flex; flex-direction: column; background: var(--bg); border-radius: 28px 28px 0 0;
+    transform: translateY(100%); transition: transform .5s var(--ease); will-change: transform; }
+  .overlay.open .sheet { transform: none; }
+  .sheet.dragging { transition: none; }
+  .sheet-head { flex-shrink: 0; padding: 8px 20px 10px; touch-action: none; }
+  .grabber { width: 38px; height: 5px; border-radius: 999px; background: var(--ink-3); opacity: 0.45; margin: 0 auto 10px; }
+  .sheet-title-row { display: flex; align-items: center; justify-content: space-between; }
+  .sheet-title-row h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .close-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--card-2); color: var(--ink-2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .close-btn:active { transform: scale(0.9); }
+  .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 4px 16px 8px; flex: 1; }
+  .sheet-foot { flex-shrink: 0; padding: 12px 16px calc(var(--sab) + 14px); background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+  .form-card { background: var(--card); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
+  .form-card .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin: 0 0 14px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .vessel-select { border-color: var(--amber) !important; background: var(--amber-light) !important; color: var(--navy) !important; }
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .autocalc-btn { font-size: 11px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--gray-200); background: transparent; color: var(--gray-500); cursor: pointer; }
-  .autocalc-btn.active { border-color: var(--amber); color: var(--amber); background: var(--amber-light); }
-  .calendar-box { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px; }
-  .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .calendar-nav button { width: 32px; height: 32px; border-radius: 999px; border: none; background: transparent; font-size: 18px; color: var(--navy); cursor: pointer; }
-  .calendar-nav button:active { background: rgba(0,0,0,0.05); }
-  .calendar-nav span { font-size: 14px; font-weight: 600; color: var(--navy); }
-  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--gray-400); margin-bottom: 4px; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; }
-  .day-cell { width: 32px; height: 32px; margin: 0 auto; border-radius: 999px; border: none; background: transparent; font-size: 12px; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .day-cell.faded { opacity: 0.3; }
-  .day-cell.inrange { background: #C08A3E33; }
-  .day-cell.endpoint { background: var(--amber); color: #FFFFFF; font-weight: 700; }
-  .cal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-200); }
-  .cal-footer span { font-size: 12px; color: var(--gray-500); }
-  .clear-btn { font-size: 12px; color: var(--amber); background: none; border: none; cursor: pointer; padding-left: 8px; flex-shrink: 0; }
-  .save-btn { width: 100%; border: none; border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600; background: var(--amber); color: var(--navy); cursor: pointer; margin-top: 20px; }
-  .save-btn:disabled { opacity: 0.4; }
+  .vessel-select { background: var(--amber-soft) !important; color: var(--ink) !important; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .autocalc-btn { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; border: none; background: var(--card-2); color: var(--ink-2); cursor: pointer; transition: all .2s; }
+  .autocalc-btn.active { background: var(--amber-soft); color: var(--amber); }
+
+  /* Calendar */
+  .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .calendar-nav button { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--card-2); font-size: 20px; line-height: 1; color: var(--ink); cursor: pointer; transition: transform .2s var(--spring); }
+  .calendar-nav button:active { transform: scale(0.85); }
+  .calendar-nav span { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; font-weight: 600; color: var(--ink-3); margin-bottom: 4px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; }
+  .day-cell { position: relative; height: 38px; border: none; background: transparent; font-size: 15px; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; padding: 0; }
+  .day-cell span { position: relative; z-index: 1; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform .25s var(--spring), background .2s; }
+  .day-cell:active span { transform: scale(0.85); }
+  .day-cell.faded { opacity: 0.28; }
+  .day-cell.today span { color: var(--amber); font-weight: 800; }
+  .day-cell.inrange::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; bottom: 2px; background: var(--amber-soft); }
+  .day-cell.rstart::before { content: ""; position: absolute; left: 50%; right: 0; top: 2px; bottom: 2px; background: var(--amber-soft); }
+  .day-cell.rend::before { content: ""; position: absolute; left: 0; right: 50%; top: 2px; bottom: 2px; background: var(--amber-soft); }
+  .day-cell.endpoint span { background: var(--amber); color: #fff; font-weight: 700; transform: scale(1.02); }
+  .day-cell.rstart.rend::before { display: none; }
+  .cal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); min-height: 40px; }
+  .cal-footer span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .clear-btn { font-size: 14px; font-weight: 600; color: var(--amber); background: none; border: none; cursor: pointer; padding: 4px 0 4px 8px; flex-shrink: 0; }
+
+  .save-btn { width: 100%; border: none; border-radius: 16px; padding: 16px; font-size: 17px; font-weight: 700; background: var(--navy); color: #fff; cursor: pointer; transition: transform .2s var(--spring), opacity .2s; }
+  @media (prefers-color-scheme: dark) { .save-btn { background: var(--amber); color: #1B2A4A; } }
+  .save-btn:active { transform: scale(0.97); }
+  .save-btn:disabled { opacity: 0.35; transform: none; }
+
+  /* Toast */
+  .toast { position: fixed; left: 50%; bottom: calc(var(--sab) + 92px); transform: translate(-50%, 30px) scale(0.95); opacity: 0; pointer-events: none; z-index: 60;
+    display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; background: rgba(28,28,30,0.92); color: #fff; font-size: 14px; font-weight: 500;
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform .45s var(--spring), opacity .25s ease; white-space: nowrap; }
+  .toast.show { transform: translate(-50%, 0) scale(1); opacity: 1; pointer-events: auto; }
+  .toast button { border: none; background: none; color: #E3B26B; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-delay: 0s !important; }
+  }
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <header>
-    <div class="badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="5" r="3"></circle><line x1="12" y1="22" x2="12" y2="8"></line><path d="M5 12H2a10 10 0 0 0 20 0h-3"></path>
-      </svg>
-    </div>
+  <header class="rise">
     <div>
-      <h1>Record of Sea Service</h1>
+      <h1>Sea Service</h1>
       <p class="subtitle">AMSA Form 771 · Near Coastal</p>
     </div>
+    <button class="icon-btn" id="exportBtn" aria-label="Export entries">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+    </button>
   </header>
 
-  <div class="total-card">
-    <span class="label">Total qualifying days</span>
-    <span class="value" id="grandTotal">0</span>
-  </div>
+  <section class="hero rise d1">
+    <div class="hero-label">Total qualifying days</div>
+    <div class="hero-value"><span id="grandTotal">0</span><small>days</small></div>
+    <div class="hero-stats">
+      <span class="pill" id="statEntries">0 entries</span>
+      <span class="pill" id="statVessels">0 vessels</span>
+    </div>
+  </section>
+
+  <section class="card rise d2">
+    <p class="section-heading">Ticket progress</p>
+    <div class="select-wrap"><select id="ticketSelect" aria-label="Ticket"></select></div>
+
+    <div class="segmented" id="taskBookToggle">
+      <div class="thumb"></div>
+      <button type="button" data-tb="with" class="active">With task book</button>
+      <button type="button" data-tb="without">Without task book</button>
+    </div>
+
+    <div class="custom-days-field" id="customDaysField">
+      <label class="field-label" for="customDaysInput">Days required</label>
+      <input type="number" inputmode="numeric" min="1" id="customDaysInput" value="30" />
+    </div>
+
+    <div class="ring-row">
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#E3B26B"/><stop offset="1" stop-color="#C08A3E"/>
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="50" cy="50" r="43"/>
+          <circle class="bar" id="ringBar" cx="50" cy="50" r="43"/>
+        </svg>
+        <div class="ring-center"><div class="ring-pct"><span id="ticketPct">0</span><sup>%</sup></div></div>
+      </div>
+      <div class="ring-info">
+        <div class="ring-days"><span id="ticketLogged">0</span> <span>/ <span id="ticketRequired">0</span> days</span></div>
+        <div class="ring-sub" id="ticketRemaining"></div>
+      </div>
+    </div>
+
+    <div class="sub-progress" id="ticketSubProgress" style="display:none;">
+      <div class="bar-label"><span id="ticketSubLabel"></span><span id="ticketSubDaysLabel"></span></div>
+      <div class="bar-track"><div class="bar-fill" id="ticketSubProgressFill"></div></div>
+    </div>
+
+    <p class="ticket-note" id="ticketNote"></p>
+  </section>
 
   <div id="summarySection"></div>
 
-  <div>
+  <div class="rise d3">
     <p class="section-heading">Entries</p>
     <div id="entriesSection"></div>
   </div>
 </div>
 
 <button class="fab" id="openModalBtn" aria-label="Add sea service entry">
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Add
 </button>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal" id="modalBox">
-    <div class="modal-header">
-      <h2>Add Sea Service</h2>
-      <button class="close-btn" id="closeModalBtn" aria-label="Close">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAction" type="button"></button></div>
+
+<div class="overlay" id="modalOverlay">
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Add sea service">
+    <div class="sheet-head" id="sheetHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>Add Sea Service</h2>
+        <button class="close-btn" id="closeModalBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
 
-    <div class="form-section">
-      <p class="section-title">Vessel details</p>
-      <div class="field" id="knownVesselField" style="display:none;">
-        <label class="field-label">Use existing vessel</label>
-        <select id="knownVesselSelect" class="vessel-select">
-          <option value="">Select a vessel to pre-fill…</option>
-        </select>
-        <p class="field-hint">Fills in the vessel identifier, length, power and propulsion from your last entry for that vessel. You can still edit any of it below.</p>
-      </div>
-      <div class="field">
-        <label class="field-label">Vessel name</label>
-        <input type="text" id="vesselName" placeholder="e.g. MV Southern Star" />
-      </div>
-      <div class="field">
-        <label class="field-label">Vessel identifier</label>
-        <input type="text" id="vesselId" placeholder="e.g. registration / call sign" />
-      </div>
-      <div class="field row-2">
-        <div>
-          <label class="field-label">Length (m)</label>
-          <input type="number" min="0" id="vesselLength" />
+    <div class="sheet-body" id="sheetBody">
+      <div class="form-card">
+        <p class="section-title">Vessel details</p>
+        <div class="field" id="knownVesselField" style="display:none;">
+          <label class="field-label" for="knownVesselSelect">Use existing vessel</label>
+          <div class="select-wrap" style="margin:0;"><select id="knownVesselSelect" class="vessel-select"><option value="">Select a vessel to pre-fill…</option></select></div>
+          <p class="field-hint">Fills in identifier, length, power and propulsion from your last entry for that vessel.</p>
         </div>
-        <div>
-          <label class="field-label">Power (kW)</label>
-          <input type="number" min="0" id="vesselPower" />
+        <div class="field">
+          <label class="field-label" for="vesselName">Vessel name</label>
+          <input type="text" id="vesselName" placeholder="e.g. MV Southern Star" autocomplete="off" autocapitalize="words" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="vesselId">Vessel identifier</label>
+          <input type="text" id="vesselId" placeholder="Registration / call sign" autocomplete="off" autocapitalize="characters" />
+        </div>
+        <div class="field row-2">
+          <div>
+            <label class="field-label" for="vesselLength">Length (m)</label>
+            <input type="number" inputmode="decimal" min="0" id="vesselLength" />
+          </div>
+          <div>
+            <label class="field-label" for="vesselPower">Power (kW)</label>
+            <input type="number" inputmode="decimal" min="0" id="vesselPower" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="propulsion">Propulsion type</label>
+          <div class="select-wrap" style="margin:0;"><select id="propulsion"></select></div>
         </div>
       </div>
-      <div class="field">
-        <label class="field-label">Propulsion type</label>
-        <select id="propulsion"></select>
-      </div>
-    </div>
 
-    <div class="form-section">
-      <p class="section-title">Operation</p>
-      <div class="field">
-        <label class="field-label">Type of operation</label>
-        <select id="operationType"></select>
+      <div class="form-card">
+        <p class="section-title">Operation</p>
+        <div class="field">
+          <label class="field-label" for="operationType">Type of operation</label>
+          <div class="select-wrap" style="margin:0;"><select id="operationType"></select></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="modeOfOperation">Mode of operation</label>
+          <div class="select-wrap" style="margin:0;"><select id="modeOfOperation"></select></div>
+        </div>
       </div>
-      <div class="field">
-        <label class="field-label">Mode of operation</label>
-        <select id="modeOfOperation"></select>
-      </div>
-    </div>
 
-    <div class="form-section">
-      <p class="section-title">Your role</p>
-      <div class="field">
-        <label class="field-label">Position on board</label>
-        <input type="text" id="position" placeholder="e.g. Second Mate, Assistant Engineer" />
+      <div class="form-card">
+        <p class="section-title">Your role</p>
+        <div class="field">
+          <label class="field-label" for="position">Position on board</label>
+          <input type="text" id="position" placeholder="e.g. Second Mate, Assistant Engineer" autocomplete="off" autocapitalize="words" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="dutyCategory">Duty category</label>
+          <div class="select-wrap" style="margin:0;"><select id="dutyCategory"></select></div>
+        </div>
       </div>
-      <div class="field">
-        <label class="field-label">Duty category</label>
-        <select id="dutyCategory"></select>
-      </div>
-    </div>
 
-    <div class="form-section">
-      <p class="section-title">Sea time</p>
-      <div class="field">
-        <label class="field-label">Voyage dates</label>
-        <div class="calendar-box">
+      <div class="form-card">
+        <p class="section-title">Sea time</p>
+        <div class="field">
           <div class="calendar-nav">
             <button type="button" id="prevMonthBtn" aria-label="Previous month">‹</button>
             <span id="calendarMonthLabel"></span>
             <button type="button" id="nextMonthBtn" aria-label="Next month">›</button>
           </div>
-          <div class="cal-weekdays">
-            <div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div><div>Su</div>
-          </div>
+          <div class="cal-weekdays"><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div><div>Su</div></div>
           <div class="cal-grid" id="calGrid"></div>
           <div class="cal-footer">
             <span id="dateRangeLabel">Tap a start date, then a finish date</span>
             <button type="button" class="clear-btn" id="clearDatesBtn" style="display:none;">Clear</button>
           </div>
         </div>
-      </div>
-      <div class="field">
-        <div class="toggle-row">
-          <label class="field-label" style="margin-bottom:0;">Qualifying days</label>
-          <button type="button" class="autocalc-btn active" id="autoCalcBtn">Auto (from dates)</button>
+        <div class="field">
+          <div class="toggle-row">
+            <label class="field-label" for="daysInput" style="margin:0;">Qualifying days</label>
+            <button type="button" class="autocalc-btn active" id="autoCalcBtn">Auto (from dates)</button>
+          </div>
+          <input type="number" inputmode="numeric" min="1" id="daysInput" value="1" disabled />
+          <p class="field-hint" id="daysHint"></p>
         </div>
-        <input type="number" min="1" id="daysInput" value="1" disabled />
-        <p class="field-hint" id="daysHint">Counting every calendar day from start to finish, inclusive. Switch to Manual if there were days off in between that shouldn't count.</p>
+      </div>
+
+      <div class="form-card">
+        <div class="field">
+          <label class="field-label" for="notes">Notes (optional)</label>
+          <textarea id="notes" rows="2" placeholder="e.g. supervisor name, task book reference"></textarea>
+        </div>
       </div>
     </div>
 
-    <div class="field" style="margin-top:20px;">
-      <label class="field-label">Notes (optional)</label>
-      <textarea id="notes" rows="2" placeholder="e.g. supervisor name, task book reference"></textarea>
-    </div>
-
-    <button class="save-btn" id="saveEntryBtn" disabled>Save entry</button>
+    <div class="sheet-foot"><button class="save-btn" id="saveEntryBtn" disabled>Save entry</button></div>
   </div>
 </div>
 
@@ -244,6 +436,7 @@
   'use strict';
 
   var STORAGE_KEY = 'sea-service-entries';
+  var TICKET_STORAGE_KEY = 'sea-service-ticket-selection';
 
   var DUTY_CATEGORIES = [
     { code: 'AEIC', name: 'Assistant to engineer in charge', group: 'Engineering' },
@@ -258,135 +451,124 @@
     { code: 'C', name: 'Coxswain grade 1 or 2 or 3', group: 'Deck' }
   ];
 
-  var GROUP_COLORS = {
-    'Deck': '#3D6B6B',
-    'Engineering': '#C08A3E',
-    'Deck & Engineering': '#7A5C8E',
-    'Other': '#6B6B6B'
-  };
+  var GROUP_COLORS = { 'Deck': '#3D8B8B', 'Engineering': '#C08A3E', 'Deck & Engineering': '#8E6BAA', 'Other': '#6B6B6B' };
 
-  var PROPULSION_TYPES = [
-    { code: 'I', name: 'Inboard' },
-    { code: 'O', name: 'Outboard' },
-    { code: 'S', name: 'Steam' }
-  ];
-
-  var OPERATION_TYPES = [
-    { code: 'C', name: 'Commercial' },
-    { code: 'R', name: 'Recreational' },
-    { code: 'M', name: 'Military' }
-  ];
-
+  var PROPULSION_TYPES = [ { code: 'I', name: 'Inboard' }, { code: 'O', name: 'Outboard' }, { code: 'S', name: 'Steam' } ];
+  var OPERATION_TYPES = [ { code: 'C', name: 'Commercial' }, { code: 'R', name: 'Recreational' }, { code: 'M', name: 'Military' } ];
   var MODE_OF_OPERATION = [
     { code: 'VU', name: 'Underway' },
-    { code: 'NUD', name: 'Not underway \u2013 deck or refit work' },
-    { code: 'NUE', name: 'Not underway \u2013 engine or refit work' }
+    { code: 'NUD', name: 'Not underway – deck or refit work' },
+    { code: 'NUE', name: 'Not underway – engine or refit work' }
   ];
 
+  // Day requirements sourced from AMSA's own certificate pages (amsa.gov.au), Nov 2026.
+  // Figures can change and some certificates have additional conditions (vessel size,
+  // propulsion type, etc.) this app can't track automatically — always confirm against
+  // AMSA before relying on these for an application.
+  var TICKETS = [
+    { id: 'gph', name: 'General Purpose Hand (GPH) NC', categories: null, withTaskBook: 5, withoutTaskBook: 5,
+      note: '5 days of sea service on commercial vessels of any size. No task book reduction applies.' },
+    { id: 'cox2', name: 'Coxswain Grade 2 NC', categories: ['D', 'DE'], withTaskBook: 10, withoutTaskBook: 50,
+      note: 'Deck, or deck and engineering duties.' },
+    { id: 'cox1', name: 'Coxswain Grade 1 NC', categories: ['D', 'DE'], withTaskBook: 30, withoutTaskBook: 150,
+      note: 'Deck, or deck and engineering duties, on vessels at least 5m long.' },
+    { id: 'med3', name: 'Marine Engine Driver Grade 3 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'C'], withTaskBook: 20, withoutTaskBook: 60,
+      note: 'As GPH, Coxswain 1/2, or assistant to an engineer/engine driver, on vessels ≥75kW. At least half (10 or 30 days) must be on an inboard diesel engine — this app doesn’t track that split, so check it yourself.' },
+    { id: 'med2', name: 'Marine Engine Driver Grade 2 NC', categories: ['GPH', 'AE/ED', 'AEIC'], withTaskBook: 180, withoutTaskBook: 360,
+      note: 'As GPH, or assistant to an engine driver/chief/second engineer, on vessels ≥150kW with inboard diesel engines.' },
+    { id: 'master45', name: 'Master <45m NC', categories: ['D', 'DE', 'GPH', 'INW', 'C'], withTaskBook: 180, withoutTaskBook: 360,
+      subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
+      note: 'On commercial vessels ≥12m long, while holding a Master <24m or Mate <80m.' },
+    { id: 'custom', name: 'Custom / other ticket', categories: null, custom: true,
+      note: 'Tracks your total logged days against a day count you set yourself.' }
+  ];
+
+  // ---- Helpers ----
   function formatDate(iso) {
     if (!iso) return '';
-    var d = new Date(iso + 'T00:00:00');
-    return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
   }
-
   function isoDate(d) {
-    var y = d.getFullYear();
-    var m = String(d.getMonth() + 1).padStart(2, '0');
-    var day = String(d.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + day;
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
-
   function buildMonthGrid(viewDate) {
-    var year = viewDate.getFullYear();
-    var month = viewDate.getMonth();
-    var firstOfMonth = new Date(year, month, 1);
-    var firstWeekday = (firstOfMonth.getDay() + 6) % 7;
+    var year = viewDate.getFullYear(), month = viewDate.getMonth();
+    var firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
     var gridStart = new Date(year, month, 1 - firstWeekday);
     var days = [];
-    for (var i = 0; i < 42; i++) {
-      var d = new Date(gridStart);
-      d.setDate(gridStart.getDate() + i);
-      days.push(d);
-    }
+    for (var i = 0; i < 42; i++) { var d = new Date(gridStart); d.setDate(gridStart.getDate() + i); days.push(d); }
     return days;
   }
-
   function daysBetween(start, end) {
     if (!start || !end) return null;
-    var s = new Date(start + 'T00:00:00');
-    var e = new Date(end + 'T00:00:00');
-    var diff = Math.round((e - s) / 86400000) + 1;
+    var diff = Math.round((new Date(end + 'T00:00:00') - new Date(start + 'T00:00:00')) / 86400000) + 1;
     return diff > 0 ? diff : null;
   }
-
   function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+    return String(str).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
-
   function uuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
   }
+  function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch (e) {} }
+  var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Animated number counter
+  var counters = new WeakMap();
+  function countTo(el, to, suffix) {
+    suffix = suffix || '';
+    var from = Number(el.getAttribute('data-v')) || 0;
+    el.setAttribute('data-v', to);
+    if (reduceMotion || from === to) { el.textContent = to + suffix; return; }
+    var prev = counters.get(el); if (prev) cancelAnimationFrame(prev);
+    var t0 = null, dur = 800;
+    function step(t) {
+      if (t0 === null) t0 = t;
+      var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 4);
+      el.textContent = Math.round(from + (to - from) * e) + suffix;
+      if (p < 1) counters.set(el, requestAnimationFrame(step));
+    }
+    counters.set(el, requestAnimationFrame(step));
+  }
 
   // ---- State ----
   var entries = [];
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) entries = JSON.parse(raw);
-  } catch (e) { entries = []; }
+  try { var raw = localStorage.getItem(STORAGE_KEY); if (raw) entries = JSON.parse(raw) || []; } catch (e) { entries = []; }
 
-  var form = defaultForm();
-  var autoCalc = true;
-  var calendarMonth = new Date();
-
+  var form, autoCalc = true, calendarMonth = new Date(), lastAddedId = null, firstRender = true;
   function defaultForm() {
-    return {
-      vessel: '', vesselId: '', position: '', vesselLength: '', vesselPower: '',
-      propulsion: 'I', operationType: 'C', modeOfOperation: 'VU', category: 'D',
-      start: '', end: '', days: 1, notes: ''
-    };
+    return { start: '', end: '', days: 1 };
   }
+  form = defaultForm();
 
-  function saveEntries() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {}
-  }
+  function saveEntries() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} }
+
+  var ticketState = { ticketId: 'gph', taskBook: 'with', customDays: 30 };
+  try { var rawTicket = localStorage.getItem(TICKET_STORAGE_KEY); if (rawTicket) ticketState = Object.assign(ticketState, JSON.parse(rawTicket)); } catch (e) {}
+  function saveTicketState() { try { localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticketState)); } catch (e) {} }
 
   // ---- DOM refs ----
   var $ = function (id) { return document.getElementById(id); };
-  var grandTotalEl = $('grandTotal');
-  var summarySection = $('summarySection');
-  var entriesSection = $('entriesSection');
-  var modalOverlay = $('modalOverlay');
-  var vesselNameInput = $('vesselName');
-  var vesselIdInput = $('vesselId');
-  var vesselLengthInput = $('vesselLength');
-  var vesselPowerInput = $('vesselPower');
-  var propulsionSelect = $('propulsion');
-  var operationTypeSelect = $('operationType');
-  var modeOfOperationSelect = $('modeOfOperation');
-  var positionInput = $('position');
-  var dutyCategorySelect = $('dutyCategory');
-  var notesInput = $('notes');
-  var daysInput = $('daysInput');
-  var daysHint = $('daysHint');
-  var autoCalcBtn = $('autoCalcBtn');
-  var calendarMonthLabel = $('calendarMonthLabel');
-  var calGrid = $('calGrid');
-  var dateRangeLabel = $('dateRangeLabel');
-  var clearDatesBtn = $('clearDatesBtn');
-  var knownVesselField = $('knownVesselField');
-  var knownVesselSelect = $('knownVesselSelect');
-  var saveEntryBtn = $('saveEntryBtn');
+  var grandTotalEl = $('grandTotal'), summarySection = $('summarySection'), entriesSection = $('entriesSection');
+  var modalOverlay = $('modalOverlay'), sheet = $('sheet'), sheetBody = $('sheetBody'), sheetHead = $('sheetHead');
+  var vesselNameInput = $('vesselName'), vesselIdInput = $('vesselId'), vesselLengthInput = $('vesselLength'), vesselPowerInput = $('vesselPower');
+  var propulsionSelect = $('propulsion'), operationTypeSelect = $('operationType'), modeOfOperationSelect = $('modeOfOperation');
+  var positionInput = $('position'), dutyCategorySelect = $('dutyCategory'), notesInput = $('notes');
+  var daysInput = $('daysInput'), daysHint = $('daysHint'), autoCalcBtn = $('autoCalcBtn');
+  var calendarMonthLabel = $('calendarMonthLabel'), calGrid = $('calGrid'), dateRangeLabel = $('dateRangeLabel'), clearDatesBtn = $('clearDatesBtn');
+  var knownVesselField = $('knownVesselField'), knownVesselSelect = $('knownVesselSelect'), saveEntryBtn = $('saveEntryBtn');
+  var ticketSelect = $('ticketSelect'), taskBookToggle = $('taskBookToggle'), customDaysField = $('customDaysField'), customDaysInput = $('customDaysInput');
+  var ring = $('ring'), ringBar = $('ringBar'), ticketPct = $('ticketPct'), ticketLogged = $('ticketLogged'), ticketRequired = $('ticketRequired'), ticketRemaining = $('ticketRemaining');
+  var ticketSubProgress = $('ticketSubProgress'), ticketSubDaysLabel = $('ticketSubDaysLabel'), ticketSubProgressFill = $('ticketSubProgressFill'), ticketSubLabel = $('ticketSubLabel');
+  var ticketNote = $('ticketNote'), toast = $('toast'), toastMsg = $('toastMsg'), toastAction = $('toastAction');
 
-  // ---- Populate static selects ----
+  // ---- Static selects ----
   function fillSelect(selectEl, items) {
     selectEl.innerHTML = '';
     items.forEach(function (item) {
       var opt = document.createElement('option');
-      opt.value = item.code;
-      opt.textContent = item.name + ' (' + item.code + ')';
+      opt.value = item.code; opt.textContent = item.name + ' (' + item.code + ')';
       selectEl.appendChild(opt);
     });
   }
@@ -395,39 +577,132 @@
   fillSelect(modeOfOperationSelect, MODE_OF_OPERATION);
   fillSelect(dutyCategorySelect, DUTY_CATEGORIES);
 
-  // ---- Rendering: totals + entries (main page) ----
+  TICKETS.forEach(function (t) {
+    var opt = document.createElement('option'); opt.value = t.id; opt.textContent = t.name; ticketSelect.appendChild(opt);
+  });
+  ticketSelect.value = ticketState.ticketId;
+  customDaysInput.value = ticketState.customDays;
+
+  function syncToggle() {
+    taskBookToggle.classList.toggle('right', ticketState.taskBook === 'without');
+    Array.prototype.forEach.call(taskBookToggle.querySelectorAll('button'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-tb') === ticketState.taskBook);
+    });
+  }
+  syncToggle();
+
+  // ---- Toast ----
+  var toastTimer = null, toastCb = null;
+  function showToast(msg, actionLabel, cb) {
+    toastMsg.textContent = msg;
+    toastAction.textContent = actionLabel || '';
+    toastAction.style.display = actionLabel ? '' : 'none';
+    toastCb = cb || null;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); toastCb = null; }, 5000);
+  }
+  toastAction.addEventListener('click', function () {
+    var cb = toastCb; toastCb = null;
+    toast.classList.remove('show'); clearTimeout(toastTimer);
+    if (cb) cb();
+  });
+
+  // ---- Ticket progress ----
+  function sumDaysForCategories(categories) {
+    var list = categories ? entries.filter(function (e) { return categories.indexOf(e.category) !== -1; }) : entries;
+    return list.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
+  }
+  var wasComplete = null;
+  var RING_LEN = 2 * Math.PI * 43;
+
+  function renderTicketProgress() {
+    var ticket = TICKETS.filter(function (t) { return t.id === ticketState.ticketId; })[0] || TICKETS[0];
+    var isCustom = !!ticket.custom;
+    customDaysField.style.display = isCustom ? 'block' : 'none';
+    taskBookToggle.style.display = isCustom ? 'none' : 'flex';
+
+    var required = isCustom ? (Number(customDaysInput.value) || 1)
+      : (ticketState.taskBook === 'with' ? ticket.withTaskBook : ticket.withoutTaskBook);
+    var logged = sumDaysForCategories(ticket.categories);
+    var ratio = Math.min(1, logged / required);
+    var pct = Math.round(ratio * 100);
+    var complete = logged >= required;
+
+    countTo(ticketPct, pct);
+    countTo(ticketLogged, logged);
+    ticketRequired.textContent = required;
+    ringBar.style.strokeDasharray = RING_LEN;
+    ringBar.style.strokeDashoffset = RING_LEN * (1 - ratio);
+    ring.classList.toggle('complete', complete);
+    ticketRemaining.textContent = complete ? 'Requirement met 🎉' : (required - logged) + ' day' + (required - logged === 1 ? '' : 's') + ' to go';
+
+    if (wasComplete === false && complete) { haptic([10, 40, 20]); }
+    wasComplete = complete;
+
+    if (!isCustom && ticket.subCategories) {
+      var subRequired = ticketState.taskBook === 'with' ? ticket.subWithTaskBook : ticket.subWithoutTaskBook;
+      var subLogged = sumDaysForCategories(ticket.subCategories);
+      ticketSubProgress.style.display = '';
+      ticketSubDaysLabel.textContent = subLogged + ' / ' + subRequired + ' days';
+      ticketSubProgressFill.style.width = Math.min(100, Math.round((subLogged / subRequired) * 100)) + '%';
+      ticketSubProgressFill.classList.toggle('complete', subLogged >= subRequired);
+      ticketSubLabel.textContent = ticket.subLabel || '';
+    } else {
+      ticketSubProgress.style.display = 'none';
+    }
+    ticketNote.textContent = ticket.note || '';
+  }
+
+  ticketSelect.addEventListener('change', function () {
+    ticketState.ticketId = ticketSelect.value; saveTicketState(); wasComplete = null; renderTicketProgress(); haptic(6);
+  });
+  Array.prototype.forEach.call(taskBookToggle.querySelectorAll('button'), function (btn) {
+    btn.addEventListener('click', function () {
+      ticketState.taskBook = btn.getAttribute('data-tb'); syncToggle(); saveTicketState(); renderTicketProgress(); haptic(6);
+    });
+  });
+  customDaysInput.addEventListener('input', function () {
+    ticketState.customDays = Number(customDaysInput.value) || 1; saveTicketState(); renderTicketProgress();
+  });
+
+  // ---- Main render ----
+  var TRASH_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+
   function renderMain() {
     var grandTotal = entries.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
-    grandTotalEl.textContent = grandTotal;
+    countTo(grandTotalEl, grandTotal);
+    var vesselCount = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
+    $('statEntries').textContent = entries.length + (entries.length === 1 ? ' entry' : ' entries');
+    $('statVessels').textContent = vesselCount + (vesselCount === 1 ? ' vessel' : ' vessels');
+    renderTicketProgress();
 
     var totalsMap = {};
-    entries.forEach(function (e) {
-      totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days);
-    });
+    entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
     var totals = DUTY_CATEGORIES
       .map(function (c) { return { code: c.code, name: c.name, group: c.group, total: totalsMap[c.code] || 0 }; })
       .filter(function (c) { return c.total > 0; });
 
     if (totals.length > 0) {
-      var html = '<p class="section-heading">By duty category</p><div class="summary-box">';
+      var max = Math.max.apply(null, totals.map(function (c) { return c.total; }));
+      var html = '<div class="rise d3"><p class="section-heading">By duty category</p><div class="card" style="padding:8px 18px;">';
       totals.forEach(function (c) {
         var color = GROUP_COLORS[c.group] || '#6B6B6B';
-        html += '<div class="summary-row">' +
-          '<div class="summary-left">' +
-            '<span class="dot-bar" style="background:' + color + '"></span>' +
-            '<div><div class="summary-name">' + escapeHtml(c.name) + ' <span class="summary-code">(' + escapeHtml(c.code) + ')</span></div></div>' +
-          '</div>' +
-          '<span class="summary-total">' + c.total + 'd</span>' +
-        '</div>';
+        html += '<div class="summary-row"><div class="summary-top"><div class="summary-name">' + escapeHtml(c.name) +
+          '<span class="summary-code">' + escapeHtml(c.code) + '</span></div><span class="summary-total">' + c.total + 'd</span></div>' +
+          '<div class="summary-track"><div class="summary-fill" data-w="' + Math.round(c.total / max * 100) + '" style="background:' + color + '"></div></div></div>';
       });
-      html += '</div>';
+      html += '</div></div>';
       summarySection.innerHTML = html;
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        Array.prototype.forEach.call(summarySection.querySelectorAll('.summary-fill'), function (el) { el.style.width = el.getAttribute('data-w') + '%'; });
+      }); });
     } else {
       summarySection.innerHTML = '';
     }
 
     if (entries.length === 0) {
-      entriesSection.innerHTML = '<div class="empty-box"><p>No entries yet. Tap the + button to log your first stretch of sea service.</p></div>';
+      entriesSection.innerHTML = '<div class="empty-box"><div class="emoji"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#C08A3E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div><h3>No sea time yet</h3><p>Tap <b>Add</b> to log your first stretch of sea service.</p></div>';
       return;
     }
 
@@ -436,263 +711,258 @@
     sorted.forEach(function (e) {
       var cat = DUTY_CATEGORIES.filter(function (c) { return c.code === e.category; })[0];
       var color = cat ? (GROUP_COLORS[cat.group] || '#6B6B6B') : '#6B6B6B';
-      var dateLine = formatDate(e.start) + (e.end ? ' \u2013 ' + formatDate(e.end) : '') + ' · ' + e.days + ' day' + (e.days == 1 ? '' : 's');
+      var dateLine = formatDate(e.start) + (e.end ? ' – ' + formatDate(e.end) : '');
 
       var detailParts = [];
-      if (e.position) detailParts.push('Position: ' + e.position);
-      if (e.vesselId) detailParts.push('ID: ' + e.vesselId);
+      if (e.position) detailParts.push(e.position);
+      if (e.vesselId) detailParts.push('ID ' + e.vesselId);
       if (e.vesselLength || e.vesselPower) {
-        var lp = (e.vesselLength ? e.vesselLength + 'm' : '') + (e.vesselLength && e.vesselPower ? ', ' : '') + (e.vesselPower ? e.vesselPower + 'kW' : '');
-        detailParts.push(lp);
+        detailParts.push((e.vesselLength ? e.vesselLength + 'm' : '') + (e.vesselLength && e.vesselPower ? ', ' : '') + (e.vesselPower ? e.vesselPower + 'kW' : ''));
       }
-      var prop = PROPULSION_TYPES.filter(function (p) { return p.code === e.propulsion; })[0];
-      if (prop) detailParts.push(prop.name);
-      var opType = OPERATION_TYPES.filter(function (o) { return o.code === e.operationType; })[0];
-      if (opType) detailParts.push(opType.name);
-      var modeOp = MODE_OF_OPERATION.filter(function (m) { return m.code === e.modeOfOperation; })[0];
-      if (modeOp) detailParts.push(modeOp.name);
+      var prop = PROPULSION_TYPES.filter(function (p) { return p.code === e.propulsion; })[0]; if (prop) detailParts.push(prop.name);
+      var opType = OPERATION_TYPES.filter(function (o) { return o.code === e.operationType; })[0]; if (opType) detailParts.push(opType.name);
+      var modeOp = MODE_OF_OPERATION.filter(function (m) { return m.code === e.modeOfOperation; })[0]; if (modeOp) detailParts.push(modeOp.name);
 
-      listHtml += '<div class="entry-card">' +
-        '<div class="entry-main">' +
-          '<div class="entry-title-row">' +
-            '<span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
-            '<span class="entry-code" style="background:' + color + '22;color:' + color + '">' + escapeHtml(e.category) + '</span>' +
+      listHtml += '<div class="swipe' + (e.id === lastAddedId ? ' new' : '') + '" data-id="' + escapeHtml(e.id) + '">' +
+        '<div class="swipe-action">' + TRASH_SVG + 'Delete</div>' +
+        '<div class="entry-card">' +
+          '<div class="entry-main">' +
+            '<div class="entry-title-row"><span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
+            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span></div>' +
+            '<div class="entry-dates">' + dateLine + '</div>' +
+            (detailParts.length ? '<div class="entry-details">' + escapeHtml(detailParts.join(' · ')) + '</div>' : '') +
+            (e.notes ? '<div class="entry-notes">' + escapeHtml(e.notes) + '</div>' : '') +
           '</div>' +
-          '<div class="entry-dates">' + dateLine + '</div>' +
-          (detailParts.length ? '<div class="entry-details">' + escapeHtml(detailParts.join(' · ')) + '</div>' : '') +
-          (e.notes ? '<div class="entry-notes">' + escapeHtml(e.notes) + '</div>' : '') +
-        '</div>' +
-        '<button class="delete-btn" data-delete-id="' + e.id + '" aria-label="Delete entry">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>' +
-          '</svg>' +
-        '</button>' +
-      '</div>';
+          '<div class="entry-days"><b>' + Number(e.days) + '</b><span>day' + (Number(e.days) === 1 ? '' : 's') + '</span></div>' +
+        '</div></div>';
     });
     listHtml += '</div>';
     entriesSection.innerHTML = listHtml;
-
-    Array.prototype.forEach.call(entriesSection.querySelectorAll('[data-delete-id]'), function (btn) {
-      btn.addEventListener('click', function () {
-        var id = btn.getAttribute('data-delete-id');
-        entries = entries.filter(function (e) { return e.id !== id; });
-        saveEntries();
-        renderMain();
-      });
-    });
+    lastAddedId = null;
+    Array.prototype.forEach.call(entriesSection.querySelectorAll('.swipe'), attachSwipe);
   }
 
-  // ---- Calendar rendering ----
+  // ---- Swipe to delete (with undo) ----
+  function attachSwipe(row) {
+    var card = row.querySelector('.entry-card');
+    var sx = 0, sy = 0, dx = 0, tracking = false, horizontal = null, width = 0;
+    row.addEventListener('touchstart', function (ev) {
+      if (ev.touches.length !== 1) return;
+      sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; dx = 0; tracking = true; horizontal = null;
+      width = row.offsetWidth; card.classList.remove('snap');
+    }, { passive: true });
+    row.addEventListener('touchmove', function (ev) {
+      if (!tracking) return;
+      var mx = ev.touches[0].clientX - sx, my = ev.touches[0].clientY - sy;
+      if (horizontal === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horizontal = Math.abs(mx) > Math.abs(my);
+      if (!horizontal) return;
+      ev.preventDefault(); row.classList.add('swiping');
+      dx = Math.min(0, mx);
+      var shown = dx < -100 ? -100 + (dx + 100) * 0.35 : dx; // rubber-band past the action
+      card.style.transform = 'translateX(' + shown + 'px)';
+    }, { passive: false });
+    function end() {
+      if (!tracking) return; tracking = false;
+      card.classList.add('snap');
+      if (horizontal && dx < -Math.min(110, width * 0.3)) { haptic(12); removeEntry(row.getAttribute('data-id'), row); }
+      else { card.style.transform = ''; setTimeout(function () { row.classList.remove('swiping'); }, 360); }
+    }
+    row.addEventListener('touchend', end);
+    row.addEventListener('touchcancel', end);
+    // Desktop / accessibility fallback: right-click or long-press-free delete via keyboard Delete on focus isn't needed; allow dblclick on action area.
+    row.querySelector('.swipe-action').addEventListener('click', function () { removeEntry(row.getAttribute('data-id'), row); });
+  }
+
+  function removeEntry(id, row) {
+    var idx = -1;
+    for (var i = 0; i < entries.length; i++) if (entries[i].id === id) { idx = i; break; }
+    if (idx === -1) return;
+    var removed = entries[idx];
+    var card = row.querySelector('.entry-card');
+    card.classList.add('snap'); card.style.transform = 'translateX(-110%)';
+    row.classList.add('swiping', 'removing');
+    setTimeout(function () {
+      entries.splice(idx, 1); saveEntries(); renderMain();
+      showToast('Entry deleted', 'Undo', function () {
+        entries.push(removed); saveEntries(); renderMain(); haptic(8);
+      });
+    }, 320);
+  }
+
+  // ---- Export ----
+  function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  $('exportBtn').addEventListener('click', function () {
+    if (!entries.length) { showToast('Nothing to export yet'); return; }
+    var head = ['Vessel', 'Identifier', 'Length (m)', 'Power (kW)', 'Propulsion', 'Operation', 'Mode', 'Position', 'Duty category', 'Start', 'End', 'Days', 'Notes'];
+    var rows = entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }).map(function (e) {
+      return [e.vessel, e.vesselId, e.vesselLength, e.vesselPower, e.propulsion, e.operationType, e.modeOfOperation, e.position, e.category, e.start, e.end, e.days, e.notes].map(csvCell).join(',');
+    });
+    var csv = [head.join(',')].concat(rows).join('\n');
+    var file;
+    try { file = new File([csv], 'sea-service.csv', { type: 'text/csv' }); } catch (err) { file = null; }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'Sea service record' }).catch(function () {});
+    } else {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'sea-service.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      showToast('Exported sea-service.csv');
+    }
+  });
+
+  // ---- Calendar ----
+  var todayIso = isoDate(new Date());
   function renderCalendar() {
     calendarMonthLabel.textContent = calendarMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
-    var days = buildMonthGrid(calendarMonth);
     var html = '';
-    days.forEach(function (d) {
+    buildMonthGrid(calendarMonth).forEach(function (d) {
       var iso = isoDate(d);
-      var inCurrentMonth = d.getMonth() === calendarMonth.getMonth();
-      var isStart = iso === form.start;
-      var isEnd = iso === form.end;
-      var isEndpoint = isStart || isEnd;
-      var inRange = form.start && form.end && iso > form.start && iso < form.end;
       var cls = 'day-cell';
-      if (!inCurrentMonth) cls += ' faded';
-      if (isEndpoint) cls += ' endpoint';
-      else if (inRange) cls += ' inrange';
-      html += '<button type="button" class="' + cls + '" data-date="' + iso + '">' + d.getDate() + '</button>';
+      if (d.getMonth() !== calendarMonth.getMonth()) cls += ' faded';
+      if (iso === todayIso) cls += ' today';
+      var isStart = iso === form.start, isEnd = iso === form.end;
+      if (isStart || isEnd) cls += ' endpoint';
+      if (form.start && form.end) {
+        if (isStart) cls += ' rstart'; else if (isEnd) cls += ' rend';
+        else if (iso > form.start && iso < form.end) cls += ' inrange';
+      }
+      html += '<button type="button" class="' + cls + '" data-date="' + iso + '"><span>' + d.getDate() + '</span></button>';
     });
     calGrid.innerHTML = html;
 
-    Array.prototype.forEach.call(calGrid.querySelectorAll('[data-date]'), function (btn) {
-      btn.addEventListener('click', function () {
-        var iso = btn.getAttribute('data-date');
-        handleDayClick(iso);
-      });
-    });
-
     if (form.start) {
-      dateRangeLabel.textContent = formatDate(form.start) + (form.end ? ' \u2013 ' + formatDate(form.end) : ' \u2013 select finish date');
+      var n = daysBetween(form.start, form.end);
+      dateRangeLabel.textContent = formatDate(form.start) + (form.end ? ' – ' + formatDate(form.end) + ' · ' + n + 'd' : ' – pick finish');
       clearDatesBtn.style.display = '';
     } else {
       dateRangeLabel.textContent = 'Tap a start date, then a finish date';
       clearDatesBtn.style.display = 'none';
     }
-
-    updateDaysField();
-    updateSaveButtonState();
+    updateDaysField(); updateSaveButtonState();
   }
-
+  calGrid.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-date]'); if (!btn) return;
+    haptic(6); handleDayClick(btn.getAttribute('data-date'));
+  });
   function handleDayClick(iso) {
-    if (!form.start || (form.start && form.end)) {
-      form.start = iso;
-      form.end = '';
-    } else if (iso < form.start) {
-      form.end = form.start;
-      form.start = iso;
-    } else {
-      form.end = iso;
-    }
+    if (!form.start || (form.start && form.end)) { form.start = iso; form.end = ''; }
+    else if (iso < form.start) { form.end = form.start; form.start = iso; }
+    else if (iso === form.start) { form.end = iso; }
+    else { form.end = iso; }
     renderCalendar();
   }
-
   function updateDaysField() {
     if (autoCalc) {
       var calc = daysBetween(form.start, form.end);
-      if (calc !== null) {
-        form.days = calc;
-        daysInput.value = calc;
-      }
+      if (calc !== null) { form.days = calc; daysInput.value = calc; }
       daysInput.disabled = true;
-      daysHint.textContent = "Counting every calendar day from start to finish, inclusive. Switch to Manual if there were days off in between that shouldn't count.";
+      daysHint.textContent = "Counting every calendar day from start to finish, inclusive. Switch to Manual if there were days off in between.";
     } else {
       daysInput.disabled = false;
       daysHint.textContent = 'A day counts if you worked 8+ hours in a 24-hour period. More than 8 hours in that period still only counts as 1 day.';
     }
   }
+  function updateSaveButtonState() { saveEntryBtn.disabled = !vesselNameInput.value.trim(); }
 
-  function updateSaveButtonState() {
-    saveEntryBtn.disabled = !vesselNameInput.value.trim();
-  }
-
-  // ---- Modal open/close/reset ----
+  // ---- Sheet ----
   function resetForm() {
-    form = defaultForm();
-    autoCalc = true;
-    calendarMonth = new Date();
-
-    vesselNameInput.value = '';
-    vesselIdInput.value = '';
-    vesselLengthInput.value = '';
-    vesselPowerInput.value = '';
-    propulsionSelect.value = 'I';
-    operationTypeSelect.value = 'C';
-    modeOfOperationSelect.value = 'VU';
-    positionInput.value = '';
-    dutyCategorySelect.value = 'D';
-    notesInput.value = '';
-    daysInput.value = 1;
-    autoCalcBtn.classList.add('active');
-    autoCalcBtn.textContent = 'Auto (from dates)';
-
+    form = defaultForm(); autoCalc = true; calendarMonth = new Date();
+    vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = '';
+    propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU';
+    positionInput.value = ''; dutyCategorySelect.value = 'D'; notesInput.value = ''; daysInput.value = 1;
+    autoCalcBtn.classList.add('active'); autoCalcBtn.textContent = 'Auto (from dates)';
+    sheetBody.scrollTop = 0;
     renderCalendar();
   }
 
   function populateKnownVessels() {
     var byName = {};
-    entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); })
-      .forEach(function (e) {
-        byName[e.vessel] = {
-          vessel: e.vessel,
-          vesselId: e.vesselId || '',
-          vesselLength: e.vesselLength || '',
-          vesselPower: e.vesselPower || '',
-          propulsion: e.propulsion || 'I'
-        };
-      });
+    entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }).forEach(function (e) {
+      byName[e.vessel] = { vessel: e.vessel, vesselId: e.vesselId || '', vesselLength: e.vesselLength || '', vesselPower: e.vesselPower || '', propulsion: e.propulsion || 'I' };
+    });
     var list = Object.keys(byName).map(function (k) { return byName[k]; }).sort(function (a, b) { return a.vessel.localeCompare(b.vessel); });
-
     if (list.length > 0) {
       knownVesselField.style.display = '';
-      var html = '<option value="">Select a vessel to pre-fill\u2026</option>';
-      list.forEach(function (v) {
-        html += '<option value="' + escapeHtml(v.vessel) + '">' + escapeHtml(v.vessel) + '</option>';
-      });
+      var html = '<option value="">Select a vessel to pre-fill…</option>';
+      list.forEach(function (v) { html += '<option value="' + escapeHtml(v.vessel) + '">' + escapeHtml(v.vessel) + '</option>'; });
       knownVesselSelect.innerHTML = html;
       knownVesselSelect.onchange = function () {
-        var name = knownVesselSelect.value;
-        if (!name) return;
-        var v = byName[name];
-        if (v) {
-          vesselNameInput.value = v.vessel;
-          vesselIdInput.value = v.vesselId;
-          vesselLengthInput.value = v.vesselLength;
-          vesselPowerInput.value = v.vesselPower;
-          propulsionSelect.value = v.propulsion;
-          updateSaveButtonState();
-        }
+        var v = byName[knownVesselSelect.value]; if (!v) return;
+        vesselNameInput.value = v.vessel; vesselIdInput.value = v.vesselId; vesselLengthInput.value = v.vesselLength;
+        vesselPowerInput.value = v.vesselPower; propulsionSelect.value = v.propulsion; updateSaveButtonState(); haptic(6);
       };
-    } else {
-      knownVesselField.style.display = 'none';
-    }
+    } else { knownVesselField.style.display = 'none'; }
   }
 
   function openModal() {
-    resetForm();
-    populateKnownVessels();
-    modalOverlay.classList.add('open');
+    resetForm(); populateKnownVessels();
+    document.body.style.overflow = 'hidden';
+    modalOverlay.classList.add('open'); haptic(8);
   }
-
   function closeModal() {
     modalOverlay.classList.remove('open');
+    sheet.style.transform = '';
+    document.body.style.overflow = '';
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
 
   $('openModalBtn').addEventListener('click', openModal);
   $('closeModalBtn').addEventListener('click', closeModal);
-  modalOverlay.addEventListener('click', function (e) {
-    if (e.target === modalOverlay) closeModal();
-  });
-  $('modalBox').addEventListener('click', function (e) { e.stopPropagation(); });
+  modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) closeModal(); });
 
-  $('prevMonthBtn').addEventListener('click', function () {
-    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
-    renderCalendar();
-  });
-  $('nextMonthBtn').addEventListener('click', function () {
-    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
-    renderCalendar();
-  });
-  clearDatesBtn.addEventListener('click', function () {
-    form.start = '';
-    form.end = '';
-    renderCalendar();
-  });
+  // Drag-to-dismiss on the sheet header
+  (function () {
+    var startY = 0, dy = 0, active = false, t0 = 0;
+    sheetHead.addEventListener('touchstart', function (e) {
+      if (e.target.closest('.close-btn')) return;
+      active = true; startY = e.touches[0].clientY; dy = 0; t0 = Date.now(); sheet.classList.add('dragging');
+    }, { passive: true });
+    sheetHead.addEventListener('touchmove', function (e) {
+      if (!active) return; dy = Math.max(0, e.touches[0].clientY - startY);
+      sheet.style.transform = 'translateY(' + dy + 'px)'; e.preventDefault();
+    }, { passive: false });
+    function end() {
+      if (!active) return; active = false; sheet.classList.remove('dragging');
+      var velocity = dy / Math.max(1, Date.now() - t0);
+      if (dy > 120 || velocity > 0.7) closeModal(); else sheet.style.transform = '';
+    }
+    sheetHead.addEventListener('touchend', end);
+    sheetHead.addEventListener('touchcancel', end);
+  })();
+
+  $('prevMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); haptic(5); });
+  $('nextMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); haptic(5); });
+  clearDatesBtn.addEventListener('click', function () { form.start = ''; form.end = ''; renderCalendar(); });
 
   autoCalcBtn.addEventListener('click', function () {
     autoCalc = !autoCalc;
-    if (autoCalc) {
-      autoCalcBtn.classList.add('active');
-      autoCalcBtn.textContent = 'Auto (from dates)';
-    } else {
-      autoCalcBtn.classList.remove('active');
-      autoCalcBtn.textContent = 'Manual';
-    }
-    updateDaysField();
+    autoCalcBtn.classList.toggle('active', autoCalc);
+    autoCalcBtn.textContent = autoCalc ? 'Auto (from dates)' : 'Manual';
+    updateDaysField(); haptic(6);
   });
-
-  daysInput.addEventListener('input', function () {
-    form.days = daysInput.value;
-  });
-
+  daysInput.addEventListener('input', function () { form.days = daysInput.value; });
   vesselNameInput.addEventListener('input', updateSaveButtonState);
 
   saveEntryBtn.addEventListener('click', function () {
     var vessel = vesselNameInput.value.trim();
-    if (!vessel || !form.days) return;
-
+    if (!vessel || !Number(daysInput.value)) return;
     var entry = {
-      id: uuid(),
-      vessel: vessel,
-      vesselId: vesselIdInput.value.trim(),
-      position: positionInput.value.trim(),
-      vesselLength: vesselLengthInput.value,
-      vesselPower: vesselPowerInput.value,
-      propulsion: propulsionSelect.value,
-      operationType: operationTypeSelect.value,
-      modeOfOperation: modeOfOperationSelect.value,
-      category: dutyCategorySelect.value,
-      start: form.start,
-      end: form.end,
-      days: Number(daysInput.value),
-      notes: notesInput.value.trim()
+      id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
+      vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value,
+      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, category: dutyCategorySelect.value,
+      start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
-
-    entries.push(entry);
-    saveEntries();
-    renderMain();
+    entries.push(entry); lastAddedId = entry.id; saveEntries();
     closeModal();
+    setTimeout(function () { renderMain(); haptic([8, 30, 12]); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
   });
 
   // ---- Init ----
   renderMain();
+
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
 })();
 </script>
 </body>
