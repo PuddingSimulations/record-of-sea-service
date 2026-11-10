@@ -105,7 +105,7 @@
   .select-wrap { position: relative; margin-bottom: 12px; }
   .select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
     border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); pointer-events: none; }
-  select, input[type=text], input[type=number], input[type=tel], input[type=email], textarea {
+  select, input[type=text], input[type=number], input[type=tel], input[type=email], input[type=date], textarea {
     width: 100%; border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; color: var(--ink);
     background: var(--card-2); font-family: inherit; outline: none; -webkit-appearance: none; appearance: none;
     transition: box-shadow .2s ease, background .2s ease; }
@@ -308,6 +308,21 @@
   .switch:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
   .group-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 18px 0 2px; }
   .group-label:first-child { margin-top: 0; }
+
+  /* Form 771 PDF */
+  .pdf-prev { background: #fff; border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5); overflow: hidden; min-height: 220px; display: flex; align-items: center; justify-content: center; }
+  .pdf-prev canvas { width: 100%; height: auto; display: block; }
+  .pdf-status { font-size: 12.5px; color: var(--ink-2); text-align: center; margin: 10px 0 14px; min-height: 18px; }
+  .sigpad { position: relative; background: #F1F1EE; border-radius: 12px; height: 96px; touch-action: none; }
+  .sigpad canvas { width: 100%; height: 100%; display: block; border-radius: 12px; touch-action: none; }
+  .sigpad .hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8A8A92; font-size: 13px; pointer-events: none; }
+  .sigpad .x { position: absolute; left: 14px; right: 14px; bottom: 22px; border-bottom: 1.5px solid #B8B8BE; pointer-events: none; }
+  .sig-row { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 6px; }
+  .sig-row .link { border: none; background: none; color: var(--accent); font-size: 13px; font-weight: 600; padding: 2px 0; cursor: pointer; }
+  .role-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .role-chips button { border: none; background: var(--card-2); color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 9px 13px; border-radius: 999px; transition: transform .25s var(--spring), background .2s; cursor: pointer; }
+  .role-chips button.on { background: var(--accent); color: #fff; }
+  .role-chips button:active { transform: scale(0.93); }
 
   /* Form 771 helper */
   .section-row { display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; }
@@ -515,6 +530,58 @@
   </div>
 </div>
 
+<div class="overlay" id="pdfOverlay">
+  <div class="sheet" id="pdfSheet" role="dialog" aria-modal="true" aria-label="Fill AMSA Form 771">
+    <div class="sheet-head" id="pdfHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>AMSA Form 771</h2>
+        <button class="close-btn" id="closePdfBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <div class="pdf-prev"><canvas id="pdfCanvas" width="10" height="10" style="display:none;"></canvas><span class="pdf-status" id="pdfMsg">Building the form\u2026</span></div>
+      <p class="pdf-status" id="pdfStatus"></p>
+
+      <div class="form-card">
+        <p class="section-title">Your details</p>
+        <div class="field"><label class="field-label" for="pfName">Full name</label><input type="text" id="pfName" autocomplete="name" autocapitalize="words" /></div>
+        <div class="field row-2">
+          <div><label class="field-label" for="pfDob">Date of birth</label><input type="date" id="pfDob" /></div>
+          <div><label class="field-label" for="pfPhone">Phone</label><input type="tel" id="pfPhone" inputmode="tel" autocomplete="tel" /></div>
+        </div>
+        <div class="field">
+          <div class="sig-row"><label class="field-label" style="margin:0;">Your signature</label><button type="button" class="link" id="mySigClear">Clear</button></div>
+          <div class="sigpad"><canvas id="mySigCv"></canvas><div class="x"></div><div class="hint" id="mySigHint">Sign with your finger</div></div>
+          <p class="field-hint">Saved on this phone and used on every form.</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <p class="section-title">This sea service</p>
+        <div class="field"><label class="field-label" for="pfEngines">Number of propulsion engines</label><input type="number" inputmode="numeric" min="0" id="pfEngines" /></div>
+        <div class="field"><span class="field-label">Supervisor role</span>
+          <div class="role-chips" id="roleChips">
+            <button type="button" data-role="master">Master in charge</button><button type="button" data-role="engineer">Engineer in charge</button><button type="button" data-role="owner">Owner</button><button type="button" data-role="other">Other</button>
+          </div>
+        </div>
+        <div class="field" id="roleOtherField" style="display:none;"><label class="field-label" for="pfRoleOther">Other role</label><input type="text" id="pfRoleOther" autocomplete="off" /></div>
+        <div class="field">
+          <div class="sig-row"><label class="field-label" style="margin:0;">Supervisor signature</label><button type="button" class="link" id="supSigClear">Clear</button></div>
+          <div class="sigpad"><canvas id="supSigCv"></canvas><div class="x"></div><div class="hint" id="supSigHint">Hand the phone to your supervisor to sign</div></div>
+          <p class="field-hint">AMSA does not accept a typed name. The signature has to be drawn. The date is added automatically.</p>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="save-btn" id="pdfShareBtn" type="button" disabled>Share or save PDF</button>
+      <button class="link-btn" id="pdfOpenBtn" type="button">Open the PDF</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAction" type="button"></button></div>
 
 <div class="overlay" id="modalOverlay">
@@ -656,6 +723,7 @@
   </div>
 </div>
 
+<script src="pdf-lib.min.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1624,7 +1692,7 @@
       formFields(e).forEach(function (f) {
         html += '<button type="button" class="copy-row" data-copy="' + escapeHtml(f[1]) + '" data-label="' + escapeHtml(f[0]) + '"><span class="lbl">' + f[0] + '</span><span class="val' + (f[1] ? '' : ' empty') + '">' + (f[1] ? escapeHtml(f[1]) : 'Not entered') + '</span></button>';
       });
-      html += '<div class="f-actions"><button type="button" data-copy-entry="' + escapeHtml(e.id) + '">Copy this entry</button></div></div>';
+      html += '<div class="f-actions"><button type="button" data-pdf="' + escapeHtml(e.id) + '" style="background:var(--primary);color:var(--on-primary);">Fill AMSA form (PDF)</button><button type="button" data-copy-entry="' + escapeHtml(e.id) + '">Copy this entry</button></div></div>';
     });
     formList.innerHTML = html;
   }
@@ -1637,6 +1705,8 @@
       row.classList.add('flash'); setTimeout(function () { row.classList.remove('flash'); }, 600);
       return;
     }
+    var pb = ev.target.closest('[data-pdf]');
+    if (pb) { openPdfSheet(pb.getAttribute('data-pdf')); return; }
     var btn = ev.target.closest('[data-copy-entry]');
     if (btn) {
       var e = entries.filter(function (x) { return x.id === btn.getAttribute('data-copy-entry'); })[0]; if (!e) return;
@@ -1657,6 +1727,173 @@
   $('form771Btn').addEventListener('click', openForm771);
   $('closeFormBtn').addEventListener('click', closeForm771);
   formOverlay.addEventListener('click', function (e) { if (e.target === formOverlay) closeForm771(); });
+
+  // ---- AMSA Form 771 PDF: place answers and signatures onto AMSA's own form ----
+  var PROFILE_KEY = 'sea-service-profile', profile = { name: '', dob: '', phone: '', sig: '' };
+  try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch (e) {}
+  function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {} }
+
+  // Boxes on the blank AMSA form (version 3, 3/26), in PDF points from the bottom-left: [x, y, width, height]
+  var B771 = {
+    name: [48, 674.9, 321.3, 24.8], dob: [380.6, 674.9, 155.4, 24.8],
+    phone: [48, 640.3, 155.4, 24], sig: [214.7, 640.3, 154.7, 24], signDate: [380.6, 640.3, 155.4, 24],
+    company: [48, 590, 238, 24.8], position: [297.3, 590, 238.7, 24.8],
+    vessel: [48, 555.5, 238, 24], vesselId: [297.3, 555.5, 238.7, 24],
+    start: [48, 520.1, 155.4, 24.8], end: [214.7, 520.1, 154.7, 24.8], days: [380.6, 520.1, 155.4, 24.8],
+    mode: [48, 484.8, 155.4, 24.8], type: [214.7, 484.8, 154.7, 24.8], duty: [380.6, 484.8, 155.4, 24.8],
+    length: [48, 450.3, 113.4, 24], prop: [172.7, 450.3, 72.1, 24], power: [256, 450.3, 155.4, 24], engines: [422.7, 450.3, 113.4, 24],
+    supName: [48, 400, 155.4, 24.8], supPos: [214.7, 400, 154.7, 24.8], supEmail: [380.6, 400, 155.4, 24.8],
+    supPhone: [48, 365.4, 155.4, 24], supCert: [214.7, 365.4, 238, 24],
+    supSig: [48, 330.1, 155.4, 24.8], supDate: [214.7, 330.1, 71.3, 24.8], other: [385.1, 299.3, 101.4, 24.8]
+  };
+  var ROLE_X = { master: 121.7, engineer: 208.8, owner: 304.5, other: 351 }, ROLE_Y = 313.8;
+  var DUTY_FORM = { 'AE/ED': 'AE', 'E/ED': 'E' };   // the form uses AE and E
+
+  function guessRole(e) {
+    var t = (e.supPosition || '').toLowerCase();
+    return /master|skipper|captain/.test(t) ? 'master' : /engineer/.test(t) ? 'engineer' : /owner/.test(t) ? 'owner' : '';
+  }
+
+  function build771(e) {
+    var PL = window.PDFLib; if (!PL) return Promise.reject(new Error('The PDF tool did not load.'));
+    return fetch('AMSA_771.pdf').then(function (r) { if (!r.ok) throw new Error('Could not load the AMSA form.'); return r.arrayBuffer(); })
+      .then(function (buf) { return PL.PDFDocument.load(buf); })
+      .then(function (pdf) {
+        var page = pdf.getPages()[0], ink = PL.rgb(0.05, 0.07, 0.2);
+        return pdf.embedFont(PL.StandardFonts.Helvetica).then(function (font) {
+          function put(k, text, size) {
+            text = String(text == null ? '' : text); if (!text) return;
+            var b = B771[k], sz = size || 10, w = b[2] - 8;
+            while (sz > 6 && font.widthOfTextAtSize(text, sz) > w) sz -= 0.5;
+            while (text.length > 1 && font.widthOfTextAtSize(text, sz) > w) text = text.slice(0, -1);
+            page.drawText(text, { x: b[0] + 4, y: b[1] + (b[3] - sz * 0.72) / 2, size: sz, font: font, color: ink });
+          }
+          function img(k, url) {
+            if (!url) return Promise.resolve();
+            return pdf.embedPng(url).then(function (im) {
+              var b = B771[k], pad = 2, sc = Math.min((b[2] - 2 * pad) / im.width, (b[3] - 2 * pad) / im.height), w = im.width * sc, h = im.height * sc;
+              page.drawImage(im, { x: b[0] + pad + ((b[2] - 2 * pad) - w) / 2, y: b[1] + pad + ((b[3] - 2 * pad) - h) / 2, width: w, height: h });
+            });
+          }
+          put('name', profile.name); put('dob', auDate(profile.dob)); put('phone', profile.phone);
+          put('company', e.owner); put('position', e.position); put('vessel', e.vessel); put('vesselId', e.vesselId);
+          put('start', auDate(e.start)); put('end', auDate(e.end || e.start)); put('days', e.days);
+          put('mode', e.modeOfOperation); put('type', e.operationType); put('duty', DUTY_FORM[e.category] || e.category);
+          put('length', e.vesselLength); put('prop', e.propulsion); put('power', e.vesselPower); put('engines', e.numEngines);
+          put('supName', e.supName); put('supPos', e.supPosition); put('supEmail', e.supEmail); put('supPhone', e.supPhone); put('supCert', e.supCert);
+          if (profile.sig) put('signDate', auDate(isoDate(new Date())));
+          if (e.supSig && e.supDate) put('supDate', auDate(e.supDate));
+          var role = e.supRole || guessRole(e);
+          if (role && ROLE_X[role]) {
+            var cx = ROLE_X[role], cy = ROLE_Y, th = 1.7, col = ink;
+            page.drawLine({ start: { x: cx - 3.6, y: cy }, end: { x: cx - 1, y: cy - 3 }, thickness: th, color: col });
+            page.drawLine({ start: { x: cx - 1, y: cy - 3 }, end: { x: cx + 4, y: cy + 4.2 }, thickness: th, color: col });
+            if (role === 'other') put('other', e.supRoleOther);
+          }
+          return img('sig', profile.sig).then(function () { return img('supSig', e.supSig); }).then(function () { return pdf.save(); });
+        });
+      });
+  }
+
+  // Signature pad (drawn on screen, never typed)
+  function sigPad(cv, hintEl, onChange) {
+    var dpr = Math.min(2, window.devicePixelRatio || 1), x, down = false, lx = 0, ly = 0, empty = true;
+    function size() {
+      var r = cv.getBoundingClientRect(); cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+      x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.lineWidth = 2.4; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#1B2A5E';
+    }
+    function pos(e) { var b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; }
+    cv.onpointerdown = function (e) { down = true; var p = pos(e); lx = p[0]; ly = p[1]; cv.setPointerCapture(e.pointerId); x.beginPath(); x.moveTo(lx, ly); x.lineTo(lx + 0.1, ly + 0.1); x.stroke(); };
+    cv.onpointermove = function (e) { if (!down) return; var p = pos(e); x.beginPath(); x.moveTo(lx, ly); x.lineTo(p[0], p[1]); x.stroke(); lx = p[0]; ly = p[1]; if (empty) { empty = false; hintEl.style.display = 'none'; } };
+    function up() { if (!down) return; down = false; onChange(empty ? '' : cv.toDataURL('image/png')); }
+    cv.onpointerup = up; cv.onpointercancel = up;
+    size();
+    return {
+      clear: function () { x.clearRect(0, 0, cv.width, cv.height); empty = true; hintEl.style.display = ''; onChange(''); },
+      set: function (url) {
+        x.clearRect(0, 0, cv.width, cv.height); empty = !url; hintEl.style.display = url ? 'none' : '';
+        if (url) { var im = new Image(); im.onload = function () { var r = cv.getBoundingClientRect(); x.drawImage(im, 0, 0, r.width, r.height); }; im.src = url; }
+      }
+    };
+  }
+
+  var pdfOverlay = $('pdfOverlay'), pdfSheet = $('pdfSheet'), pdfEntry = null, pdfBytes = null, pdfTimer = null, pdfSeq = 0, mySig = null, supSigPad = null;
+  function loadScript(src) {
+    return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = function () { rej(new Error('preview')); }; document.head.appendChild(sc); });
+  }
+  // The worker script is loaded as a normal script so pdf.js runs on the main thread. That works even where Web Workers are blocked.
+  function loadPdfJs() {
+    if (window.pdfjsLib && window.pdfjsWorker) return Promise.resolve(window.pdfjsLib);
+    var base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    return loadScript(base + 'pdf.min.js').then(function () { return loadScript(base + 'pdf.worker.min.js'); })
+      .then(function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; return window.pdfjsLib; });
+  }
+  function schedulePdf() { clearTimeout(pdfTimer); pdfTimer = setTimeout(refreshPdf, 350); }
+  function refreshPdf() {
+    if (!pdfEntry) return;
+    var seq = ++pdfSeq; $('pdfShareBtn').disabled = true;
+    build771(pdfEntry).then(function (bytes) {
+      if (seq !== pdfSeq) return; pdfBytes = bytes; $('pdfShareBtn').disabled = false;
+      return loadPdfJs().then(function (lib) { return lib.getDocument({ data: bytes.slice() }).promise; })
+        .then(function (doc) { return doc.getPage(1); })
+        .then(function (pg) {
+          var vp = pg.getViewport({ scale: 2 }), cv = $('pdfCanvas'); cv.width = vp.width; cv.height = vp.height; cv.style.display = 'block'; $('pdfMsg').style.display = 'none';
+          return pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        })
+        .then(function () { $('pdfStatus').textContent = 'Check every box, then share or save the PDF.'; })
+        .catch(function () { $('pdfMsg').textContent = 'The form is ready. A preview is not available here, so tap Open the PDF.'; $('pdfMsg').style.display = ''; $('pdfCanvas').style.display = 'none'; });
+    }).catch(function (err) { $('pdfMsg').textContent = (err && err.message) || 'Could not build the form.'; $('pdfMsg').style.display = ''; });
+  }
+  function openPdfSheet(id) {
+    pdfEntry = entries.filter(function (e) { return e.id === id; })[0]; if (!pdfEntry) return;
+    $('pfName').value = profile.name; $('pfDob').value = profile.dob; $('pfPhone').value = profile.phone;
+    $('pfEngines').value = pdfEntry.numEngines || ''; $('pfRoleOther').value = pdfEntry.supRoleOther || '';
+    var role = pdfEntry.supRole || guessRole(pdfEntry); syncRole(role);
+    $('pdfMsg').textContent = 'Building the form…'; $('pdfMsg').style.display = ''; $('pdfCanvas').style.display = 'none'; $('pdfStatus').textContent = '';
+    document.body.style.overflow = 'hidden'; pdfOverlay.classList.add('open'); fx('open');
+    setTimeout(function () {
+      mySig = sigPad($('mySigCv'), $('mySigHint'), function (url) { profile.sig = url; saveProfile(); schedulePdf(); });
+      supSigPad = sigPad($('supSigCv'), $('supSigHint'), function (url) { pdfEntry.supSig = url; pdfEntry.supDate = url ? isoDate(new Date()) : ''; saveEntries(); schedulePdf(); });
+      mySig.set(profile.sig); supSigPad.set(pdfEntry.supSig || '');
+    }, 60);
+    refreshPdf();
+  }
+  function closePdfSheet() {
+    if (pdfOverlay.classList.contains('open')) fx('close');
+    pdfOverlay.classList.remove('open'); pdfSheet.style.transform = ''; document.body.style.overflow = ''; pdfEntry = null; pdfSeq++;
+  }
+  function syncRole(role) {
+    Array.prototype.forEach.call($('roleChips').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-role') === role); });
+    $('roleOtherField').style.display = role === 'other' ? '' : 'none';
+  }
+  $('roleChips').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-role]'); if (!b || !pdfEntry) return;
+    pdfEntry.supRole = b.getAttribute('data-role'); saveEntries(); syncRole(pdfEntry.supRole); fx('tick'); schedulePdf();
+  });
+  [['pfName', 'name'], ['pfDob', 'dob'], ['pfPhone', 'phone']].forEach(function (m) { $(m[0]).addEventListener('input', function () { profile[m[1]] = $(m[0]).value; saveProfile(); schedulePdf(); }); });
+  $('pfEngines').addEventListener('input', function () { if (pdfEntry) { pdfEntry.numEngines = $('pfEngines').value; saveEntries(); schedulePdf(); } });
+  $('pfRoleOther').addEventListener('input', function () { if (pdfEntry) { pdfEntry.supRoleOther = $('pfRoleOther').value; saveEntries(); schedulePdf(); } });
+  $('mySigClear').addEventListener('click', function () { if (mySig) { mySig.clear(); fx('undo'); } });
+  $('supSigClear').addEventListener('click', function () { if (supSigPad) { supSigPad.clear(); fx('undo'); } });
+  $('closePdfBtn').addEventListener('click', closePdfSheet);
+  pdfOverlay.addEventListener('click', function (e) { if (e.target === pdfOverlay) closePdfSheet(); });
+  function pdfName() { return 'Form-771-' + ((pdfEntry && pdfEntry.vessel) || 'sea-service').replace(/[^A-Za-z0-9]+/g, '-') + '.pdf'; }
+  $('pdfShareBtn').addEventListener('click', function () {
+    if (!pdfBytes) return; var file = null;
+    try { file = new File([pdfBytes], pdfName(), { type: 'application/pdf' }); } catch (e) {}
+    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'AMSA Form 771' }).catch(function (err) { if (err && err.name !== 'AbortError') openPdfBlob(); });
+    } else { openPdfBlob(); }
+  });
+  $('pdfOpenBtn').addEventListener('click', function () { if (pdfBytes) openPdfBlob(); });
+  function openPdfBlob() {
+    try {
+      var url = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' })), a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.download = pdfName(); document.body.appendChild(a); a.click(); a.remove();
+      showToast('PDF ready. If nothing opened, saving is not available in this view.');
+    } catch (e) { showToast('Saving a PDF is not available in this view.'); }
+  }
+  makeDraggable($('pdfHead'), pdfSheet, closePdfSheet);
 
   // ---- Calendar ----
   var todayIso = isoDate(new Date());
