@@ -833,6 +833,7 @@
 </div>
 
 <script src="pdf-lib.min.js"></script>
+<script src="cloud.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1123,7 +1124,23 @@
   }
   form = defaultForm();
 
-  function saveEntries() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} }
+  function saveEntries() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} cloudSoon(); }
+  // ---- Cloud sync (optional: only when signed in) ----
+  var cloudT, cloudBusy = false, cloudCompanies = [], cloudMsg = '', cloudStatus = '';
+  function cloudOn() { return window.Cloud && Cloud.user(); }
+  function cloudSoon() { if (!cloudOn()) return; clearTimeout(cloudT); cloudT = setTimeout(cloudSync, 1500); }
+  function cloudSync(manual) {
+    if (!cloudOn() || cloudBusy) return Promise.resolve(); cloudBusy = true; cloudStatus = 'Syncing\u2026'; refreshAccount();
+    return Cloud.sync(entries).then(function (r) {
+      if (r.changed) { entries = r.entries; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} renderMain(); }
+      return Cloud.myCompanies().then(function (c) { cloudCompanies = c || []; }, function () { cloudCompanies = []; });
+    }).then(function () {
+      if (cloudCompanies.length && profile.name.trim()) return Cloud.saveProfile(profile.name.trim()).then(function () { return Cloud.pushSnapshot(buildSnapshot()); });
+    }).then(function () { cloudStatus = 'Synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); if (manual) showToast('Synced'); },
+      function (e) { cloudStatus = 'Could not sync: ' + e.message; if (manual) showToast('Could not sync'); }).then(function () { cloudBusy = false; refreshAccount(); });
+  }
+  function refreshAccount() { if (settingsOverlay && settingsOverlay.classList.contains('open')) renderSettings(); }
+  window.addEventListener('online', function () { cloudSoon(); });
 
   var ticketState = { ticketId: 'gph', taskBook: 'with', customDays: 30 };
   try { var rawTicket = localStorage.getItem(TICKET_STORAGE_KEY); if (rawTicket) ticketState = Object.assign(ticketState, JSON.parse(rawTicket)); } catch (e) {}
@@ -2357,10 +2374,32 @@
 
   // ---- Settings sheet ----
   var settingsOverlay = $('settingsOverlay'), settingsSheet = $('settingsSheet'), settingsBody = $('settingsBody');
+  function accountCard() {
+    if (!window.Cloud) return '';
+    var u = Cloud.user(), h;
+    if (!u) {
+      h = '<div class="form-card"><p class="section-title">Account</p><p class="field-hint" style="margin:-6px 0 12px;">Back up your sea service, use it on more than one device, and join your employer. Optional — the app works without it.</p>' +
+        '<div class="field"><label class="field-label" for="acctEmail">Email</label><input type="email" id="acctEmail" autocomplete="email" autocapitalize="none" /></div>' +
+        '<div class="field"><label class="field-label" for="acctPw">Password</label><input type="password" id="acctPw" autocomplete="current-password" placeholder="At least 8 characters" /></div>' +
+        (cloudMsg ? '<p class="field-hint" style="color:var(--red,#ff5a5f);margin:0 0 10px;">' + escapeHtml(cloudMsg) + '</p>' : '') +
+        '<button type="button" class="save-btn" id="acctIn">Sign in</button><button type="button" class="save-btn" id="acctUp" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Create account</button></div>';
+      return h;
+    }
+    h = '<div class="form-card"><p class="section-title">Account</p><p class="field-hint" style="margin:-6px 0 12px;">Signed in as ' + escapeHtml(u.email) + '<br>' + escapeHtml(cloudStatus || 'Not synced yet') + '</p>' +
+      '<button type="button" class="save-btn" id="acctSync">Sync now</button><button type="button" class="save-btn" id="acctOut" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Sign out</button></div>';
+    h += '<div class="form-card"><p class="section-title">Your company</p>';
+    if (cloudCompanies.length) cloudCompanies.forEach(function (c) {
+      h += '<label class="set-row"><span class="n">' + escapeHtml(c.name) + '<small>' + (c.role === 'crew' ? 'Your progress is shared with this employer' : 'You manage this company on the employer dashboard') + '</small></span>' + (c.role === 'crew' ? '<button type="button" class="more-toggle" data-leave="' + c.id + '" style="width:auto;">Leave</button>' : '') + '</label>';
+    });
+    h += '<div class="field"><label class="field-label" for="joinCode">Company code</label><div class="paste-row" style="margin:0;"><input type="text" id="joinCode" placeholder="From your employer" autocomplete="off" autocapitalize="characters" /><button type="button" id="joinBtn">Join</button></div>' +
+      '<p class="field-hint">Employers see your name, tickets you are working on and signed days. Not your vessels, phone or date of birth.</p></div></div>';
+    return h;
+  }
   function renderSettings() {
     var html = '<div class="form-card"><p class="section-title">Feedback</p>' +
       '<label class="set-row"><span class="n">Sounds<small>Taps, calendar notes and confirmations. Your silent switch still mutes them.</small></span>' +
       '<input type="checkbox" class="switch" id="soundSwitch" ' + (soundOn ? 'checked' : '') + ' /></label></div>';
+    html += accountCard();
     html += '<div class="form-card"><p class="section-title">Employer</p><p class="field-hint" style="margin:-6px 0 12px;">Send your employer a summary of your progress. They see your name, the tickets you are working on, and how many days are signed. They do not see your date of birth, phone, email, vessels or medical details.</p>' +
       '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
       '<div class="field"><label class="field-label" for="empCompany">Company</label><input type="text" id="empCompany" autocomplete="organization" autocapitalize="words" placeholder="Who you work for" value="' + escapeHtml(profile.company || '') + '" /></div>' +
@@ -2391,6 +2430,20 @@
   settingsBody.addEventListener('click', function (ev) {
     if (ev.target.id === 'empSendBtn') sendProgress();
     else if (ev.target.id === 'pasteReplyBtn') takePasted($('pasteReply').value);
+    else if (ev.target.id === 'acctIn' || ev.target.id === 'acctUp') {
+      var em = $('acctEmail').value.trim(), pw = $('acctPw').value;
+      if (!em || pw.length < 8) { cloudMsg = 'Enter your email and a password of at least 8 characters.'; renderSettings(); return; }
+      cloudMsg = ''; ev.target.disabled = true;
+      (ev.target.id === 'acctUp' ? Cloud.signUp : Cloud.signIn)(em, pw).then(function () { cloudStatus = ''; return cloudSync(true); }, function (e) { cloudMsg = e.message; renderSettings(); });
+    }
+    else if (ev.target.id === 'acctSync') cloudSync(true);
+    else if (ev.target.id === 'acctOut') { Cloud.signOut(); cloudCompanies = []; cloudStatus = ''; renderSettings(); showToast('Signed out. Your entries stay on this phone.'); }
+    else if (ev.target.id === 'joinBtn') {
+      var code = $('joinCode').value.trim(); if (!code) return;
+      if (!profile.name.trim()) { showToast('Add your name under Employer first'); return; }
+      Cloud.saveProfile(profile.name.trim()).then(function () { return Cloud.join(code); }).then(function () { showToast('Joined'); return cloudSync(); }, function (e) { showToast(e.message); });
+    }
+    else if (ev.target.getAttribute && ev.target.getAttribute('data-leave')) { Cloud.leave(ev.target.getAttribute('data-leave')).then(function () { return cloudSync(); }, function (e) { showToast(e.message); }); }
   });
   settingsBody.addEventListener('input', function (ev) {
     if (ev.target.id === 'empName') { profile.name = ev.target.value; saveProfile(); return; }
@@ -2431,6 +2484,7 @@
 
   // ---- Init ----
   renderMain();
+  if (cloudOn()) setTimeout(cloudSync, 600);
   handleSignedLink();
 
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {

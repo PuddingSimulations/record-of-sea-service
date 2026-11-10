@@ -44,7 +44,7 @@
   .tile span { font-size: 13px; color: var(--ink-2); }
   .panel { background: var(--card); border-radius: 22px; padding: 18px; margin-bottom: 18px; }
   .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-  select, input[type=text] { background: var(--card-2); color: var(--ink); border: none; border-radius: 12px; padding: 11px 13px; font-size: 15px; outline: none; }
+  select, input[type=text], input[type=email], input[type=password] { background: var(--card-2); color: var(--ink); border: none; border-radius: 12px; padding: 11px 13px; font-size: 15px; outline: none; }
   input[type=text] { flex: 1; min-width: 180px; }
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .btn { border: none; border-radius: 12px; padding: 11px 16px; font-weight: 700; font-size: 14px; background: var(--primary); color: var(--on-primary); cursor: pointer; transition: transform .2s var(--spring); }
@@ -98,6 +98,8 @@
     </div>
   </div>
 
+  <div class="panel" id="acctBox"></div>
+
   <div class="tiles" id="tiles"></div>
 
   <div class="panel" id="emptyBox" style="display:none;">
@@ -132,6 +134,7 @@
 </div>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="cloud.js"></script>
 <script>
 (function () {
   'use strict';
@@ -139,9 +142,9 @@
   var ROSTER_KEY = 'sea-dash-roster', NAME = { gph: 'General Purpose Hand', cox3: 'Coxswain Grade 3', cox2: 'Coxswain Grade 2', cox1: 'Coxswain Grade 1', inland: 'Master (Inland Waters)', master24: 'Master <24m', master45: 'Master <45m', master100: 'Master <100m', med3: 'Marine Engine Driver 3', med2: 'Marine Engine Driver 2', med1: 'Marine Engine Driver 1', eng3: 'Engineer Class 3' };
   function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var roster = {}, open = {};
+  var roster = {}, open = {}, live = false, cos = [], msg = '', busy = false;
   try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; }
-  function save() { try { localStorage.setItem(ROSTER_KEY, JSON.stringify(roster)); } catch (e) {} }
+  function save() { if (live) return; try { localStorage.setItem(ROSTER_KEY, JSON.stringify(roster)); } catch (e) {} }
   var toastT; function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 3200); }
 
   function valid(s) { return s && s.k === 'snap' && s.u && s.n && Array.isArray(s.tk); }
@@ -253,6 +256,42 @@
     try { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'crew-progress.csv'; document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded crew-progress.csv'); }
     catch (e) { try { navigator.clipboard.writeText(csv).then(function () { toast('CSV copied'); }); } catch (e2) { toast('Could not export here'); } }
   });
+
+  // ---- Live mode: sign in as an employer and read crew who joined your company ----
+  function admins() { return cos.filter(function (c) { return c.role !== 'crew'; }); }
+  function loadLive() {
+    busy = true; drawAcct();
+    return Cloud.myCompanies().then(function (c) { cos = c || []; return admins().length ? Cloud.crew() : []; }).then(function (rows) {
+      var name = {}; admins().forEach(function (c) { name[c.id] = c.name; });
+      roster = {}; live = true;
+      rows.forEach(function (r) { var s = r.snapshot; if (!s || !valid(s)) s = { v: 1, k: 'snap', u: r.user_id, n: r.full_name || 'Crew member', ed: 0, vd: 0, held: [], tk: [], ve: 0, t: r.updated_at || new Date().toISOString() }; s.u = r.user_id; s.n = r.full_name || s.n; s.co = name[r.company_id] || s.co; roster[r.user_id] = s; });
+      msg = '';
+    }).catch(function (e) { msg = e.message; }).then(function () { busy = false; drawAcct(); render(); });
+  }
+  function drawAcct() {
+    var box = $('acctBox'), u = window.Cloud && Cloud.user();
+    if (!window.Cloud) { box.style.display = 'none'; return; }
+    var err = msg ? '<p class="small" style="color:var(--red);margin:0 0 10px;">' + esc(msg) + '</p>' : '';
+    if (!u) {
+      box.innerHTML = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Sign in to see crew who join your company by code, with no links to open. Crew sign up in their app.</p>' + err +
+        '<div class="tools" style="margin:0;flex-wrap:wrap;"><input type="email" id="aE" placeholder="Email" autocomplete="email" autocapitalize="none"><input type="password" id="aP" placeholder="Password (8+ characters)" autocomplete="current-password"><button class="btn" id="aIn">Sign in</button><button class="btn ghost" id="aUp">Create account</button></div>'; return;
+    }
+    var a = admins(), h = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Signed in as ' + esc(u.email) + (busy ? ' · loading…' : '') + '</p>' + err;
+    if (!a.length) h += '<p class="small" style="margin:0 0 10px;">Create your company to get a code your crew can enter in their app.</p><div class="tools" style="margin:0;"><input type="text" id="coIn" placeholder="Company name" autocomplete="organization"><button class="btn" id="coMake">Create company</button></div>';
+    else a.forEach(function (c) { h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);"><div><b>' + esc(c.name) + '</b><div class="small">Crew enter this code in the app (Settings, Your company)</div></div><span class="pill blue" style="font-size:18px;letter-spacing:.12em;user-select:all;">' + esc(c.join_code || '') + '</span></div>'; });
+    h += '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn ghost sm" id="aRef">Refresh</button><button class="btn ghost sm" id="aOut">Sign out</button></div>';
+    box.innerHTML = h;
+  }
+  $('acctBox').addEventListener('click', function (ev) {
+    var id = ev.target.id;
+    if (id === 'aIn' || id === 'aUp') {
+      var em = $('aE').value.trim(), pw = $('aP').value; if (!em || pw.length < 8) { msg = 'Enter your email and a password of at least 8 characters.'; drawAcct(); return; }
+      msg = ''; (id === 'aUp' ? Cloud.signUp : Cloud.signIn)(em, pw).then(loadLive, function (e) { msg = e.message; drawAcct(); });
+    } else if (id === 'coMake') { var n = $('coIn').value.trim(); if (n) Cloud.createCompany(n).then(loadLive, function (e) { msg = e.message; drawAcct(); }); }
+    else if (id === 'aRef') loadLive();
+    else if (id === 'aOut') { Cloud.signOut(); live = false; cos = []; msg = ''; try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; } drawAcct(); render(); }
+  });
+  drawAcct(); if (window.Cloud && Cloud.user()) loadLive();
   render();
 })();
 </script>

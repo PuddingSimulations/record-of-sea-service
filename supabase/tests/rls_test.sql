@@ -5,6 +5,7 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 create role anon nologin; create role authenticated nologin;
 grant usage on schema public, auth to anon, authenticated;
 \i supabase/migrations/0001_core.sql
+\i supabase/migrations/0002_snapshots.sql
 grant all on all tables in schema public to authenticated; grant all on all tables in schema public to anon;
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c');
 insert into profiles(id,full_name) select id,'u'||right(id::text,1) from auth.users;
@@ -22,8 +23,15 @@ select 'C sees (expect 1 own):' as t, count(*) from entries;
 select 'C joined bad code:' as t; 
 do $$ begin perform join_company('NOPE'); exception when others then raise notice 'bad code rejected ok'; end $$;
 set request.uid='00000000-0000-0000-0000-00000000000a';
-select 'A (admin) sees (expect 1: B only):' as t, count(*) from entries;
+select 'A (admin) raw entries visible (expect 0):' as t, count(*) from entries;
 select 'A crew view rows (expect 1):' as t, count(*) from company_crew;
+select 'A sees phone column? (expect error)' ; do $$ begin perform phone from company_crew; exception when others then raise notice 'no phone column ok'; end $$;
+set request.uid='00000000-0000-0000-0000-00000000000b';
+insert into progress_snapshots values ('00000000-0000-0000-0000-00000000000b','{"ed":12}');
+set request.uid='00000000-0000-0000-0000-00000000000a';
+select 'A sees snapshot (expect 1):' as t, count(*) from company_crew where snapshot is not null;
+set request.uid='00000000-0000-0000-0000-00000000000c';
+select 'C (outsider) crew rows (expect 0):' as t, count(*) from company_crew;
 set request.uid='00000000-0000-0000-0000-00000000000b';
 select 'B sees (expect 1 own):' as t, count(*) from entries;
 select 'B cannot see companies members of others:' as t, count(*) from company_members;
