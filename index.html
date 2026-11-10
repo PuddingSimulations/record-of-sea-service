@@ -249,6 +249,11 @@
   .save-btn:active { transform: scale(0.97); }
   .save-btn:disabled { opacity: 0.35; transform: none; }
 
+  /* Share sheet */
+  .passport-wrap img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; background: var(--card-2); border-radius: 22px; box-shadow: 0 18px 40px rgba(15,24,48,0.32); -webkit-touch-callout: default; -webkit-user-select: none; user-select: none; }
+  .link-btn { width: 100%; border: none; background: none; color: var(--ink-2); font-size: 15px; font-weight: 600; padding: 12px 0 0; cursor: pointer; }
+  .link-btn:active { opacity: 0.5; }
+
   /* Toast */
   .toast { position: fixed; left: 50%; bottom: calc(var(--sab) + 92px); transform: translate(-50%, 30px) scale(0.95); opacity: 0; pointer-events: none; z-index: 60;
     display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; background: rgba(28,28,30,0.92); color: #fff; font-size: 14px; font-weight: 500;
@@ -269,7 +274,7 @@
       <h1>Sea Service</h1>
       <p class="subtitle">AMSA Form 771 · Near Coastal</p>
     </div>
-    <button class="icon-btn" id="exportBtn" aria-label="Export entries">
+    <button class="icon-btn" id="exportBtn" aria-label="Share sea passport">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
     </button>
   </header>
@@ -339,6 +344,34 @@
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   Add
 </button>
+
+<div class="overlay" id="shareOverlay">
+  <div class="sheet" id="shareSheet" role="dialog" aria-modal="true" aria-label="Share sea passport">
+    <div class="sheet-head" id="shareHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>Sea Passport</h2>
+        <button class="close-btn" id="closeShareBtn" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <div class="passport-wrap"><img id="passportImg" alt="Sea passport card summarising your sea service" /></div>
+      <p class="field-hint" style="text-align:center;margin:10px 0 14px;">Touch and hold the card to save it to Photos.</p>
+      <div class="form-card">
+        <div class="field">
+          <label class="field-label" for="holderName">Name on card</label>
+          <input type="text" id="holderName" placeholder="Your name (optional)" autocomplete="name" autocapitalize="words" maxlength="40" />
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="save-btn" id="shareBtn">Share card</button>
+      <button class="link-btn" id="csvBtn" type="button">Copy entries as CSV</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAction" type="button"></button></div>
 
@@ -684,13 +717,16 @@
 
   // ---- Working towards (tickets with any qualifying sea time) ----
   var workingSection = $('workingSection');
-  function renderWorking() {
-    var list = TICKETS.filter(function (t) { return !t.custom; }).map(function (t) {
+  function workingList() {
+    return TICKETS.filter(function (t) { return !t.custom; }).map(function (t) {
       var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook;
       var logged = sumDaysForCategories(t.categories);
       return { id: t.id, name: t.name, required: required, logged: logged, ratio: Math.min(1, logged / required) };
     }).filter(function (t) { return t.logged > 0; })
       .sort(function (a, b) { return b.ratio - a.ratio; });
+  }
+  function renderWorking() {
+    var list = workingList();
 
     if (!list.length) { workingSection.innerHTML = ''; return; }
     var html = '<div class="working"><p class="working-title">Working towards</p>';
@@ -837,25 +873,188 @@
     }, 320);
   }
 
-  // ---- Export ----
+  // ---- Sea passport (shareable card) ----
+  var HOLDER_KEY = 'sea-service-holder';
+  var holderInput = $('holderName'), passportImg = $('passportImg'), shareOverlay = $('shareOverlay'), shareSheet = $('shareSheet');
+  var passportBlob = null, passportUrl = null, holderTimer = null;
+  try { holderInput.value = localStorage.getItem(HOLDER_KEY) || ''; } catch (e) {}
+
+  function monthYear(iso) {
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }).toUpperCase();
+  }
+
+  function drawPassport(name) {
+    var W = 1080, H = 1350, PAD = 80;
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d');
+    var F = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+
+    function rr(px, py, w, h, r) {
+      x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r);
+      x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath();
+    }
+    function spaced(t, px, py, sp, align) {
+      var w = 0, i;
+      for (i = 0; i < t.length; i++) w += x.measureText(t[i]).width + sp;
+      w -= sp;
+      var sx = align === 'right' ? px - w : px;
+      for (i = 0; i < t.length; i++) { x.fillText(t[i], sx, py); sx += x.measureText(t[i]).width + sp; }
+    }
+    function fit(text, weight, size, maxW) {
+      do { x.font = weight + ' ' + size + 'px ' + F; size -= 2; } while (x.measureText(text).width > maxW && size > 20);
+      return size + 2;
+    }
+
+    // Stats
+    var total = entries.reduce(function (n, e) { return n + Number(e.days); }, 0);
+    var vessels = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
+    var longest = entries.reduce(function (m, e) { return Math.max(m, Number(e.days)); }, 0);
+    var starts = entries.map(function (e) { return e.start; }).filter(Boolean).sort();
+    var ends = entries.map(function (e) { return e.end || e.start; }).filter(Boolean).sort();
+    var period = '';
+    if (starts.length) {
+      var p1 = monthYear(starts[0]), p2 = monthYear(ends[ends.length - 1]);
+      period = p1 === p2 ? p1 : p1 + ' – ' + p2;
+    }
+
+    // Background
+    var g = x.createLinearGradient(0, 0, W * 0.6, H);
+    g.addColorStop(0, '#2B4170'); g.addColorStop(0.55, '#1B2A4A'); g.addColorStop(1, '#0C1428');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    var glow = x.createRadialGradient(W, 0, 0, W, 0, 760);
+    glow.addColorStop(0, 'rgba(110,145,230,0.38)'); glow.addColorStop(1, 'rgba(110,145,230,0)');
+    x.fillStyle = glow; x.fillRect(0, 0, W, H);
+    x.lineWidth = 2;
+    [300, 420, 540, 660].forEach(function (r, i) {
+      x.strokeStyle = 'rgba(255,255,255,' + (0.09 - i * 0.018) + ')';
+      x.beginPath(); x.arc(W + 40, 470, r, 0, Math.PI * 2); x.stroke();
+    });
+
+    // Header: anchor badge + title
+    x.fillStyle = 'rgba(255,255,255,0.12)'; x.beginPath(); x.arc(PAD + 40, 118, 40, 0, Math.PI * 2); x.fill();
+    x.save(); x.translate(PAD + 40 - 14, 118 - 14); x.scale(28 / 24, 28 / 24);
+    x.strokeStyle = '#E3B26B'; x.lineWidth = 1.9; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); x.arc(12, 5, 3, 0, Math.PI * 2); x.stroke();
+    x.beginPath(); x.moveTo(12, 22); x.lineTo(12, 8); x.stroke();
+    x.stroke(new Path2D('M5 12H2a10 10 0 0 0 20 0h-3'));
+    x.restore();
+    x.textBaseline = 'alphabetic';
+    x.fillStyle = '#FFFFFF'; x.font = '700 30px ' + F; spaced('SEA PASSPORT', PAD + 104, 112, 5);
+    x.fillStyle = 'rgba(255,255,255,0.55)'; x.font = '500 24px ' + F; x.fillText('AMSA Form 771 · Near Coastal', PAD + 104, 148);
+    if (period) { x.fillStyle = 'rgba(255,255,255,0.55)'; x.font = '600 22px ' + F; spaced(period, W - PAD, 118, 3, 'right'); }
+
+    // Holder
+    x.fillStyle = 'rgba(255,255,255,0.45)'; x.font = '600 22px ' + F; spaced('HOLDER', PAD, 250, 5);
+    x.fillStyle = '#FFFFFF'; var holder = name || 'Mariner';
+    var hs = fit(holder, 700, 60, W - PAD * 2); x.font = '700 ' + hs + 'px ' + F; x.fillText(holder, PAD, 314);
+
+    // Hero number
+    var numStr = String(total);
+    var ns = fit(numStr, 800, 300, W - PAD * 2 - 20);
+    x.font = '800 ' + ns + 'px ' + F; x.fillStyle = '#FFFFFF'; x.fillText(numStr, PAD - 6, 592);
+    x.fillStyle = '#E3B26B'; x.font = '700 28px ' + F; spaced('DAYS AT SEA', PAD, 650, 7);
+
+    // Stat tiles
+    var gap = 24, tw = (W - PAD * 2 - gap * 2) / 3, ty = 706, th = 170;
+    [[entries.length, entries.length === 1 ? 'VOYAGE' : 'VOYAGES'], [vessels, vessels === 1 ? 'VESSEL' : 'VESSELS'], [longest, 'LONGEST (DAYS)']].forEach(function (t, i) {
+      var tx = PAD + i * (tw + gap);
+      rr(tx, ty, tw, th, 28); x.fillStyle = 'rgba(255,255,255,0.08)'; x.fill();
+      x.strokeStyle = 'rgba(255,255,255,0.14)'; x.lineWidth = 1.5; x.stroke();
+      x.fillStyle = '#FFFFFF'; x.font = '800 68px ' + F; x.fillText(String(t[0]), tx + 28, ty + 92);
+      x.fillStyle = 'rgba(255,255,255,0.55)'; x.font = '600 19px ' + F; spaced(t[1], tx + 28, ty + 138, 3);
+    });
+
+    // Tickets
+    x.fillStyle = '#E3B26B'; x.font = '700 22px ' + F; spaced('WORKING TOWARDS', PAD, 960, 5);
+    var list = workingList().sort(function (a, b) {
+      var ad = a.logged >= a.required, bd = b.logged >= b.required;
+      if (ad !== bd) return ad ? 1 : -1;
+      return ad ? b.required - a.required : b.ratio - a.ratio;
+    }).slice(0, 3);
+    if (!list.length) {
+      x.fillStyle = 'rgba(255,255,255,0.45)'; x.font = '500 28px ' + F; x.fillText('Log sea time to see ticket progress.', PAD, 1020);
+    }
+    list.forEach(function (t, i) {
+      var ry = 1020 + i * 84, done = t.logged >= t.required;
+      x.fillStyle = '#FFFFFF'; x.font = '600 30px ' + F; x.fillText(t.name, PAD, ry);
+      x.textAlign = 'right'; x.fillStyle = done ? '#6FD3A8' : 'rgba(255,255,255,0.8)'; x.font = '700 30px ' + F;
+      x.fillText((done ? '✓ ' : '') + t.logged + ' / ' + t.required, W - PAD, ry); x.textAlign = 'left';
+      rr(PAD, ry + 18, W - PAD * 2, 10, 5); x.fillStyle = 'rgba(255,255,255,0.12)'; x.fill();
+      var bw = Math.max(10, (W - PAD * 2) * t.ratio);
+      var bg = x.createLinearGradient(PAD, 0, PAD + bw, 0);
+      if (done) { bg.addColorStop(0, '#4FBF92'); bg.addColorStop(1, '#6FD3A8'); } else { bg.addColorStop(0, '#C08A3E'); bg.addColorStop(1, '#E3B26B'); }
+      rr(PAD, ry + 18, bw, 10, 5); x.fillStyle = bg; x.fill();
+    });
+
+    // Machine-readable strip
+    x.strokeStyle = 'rgba(255,255,255,0.18)'; x.lineWidth = 2; x.setLineDash([10, 10]);
+    x.beginPath(); x.moveTo(PAD, 1236); x.lineTo(W - PAD, 1236); x.stroke(); x.setLineDash([]);
+    function pad(n, l) { return String(n).padStart(l, '0'); }
+    function fill(str, len) { while (str.length < len) str += '<'; return str.slice(0, len); }
+    var who = (name || 'MARINER').toUpperCase().replace(/[^A-Z0-9]+/g, '<');
+    var l1 = fill('SEA<<SERVICE<<' + who, 38);
+    var l2 = fill(pad(total, 4) + 'D<' + pad(entries.length, 3) + 'V<' + pad(vessels, 2) + 'S<' + pad(longest, 3) + 'L', 38);
+    var ms = 40; x.font = '500 ' + ms + 'px "SF Mono", Menlo, Courier, monospace';
+    while (x.measureText(l1).width > W - PAD * 2 && ms > 16) { ms -= 1; x.font = '500 ' + ms + 'px "SF Mono", Menlo, Courier, monospace'; }
+    x.fillStyle = 'rgba(255,255,255,0.3)'; x.fillText(l1, PAD, 1280); x.fillText(l2, PAD, 1280 + ms + 12);
+    return c;
+  }
+
+  function refreshPassport() {
+    var canvas = drawPassport(holderInput.value.trim());
+    canvas.toBlob(function (blob) {
+      if (!blob) return;
+      passportBlob = blob;
+      if (passportUrl) URL.revokeObjectURL(passportUrl);
+      passportUrl = URL.createObjectURL(blob); passportImg.src = passportUrl;
+    }, 'image/png');
+  }
+
+  function openShare() {
+    refreshPassport();
+    document.body.style.overflow = 'hidden';
+    shareOverlay.classList.add('open'); haptic(8);
+  }
+  function closeShare() {
+    shareOverlay.classList.remove('open'); shareSheet.style.transform = '';
+    document.body.style.overflow = '';
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+  $('exportBtn').addEventListener('click', openShare);
+  $('closeShareBtn').addEventListener('click', closeShare);
+  shareOverlay.addEventListener('click', function (e) { if (e.target === shareOverlay) closeShare(); });
+  holderInput.addEventListener('input', function () {
+    try { localStorage.setItem(HOLDER_KEY, holderInput.value); } catch (e) {}
+    clearTimeout(holderTimer); holderTimer = setTimeout(refreshPassport, 200);
+  });
+
+  function copyImageFallback() {
+    try {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': passportBlob })])
+        .then(function () { showToast('Card copied. Paste it into a message.'); },
+              function () { showToast('Touch and hold the card to save it'); });
+    } catch (err) { showToast('Touch and hold the card to save it'); }
+  }
+  $('shareBtn').addEventListener('click', function () {
+    if (!passportBlob) return;
+    var file = null;
+    try { file = new File([passportBlob], 'sea-passport.png', { type: 'image/png' }); } catch (err) {}
+    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'My sea service' }).catch(function (err) { if (err && err.name !== 'AbortError') copyImageFallback(); });
+    } else { copyImageFallback(); }
+  });
+
   function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
-  $('exportBtn').addEventListener('click', function () {
-    if (!entries.length) { showToast('Nothing to export yet'); return; }
+  $('csvBtn').addEventListener('click', function () {
+    if (!entries.length) { showToast('Nothing to copy yet'); return; }
     var head = ['Vessel', 'Identifier', 'Length (m)', 'Power (kW)', 'Propulsion', 'Operation', 'Mode', 'Position', 'Duty category', 'Start', 'End', 'Days', 'Notes'];
-    var rows = entries.slice().sort(function (a, b) { return (a.start || '').localeCompare(b.start || ''); }).map(function (e) {
+    var rows = entries.slice().sort(function (p, q) { return (p.start || '').localeCompare(q.start || ''); }).map(function (e) {
       return [e.vessel, e.vesselId, e.vesselLength, e.vesselPower, e.propulsion, e.operationType, e.modeOfOperation, e.position, e.category, e.start, e.end, e.days, e.notes].map(csvCell).join(',');
     });
     var csv = [head.join(',')].concat(rows).join('\n');
-    var file;
-    try { file = new File([csv], 'sea-service.csv', { type: 'text/csv' }); } catch (err) { file = null; }
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: 'Sea service record' }).catch(function () {});
-    } else {
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'sea-service.csv';
-      document.body.appendChild(a); a.click(); a.remove();
-      showToast('Exported sea-service.csv');
-    }
+    var done = function () { showToast('Copied ' + entries.length + ' entries as CSV'); };
+    var fail = function () { showToast('Copy was blocked here'); };
+    try { navigator.clipboard.writeText(csv).then(done, fail); } catch (err) { fail(); }
   });
 
   // ---- Calendar ----
@@ -958,25 +1157,27 @@
   $('closeModalBtn').addEventListener('click', closeModal);
   modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) closeModal(); });
 
-  // Drag-to-dismiss on the sheet header
-  (function () {
+  // Drag-to-dismiss on a sheet header
+  function makeDraggable(head, sh, close) {
     var startY = 0, dy = 0, active = false, t0 = 0;
-    sheetHead.addEventListener('touchstart', function (e) {
+    head.addEventListener('touchstart', function (e) {
       if (e.target.closest('.close-btn')) return;
-      active = true; startY = e.touches[0].clientY; dy = 0; t0 = Date.now(); sheet.classList.add('dragging');
+      active = true; startY = e.touches[0].clientY; dy = 0; t0 = Date.now(); sh.classList.add('dragging');
     }, { passive: true });
-    sheetHead.addEventListener('touchmove', function (e) {
+    head.addEventListener('touchmove', function (e) {
       if (!active) return; dy = Math.max(0, e.touches[0].clientY - startY);
-      sheet.style.transform = 'translateY(' + dy + 'px)'; e.preventDefault();
+      sh.style.transform = 'translateY(' + dy + 'px)'; e.preventDefault();
     }, { passive: false });
     function end() {
-      if (!active) return; active = false; sheet.classList.remove('dragging');
+      if (!active) return; active = false; sh.classList.remove('dragging');
       var velocity = dy / Math.max(1, Date.now() - t0);
-      if (dy > 120 || velocity > 0.7) closeModal(); else sheet.style.transform = '';
+      if (dy > 120 || velocity > 0.7) close(); else sh.style.transform = '';
     }
-    sheetHead.addEventListener('touchend', end);
-    sheetHead.addEventListener('touchcancel', end);
-  })();
+    head.addEventListener('touchend', end);
+    head.addEventListener('touchcancel', end);
+  }
+  makeDraggable(sheetHead, sheet, closeModal);
+  makeDraggable($('shareHead'), shareSheet, closeShare);
 
   $('prevMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); haptic(5); });
   $('nextMonthBtn').addEventListener('click', function () { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); haptic(5); });
