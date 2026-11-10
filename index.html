@@ -309,6 +309,16 @@
   .group-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 18px 0 2px; }
   .group-label:first-child { margin-top: 0; }
 
+  /* Send to supervisor */
+  .send-btn { display: flex; align-items: center; gap: 14px; width: 100%; border: none; border-radius: 16px; padding: 14px 16px; background: var(--accent); color: #fff; text-align: left; cursor: pointer; transition: transform .25s var(--spring); }
+  .send-btn:active { transform: scale(0.97); }
+  .send-btn b { display: block; font-size: 16px; letter-spacing: -0.01em; }
+  .send-btn small { display: block; font-size: 12.5px; opacity: 0.85; margin-top: 2px; font-weight: 500; line-height: 1.35; }
+  .send-btn svg { flex-shrink: 0; }
+  .sent-note { font-size: 12.5px; color: var(--yellow); margin: 8px 2px 0; }
+  .sig-img { background: #F1F1EE; border-radius: 12px; padding: 8px; text-align: center; margin: 4px 0 6px; }
+  .sig-img img { max-width: 100%; max-height: 90px; }
+
   /* Form 771 PDF */
   .pdf-prev { background: #fff; border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5); overflow: hidden; min-height: 220px; display: flex; align-items: center; justify-content: center; }
   .pdf-prev canvas { width: 100%; height: auto; display: block; }
@@ -530,6 +540,22 @@
   </div>
 </div>
 
+<div class="overlay" id="signedOverlay">
+  <div class="sheet" id="signedSheet" role="dialog" aria-modal="true" aria-label="Signed by supervisor">
+    <div class="sheet-head" id="signedHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row"><h2>Signed</h2>
+        <button class="close-btn" id="closeSignedBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="sheet-body" id="signedBody"></div>
+    <div class="sheet-foot">
+      <button class="save-btn" id="signedAddBtn" type="button">Add to my Form 771</button>
+      <button class="link-btn" id="signedLaterBtn" type="button">Not now</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="pdfOverlay">
   <div class="sheet" id="pdfSheet" role="dialog" aria-modal="true" aria-label="Fill AMSA Form 771">
     <div class="sheet-head" id="pdfHead">
@@ -569,7 +595,14 @@
         </div>
         <div class="field" id="roleOtherField" style="display:none;"><label class="field-label" for="pfRoleOther">Other role</label><input type="text" id="pfRoleOther" autocomplete="off" /></div>
         <div class="field">
-          <div class="sig-row"><label class="field-label" style="margin:0;">Supervisor signature</label><button type="button" class="link" id="supSigClear">Clear</button></div>
+          <button type="button" class="send-btn" id="sendSupBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+            <span><b>Send to supervisor</b><small>They sign on their own phone. No account, no meeting.</small></span>
+          </button>
+          <p class="sent-note" id="sentNote" style="display:none;"></p>
+        </div>
+        <div class="field">
+          <div class="sig-row"><label class="field-label" style="margin:0;">Or sign in person</label><button type="button" class="link" id="supSigClear">Clear</button></div>
           <div class="sigpad"><canvas id="supSigCv"></canvas><div class="x"></div><div class="hint" id="supSigHint">Hand the phone to your supervisor to sign</div></div>
           <p class="field-hint">AMSA does not accept a typed name. The signature has to be drawn. The date is added automatically.</p>
         </div>
@@ -1817,6 +1850,77 @@
     };
   }
 
+  // ---- Send to supervisor: the request travels in a link, the signed reply comes back in a link ----
+  var BASE_KEY = 'sea-service-base', appBaseOverride = '';
+  try { appBaseOverride = localStorage.getItem(BASE_KEY) || ''; } catch (e) {}
+  function b64enc(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function b64dec(t) { try { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return JSON.parse(decodeURIComponent(escape(atob(t)))); } catch (e) { return null; } }
+  function appBase() {
+    var b = appBaseOverride || (location.origin + location.pathname.replace(/[^\/]*$/, ''));
+    return /\/$/.test(b) ? b : b + '/';
+  }
+  function baseIsPrivate(b) { return /^file:|^null|claude\.ai|localhost|127\.0\.0\.1|192\.168\./.test(b); }
+
+  function sendToSupervisor(e) {
+    if (!profile.name.trim()) { showToast('Add your full name first'); $('pfName').focus(); return; }
+    var base = appBase();
+    if (baseIsPrivate(base)) { showToast('Supervisors cannot open links from this address. Put the app on a public address first.'); return; }
+    var req = { v: 1, id: e.id, n: profile.name.trim(), ve: e.vessel, s: e.start, e: e.end || e.start, d: Number(e.days), p: e.position || '', c: e.category,
+      sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base };
+    var url = base + 'sign.html#r=' + b64enc(req), first = (e.supName || '').split(' ')[0];
+    var text = 'Hi' + (first ? ' ' + first : '') + ', could you confirm my sea service on ' + e.vessel + ' (' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ', ' + e.days + ' days)? It takes about 30 seconds on your phone. No account needed.';
+    e.sentAt = new Date().toISOString(); saveEntries(); showSentNote(e);
+    if (navigator.share) { navigator.share({ title: 'Sea service sign-off', text: text, url: url }).catch(function () {}); }
+    else { try { navigator.clipboard.writeText(text + '\n' + url).then(function () { showToast('Message and link copied'); }, function () { showToast('Could not copy the link'); }); } catch (err) { showToast('Could not copy the link'); } }
+  }
+  function showSentNote(e) {
+    var n = $('sentNote'); if (!e.sentAt) { n.style.display = 'none'; return; }
+    var d = new Date(e.sentAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    n.textContent = (e.supSig ? 'Signed' : 'Sent' + (e.supName ? ' to ' + e.supName : '') + ' on ' + d + '. Waiting for the signed reply.'); n.style.display = '';
+    if (e.supSig) n.textContent = 'Signed by ' + (e.supName || 'your supervisor') + (e.supDate ? ' on ' + auDate(e.supDate) : '') + '.';
+  }
+  $('sendSupBtn').addEventListener('click', function () { if (pdfEntry) { fx('open'); sendToSupervisor(pdfEntry); } });
+
+  // Draw the supervisor's stroke data back into a PNG for the form
+  function strokesToPng(g, a) {
+    var W = 600, H = Math.max(80, Math.round(W * (a || 300) / 1000)), c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d'), k = W / 1000; x.lineWidth = 5; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#1B2A5E';
+    (g || []).forEach(function (st) {
+      x.beginPath(); x.moveTo(st[0] * k, st[1] * k); if (st.length === 2) x.lineTo(st[0] * k + 0.1, st[1] * k + 0.1);
+      for (var i = 2; i < st.length; i += 2) x.lineTo(st[i] * k, st[i + 1] * k); x.stroke();
+    });
+    return c.toDataURL('image/png');
+  }
+  var signedOverlay = $('signedOverlay'), signedSheet = $('signedSheet'), signedReply = null, signedEntry = null;
+  function handleSignedLink() {
+    var m = location.hash.match(/^#signed=(.+)$/); if (!m) return;
+    var r = b64dec(m[1]); history.replaceState(null, '', location.pathname + location.search);
+    if (!r || !r.id) { showToast('That link could not be read'); return; }
+    var e = entries.filter(function (x) { return x.id === r.id; })[0];
+    if (!e) { showToast('That reply belongs to a different phone. Open it on the phone you sent the request from.'); return; }
+    signedReply = r; signedEntry = e;
+    var png = strokesToPng(r.g, r.a), changed = Number(r.d) !== Number(e.days);
+    var kv = function (l, v) { return v ? '<div class="kv"><span>' + l + '</span><span>' + escapeHtml(v) + '</span></div>' : ''; };
+    $('signedBody').innerHTML = '<p class="f-intro">' + escapeHtml(r.sn || 'Your supervisor') + ' signed your sea service on ' + escapeHtml(e.vessel) + '.</p>' +
+      '<div class="form-card">' + '<div class="sig-img"><img alt="Supervisor signature" src="' + png + '"></div>' +
+      kv('Supervisor', r.sn) + kv('Position', r.sp) + kv('Certificate', r.sc) + kv('Phone', r.sph) + kv('Email', r.sem) +
+      kv('Days confirmed', String(r.d) + (changed ? ' (you logged ' + e.days + ')' : '')) + kv('Signed', new Date(r.t).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })) + '</div>' +
+      (changed ? '<p class="sent-note">Your supervisor changed the days to ' + escapeHtml(String(r.d)) + '. Adding this updates your entry.</p>' : '');
+    signedReply.png = png; document.body.style.overflow = 'hidden'; signedOverlay.classList.add('open'); fx('success');
+  }
+  function closeSigned() { signedOverlay.classList.remove('open'); signedSheet.style.transform = ''; document.body.style.overflow = ''; }
+  $('closeSignedBtn').addEventListener('click', closeSigned); $('signedLaterBtn').addEventListener('click', closeSigned);
+  signedOverlay.addEventListener('click', function (ev) { if (ev.target === signedOverlay) closeSigned(); });
+  $('signedAddBtn').addEventListener('click', function () {
+    var r = signedReply, e = signedEntry; if (!r || !e) return;
+    e.supName = r.sn || e.supName; e.supPosition = r.sp || e.supPosition; e.supCert = r.sc || e.supCert; e.supPhone = r.sph || e.supPhone; e.supEmail = r.sem || e.supEmail;
+    e.supRole = r.r || e.supRole; e.supRoleOther = r.ro || ''; e.supSig = r.png; e.supDate = (r.t || '').slice(0, 10) || isoDate(new Date());
+    if (Number(r.d) !== Number(e.days)) { e.daysLogged = e.days; e.days = Number(r.d); }
+    saveEntries(); renderMain(); closeSigned(); fx('success'); showToast('Added. Check the form and save it.');
+    setTimeout(function () { openPdfSheet(e.id); }, 350);
+  });
+  window.addEventListener('hashchange', handleSignedLink);
+
   var pdfOverlay = $('pdfOverlay'), pdfSheet = $('pdfSheet'), pdfEntry = null, pdfBytes = null, pdfTimer = null, pdfSeq = 0, mySig = null, supSigPad = null;
   function loadScript(src) {
     return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = function () { rej(new Error('preview')); }; document.head.appendChild(sc); });
@@ -1848,7 +1952,7 @@
     pdfEntry = entries.filter(function (e) { return e.id === id; })[0]; if (!pdfEntry) return;
     $('pfName').value = profile.name; $('pfDob').value = profile.dob; $('pfPhone').value = profile.phone;
     $('pfEngines').value = pdfEntry.numEngines || ''; $('pfRoleOther').value = pdfEntry.supRoleOther || '';
-    var role = pdfEntry.supRole || guessRole(pdfEntry); syncRole(role);
+    var role = pdfEntry.supRole || guessRole(pdfEntry); syncRole(role); showSentNote(pdfEntry);
     $('pdfMsg').textContent = 'Building the form…'; $('pdfMsg').style.display = ''; $('pdfCanvas').style.display = 'none'; $('pdfStatus').textContent = '';
     document.body.style.overflow = 'hidden'; pdfOverlay.classList.add('open'); fx('open');
     setTimeout(function () {
@@ -1894,6 +1998,7 @@
     } catch (e) { showToast('Saving a PDF is not available in this view.'); }
   }
   makeDraggable($('pdfHead'), pdfSheet, closePdfSheet);
+  makeDraggable($('signedHead'), signedSheet, closeSigned);
 
   // ---- Calendar ----
   var todayIso = isoDate(new Date());
@@ -2070,6 +2175,7 @@
     var html = '<div class="form-card"><p class="section-title">Feedback</p>' +
       '<label class="set-row"><span class="n">Sounds<small>Taps, calendar notes and confirmations. Your silent switch still mutes them.</small></span>' +
       '<input type="checkbox" class="switch" id="soundSwitch" ' + (soundOn ? 'checked' : '') + ' /></label></div>';
+    html += '<div class="form-card"><p class="section-title">Supervisor links</p><div class="field"><label class="field-label" for="baseInput">Web address of this app</label><input type="text" id="baseInput" placeholder="https://yourname.github.io/record-of-sea-service/" autocapitalize="none" autocomplete="off" value="' + escapeHtml(appBaseOverride) + '" /><p class="field-hint">Links you send must open on your supervisor\u2019s phone. Leave this blank if the app is already on a public address.</p></div></div>';
     html += '<div class="form-card"><p class="section-title">Tickets I hold</p><p class="field-hint" style="margin:-6px 0 10px;">Tick tickets you already have. They leave Working towards and appear on your passport card.</p>';
     ['General', 'Deck', 'Engineering'].forEach(function (g) {
       html += '<div class="group-label">' + g + '</div>';
@@ -2086,6 +2192,10 @@
       el.textContent = c ? 'Covered by ' + c.name : '';
     });
   }
+  settingsBody.addEventListener('input', function (ev) {
+    if (ev.target.id !== 'baseInput') return;
+    appBaseOverride = ev.target.value.trim(); try { localStorage.setItem(BASE_KEY, appBaseOverride); } catch (e) {}
+  });
   settingsBody.addEventListener('change', function (ev) {
     var el = ev.target;
     if (el.id === 'soundSwitch') {
@@ -2119,6 +2229,7 @@
 
   // ---- Init ----
   renderMain();
+  handleSignedLink();
 
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });

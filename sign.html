@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#141416" />
+<meta name="robots" content="noindex" />
+<title>Sign sea service</title>
+<style>
+  /* One screen, one job: check the details, draw a signature, send it back. */
+  :root {
+    color-scheme: dark;
+    --bg: #141416; --card: #202024; --card-2: #2A2A2F; --ink: #F1F1EE; --ink-2: #A6A6AE; --ink-3: #6F6F77;
+    --line: rgba(255,255,255,0.09); --blue: #2A93FF; --blue-soft: rgba(42,147,255,0.2); --green: #30D158; --yellow: #FFD60A;
+    --primary: #ECECE8; --on-primary: #19191C;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --ease: cubic-bezier(.32,.72,0,1); --spring: cubic-bezier(.34,1.56,.64,1);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+  .wrap { max-width: 460px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 22px) 18px calc(env(safe-area-inset-bottom, 0px) + 40px); }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 13px; font-weight: 600; margin-bottom: 26px; }
+  .brand i { width: 30px; height: 30px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; }
+  h1 { font-size: 30px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 8px; text-wrap: balance; }
+  .lead { color: var(--ink-2); font-size: 15px; margin: 0 0 22px; }
+  .rise { animation: rise .6s var(--ease) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .card { background: var(--card); border-radius: 20px; padding: 6px 18px; margin-bottom: 14px; }
+  .kv { display: flex; justify-content: space-between; gap: 14px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .kv:first-child { border-top: none; }
+  .kv span:first-child { color: var(--ink-2); flex-shrink: 0; }
+  .kv span:last-child { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+  .days { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+  .days b { font-size: 15px; font-weight: 600; }
+  .stepper { display: flex; align-items: center; gap: 14px; }
+  .stepper button { width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--card-2); color: var(--ink); font-size: 22px; font-weight: 600; cursor: pointer; transition: transform .25s var(--spring); }
+  .stepper button:active { transform: scale(0.86); }
+  .stepper output { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+  .note { font-size: 12.5px; color: var(--yellow); margin: -4px 0 12px; display: none; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin: 24px 2px 10px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid .full { grid-column: 1 / -1; }
+  input { width: 100%; border: none; border-radius: 14px; padding: 15px 14px; font-size: 16px; font-family: inherit; color: var(--ink); background: var(--card); outline: none; transition: box-shadow .2s; }
+  input::placeholder { color: var(--ink-3); }
+  input:focus { box-shadow: 0 0 0 2px var(--blue); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips button { border: none; background: var(--card); color: var(--ink-2); font: inherit; font-size: 14px; font-weight: 600; padding: 11px 15px; border-radius: 999px; cursor: pointer; transition: transform .25s var(--spring), background .2s; }
+  .chips button.on { background: var(--blue); color: #fff; }
+  .chips button:active { transform: scale(0.94); }
+  .decl { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 22px 2px 12px; }
+  .pad { position: relative; background: #F1F1EE; border-radius: 18px; height: 150px; touch-action: none; }
+  .pad canvas { width: 100%; height: 100%; display: block; border-radius: 18px; touch-action: none; }
+  .pad .hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8A8A92; font-size: 14px; pointer-events: none; }
+  .pad .x { position: absolute; left: 20px; right: 20px; bottom: 34px; border-bottom: 1.5px solid #B8B8BE; pointer-events: none; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin: 10px 2px 0; }
+  .link { border: none; background: none; color: var(--blue); font: inherit; font-size: 14px; font-weight: 600; padding: 4px 0; cursor: pointer; }
+  .small { font-size: 12.5px; color: var(--ink-3); }
+  .go { width: 100%; margin-top: 18px; border: none; border-radius: 18px; padding: 18px; font: inherit; font-size: 17px; font-weight: 700; background: var(--primary); color: var(--on-primary); cursor: pointer; transition: transform .25s var(--spring), opacity .2s; }
+  .go:active { transform: scale(0.97); }
+  .go:disabled { opacity: 0.3; }
+  .fine { font-size: 12.5px; color: var(--ink-3); text-align: center; margin: 16px 8px 0; line-height: 1.5; }
+  .preview { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--yellow); background: rgba(255,214,10,0.14); padding: 4px 10px; border-radius: 999px; margin-bottom: 14px; }
+  .done { text-align: center; padding-top: 40px; }
+  .tick { width: 84px; height: 84px; border-radius: 50%; background: var(--green); color: #0B2A16; display: flex; align-items: center; justify-content: center; margin: 0 auto 22px; animation: pop .7s var(--spring); }
+  @keyframes pop { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
+  .copybox { background: var(--card); border-radius: 14px; padding: 12px 14px; font-size: 12px; color: var(--ink-2); word-break: break-all; text-align: left; margin-top: 18px; max-height: 84px; overflow: hidden; }
+  button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></i>Sea Service</div>
+
+  <section id="form">
+    <div id="previewTag"></div>
+    <h1 class="rise" id="title"></h1>
+    <p class="lead rise" id="lead" style="animation-delay:.05s"></p>
+
+    <div class="card rise" id="facts" style="animation-delay:.1s"></div>
+
+    <div class="card rise" style="animation-delay:.15s">
+      <div class="days"><b>Days at sea</b><div class="stepper"><button id="dec" aria-label="Fewer days">−</button><output id="days"></output><button id="inc" aria-label="More days">+</button></div></div>
+    </div>
+    <p class="note" id="changed">Different from what was logged. Your number will replace it.</p>
+
+    <div class="label">You</div>
+    <div class="grid">
+      <input id="sn" class="full" placeholder="Your full name" autocomplete="name" autocapitalize="words">
+      <input id="sp" placeholder="Job title" autocomplete="organization-title" autocapitalize="words">
+      <input id="sc" class="full" placeholder="Certificate held (type and number)" autocapitalize="characters">
+      <input id="sph" type="tel" inputmode="tel" placeholder="Phone" autocomplete="tel">
+      <input id="sem" type="email" inputmode="email" placeholder="Email" autocomplete="email" autocapitalize="none">
+    </div>
+    <div class="label">Your role</div>
+    <div class="chips" id="roles"><button data-r="master">Master in charge</button><button data-r="engineer">Engineer in charge</button><button data-r="owner">Owner</button><button data-r="other">Other</button></div>
+    <div id="otherBox" style="display:none;margin-top:10px;"><input id="ro" placeholder="Describe your role"></div>
+
+    <p class="decl">I supervised this person on this vessel, and the details above are true and correct.</p>
+    <div class="pad"><canvas id="cv"></canvas><div class="x"></div><div class="hint" id="hint">Draw your signature</div></div>
+    <div class="row"><button class="link" id="clear">Clear</button><span class="small">Drawn, not typed</span></div>
+
+    <button class="go" id="go" disabled>Sign and send back</button>
+    <p class="fine">No account and nothing stored on a server. Your signed reply travels back to <span id="firstName">them</span> in a link.</p>
+  </section>
+
+  <section id="doneBox" class="done" style="display:none;">
+    <div class="tick"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h1>All signed</h1>
+    <p class="lead" id="doneLead"></p>
+    <button class="go" id="again" style="margin-top:8px;">Send the reply again</button>
+    <div class="copybox" id="copybox"></div>
+    <button class="link" id="copyLink" style="margin-top:10px;">Copy link</button>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function enc(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
+  function au(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+  var DUTY = { D: 'Deck work', DE: 'Deck and engineering', GPH: 'General purpose hand', INW: 'In charge of navigation watch', C: 'Coxswain', AEIC: 'Assistant to engineer in charge', 'AE/ED': 'Assistant to engineer or engine driver', 'E/ED': 'Engineer or engine driver', EW: 'Engineer watchkeeper', EIC: 'Engineer in charge' };
+
+  // ---- the request lives in the link ----
+  var m = location.hash.match(/^#r=(.+)$/), R = m && dec(m[1]), demo = false;
+  if (!R || !R.id) {
+    demo = true;
+    R = { v: 1, id: 'demo', n: 'Alex Marlow', ve: 'Coral Trader', s: '2026-08-01', e: '2026-09-02', d: 33, p: 'Mate', c: 'INW', sn: 'Sam Rivera', sp: 'Master', sc: '', sph: '', sem: '', b: '' };
+    $('previewTag').innerHTML = '<span class="preview">Preview with example data</span>';
+  }
+  var first = (R.sn || '').split(' ')[0], who = R.n || 'A crew member', days = Number(R.d) || 1, role = '', hasInk = false;
+  document.title = 'Sign for ' + who;
+  $('title').textContent = who + ' asks you to confirm sea service';
+  $('lead').textContent = 'Check the details, sign, and send it back. About 30 seconds.';
+  $('firstName').textContent = (R.n || 'them').split(' ')[0];
+  var facts = [['Vessel', R.ve], ['Dates', au(R.s) + (R.e && R.e !== R.s ? ' to ' + au(R.e) : '')], ['Position', R.p || ''], ['Duty', DUTY[R.c] || R.c || '']].filter(function (r) { return r[1]; });
+  $('facts').innerHTML = '';
+  facts.forEach(function (r) { var row = document.createElement('div'); row.className = 'kv'; var a = document.createElement('span'), b = document.createElement('span'); a.textContent = r[0]; b.textContent = r[1]; row.appendChild(a); row.appendChild(b); $('facts').appendChild(row); });
+  ['sn', 'sp', 'sc', 'sph', 'sem'].forEach(function (k) { $(k).value = R[k] || ''; });
+  var g = (R.sp || '').toLowerCase(); role = /master|skipper|captain/.test(g) ? 'master' : /engineer/.test(g) ? 'engineer' : /owner/.test(g) ? 'owner' : '';
+  function paintDays() { $('days').textContent = days; $('changed').style.display = days !== Number(R.d) ? 'block' : 'none'; }
+  function paintRole() { Array.prototype.forEach.call($('roles').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-r') === role); }); $('otherBox').style.display = role === 'other' ? 'block' : 'none'; }
+  paintDays(); paintRole();
+  $('inc').onclick = function () { days = Math.min(60, days + 1); paintDays(); };
+  $('dec').onclick = function () { days = Math.max(1, days - 1); paintDays(); };
+  $('roles').onclick = function (e) { var b = e.target.closest('[data-r]'); if (!b) return; role = b.getAttribute('data-r'); paintRole(); };
+
+  // ---- signature pad: records strokes as small numbers so the reply stays a short link ----
+  var cv = $('cv'), pad = cv.parentNode, x, strokes = [], cur = null, down = false, W = 1, Hh = 1, K = 1;
+  function size() {
+    var r = pad.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); W = r.width; Hh = r.height; K = 1000 / W;
+    cv.width = W * dpr; cv.height = Hh * dpr; x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.lineWidth = 2.6; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#1B2A5E';
+  }
+  size();
+  function pt(e) { var b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; }
+  cv.onpointerdown = function (e) { down = true; cv.setPointerCapture(e.pointerId); var p = pt(e); cur = [Math.round(p[0] * K), Math.round(p[1] * K)]; strokes.push(cur); x.beginPath(); x.moveTo(p[0], p[1]); x.lineTo(p[0] + 0.1, p[1] + 0.1); x.stroke(); };
+  cv.onpointermove = function (e) {
+    if (!down) return; var p = pt(e), n = cur.length, lx = cur[n - 2] / K, ly = cur[n - 1] / K;
+    if (Math.abs(p[0] - lx) + Math.abs(p[1] - ly) < 3) return;
+    x.beginPath(); x.moveTo(lx, ly); x.lineTo(p[0], p[1]); x.stroke(); cur.push(Math.round(p[0] * K), Math.round(p[1] * K));
+    if (!hasInk) { hasInk = true; $('hint').style.display = 'none'; check(); }
+  };
+  cv.onpointerup = cv.onpointercancel = function () { down = false; };
+  $('clear').onclick = function () { x.clearRect(0, 0, W, Hh); strokes = []; hasInk = false; $('hint').style.display = ''; check(); };
+  function check() { $('go').disabled = !(hasInk && $('sn').value.trim()); }
+  $('sn').oninput = check;
+
+  // ---- send the signed reply back as a link ----
+  function reply() {
+    var resp = { v: 1, id: R.id, d: days, dl: Number(R.d), sn: $('sn').value.trim(), sp: $('sp').value.trim(), sc: $('sc').value.trim(), sph: $('sph').value.trim(), sem: $('sem').value.trim(),
+      r: role, ro: $('ro').value.trim(), t: new Date().toISOString(), a: Math.round(1000 * Hh / W), g: strokes.filter(function (s) { return s.length >= 4; }) };
+    var base = R.b || (location.href.replace(/sign\.html.*$/, ''));
+    return base + '#signed=' + enc(resp);
+  }
+  var lastUrl = '';
+  function send() {
+    lastUrl = reply();
+    var text = 'Signed. ' + ($('sn').value.trim() || 'Your supervisor') + ' confirmed ' + days + ' days for ' + (R.ve || 'your sea service') + '. Open this link on your phone to add it to your Form 771:';
+    $('form').style.display = 'none'; $('doneBox').style.display = 'block'; window.scrollTo(0, 0);
+    $('doneLead').textContent = 'Send the reply to ' + (R.n || 'them') + ' and you are finished.';
+    $('copybox').textContent = lastUrl;
+    if (navigator.share) { navigator.share({ title: 'Signed sea service', text: text, url: lastUrl }).catch(function () {}); }
+  }
+  $('go').onclick = send;
+  $('again').onclick = function () { if (navigator.share) { navigator.share({ title: 'Signed sea service', text: 'Signed. Open this link on your phone to add it to your Form 771:', url: lastUrl }).catch(function () {}); } else { copy(); } };
+  function copy() { try { navigator.clipboard.writeText(lastUrl).then(function () { $('copyLink').textContent = 'Copied'; }, function () { $('copyLink').textContent = 'Press and hold the link above to copy'; }); } catch (e) { $('copyLink').textContent = 'Press and hold the link above to copy'; } }
+  $('copyLink').onclick = copy;
+})();
+</script>
+</body>
+</html>
