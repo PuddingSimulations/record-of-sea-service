@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Sea Service" />
+<meta name="apple-mobile-web-app-title" content="Askel" />
 <meta name="format-detection" content="telephone=no" />
 <meta name="color-scheme" content="dark" />
 <meta name="theme-color" content="#141416" />
@@ -15,14 +15,14 @@
 <link rel="icon" href="icon-192.png" />
 <meta name="description" content="Log sea time, track every Australian near coastal ticket, get your supervisor to sign it, and fill AMSA Form 771." />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="Sea Service" />
-<meta property="og:title" content="Sea Service" />
+<meta property="og:site_name" content="Askel" />
+<meta property="og:title" content="Askel: Sea Service Log" />
 <meta property="og:description" content="Log sea time, track every Australian near coastal ticket, get your supervisor to sign it, and fill AMSA Form 771." />
 <meta property="og:image" content="https://flagmantle.github.io/record-of-sea-service/og-image.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<title>Record of Sea Service</title>
+<title>Askel: Sea Service Log</title>
 <style>
   /* Dark grey with white text and faded blue / green / red / yellow accents */
   :root {
@@ -428,11 +428,11 @@
 <body>
 
 <div class="wrap">
-  <div class="navbar" id="navbar" aria-hidden="true"><span>Sea Service</span></div>
+  <div class="navbar" id="navbar" aria-hidden="true"><span>Askel</span></div>
 
   <header class="rise">
     <div>
-      <h1>Sea Service</h1>
+      <h1>Askel</h1>
       <p class="subtitle">AMSA Form 771 · Near Coastal</p>
     </div>
     <button class="icon-btn" id="settingsBtn" aria-label="Settings">
@@ -1456,7 +1456,7 @@
     }
 
     if (entries.length === 0) {
-      entriesSection.innerHTML = '<div class="empty-box"><div class="emoji"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2A93FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div><h3>No sea time yet</h3><p>Tap <b>Add</b> to log your first stretch of sea service.</p></div>';
+      entriesSection.innerHTML = '<div class="empty-box"><div class="emoji"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2A93FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="4.2"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></g></svg></div><h3>No sea time yet</h3><p>Tap <b>Add</b> to log your first stretch of sea service.</p></div>';
       return;
     }
 
@@ -1668,13 +1668,11 @@
     x.fillStyle = T.badge; x.beginPath(); x.arc(PAD + 40, 118, 40, 0, Math.PI * 2); x.fill();
     x.save(); x.translate(PAD + 40 - 14, 118 - 14); x.scale(28 / 24, 28 / 24);
     x.strokeStyle = T.accent; x.lineWidth = 1.9; x.lineCap = 'round'; x.lineJoin = 'round';
-    x.beginPath(); x.arc(12, 5, 3, 0, Math.PI * 2); x.stroke();
-    x.beginPath(); x.moveTo(12, 22); x.lineTo(12, 8); x.stroke();
-    x.stroke(new Path2D('M5 12H2a10 10 0 0 0 20 0h-3'));
+    x.lineWidth = 4.2; [[4, 18.5, 0.45], [8, 12, 0.75], [12, 5.5, 1]].forEach(function (b) { x.globalAlpha = b[2]; x.beginPath(); x.moveTo(b[0], b[1]); x.lineTo(20, b[1]); x.stroke(); }); x.globalAlpha = 1;
     x.restore();
     x.textBaseline = 'alphabetic';
-    x.fillStyle = T.ink; x.font = '700 30px ' + F; spaced('SEA PASSPORT', PAD + 104, 112, 5);
-    x.fillStyle = T.muted; x.font = '500 24px ' + F; x.fillText('AMSA Form 771 · Near Coastal', PAD + 104, 148);
+    x.fillStyle = T.ink; x.font = '700 30px ' + F; spaced('ASKEL', PAD + 104, 112, 6);
+    x.fillStyle = T.muted; x.font = '500 24px ' + F; x.fillText('Sea Passport · Near Coastal', PAD + 104, 148);
     if (period) { x.fillStyle = T.muted; x.font = '600 22px ' + F; spaced(period, W - PAD, 118, 3, 'right'); }
 
     // Holder

@@ -1,6 +1,6 @@
 {
-  "name": "Record of Sea Service",
-  "short_name": "Sea Service",
+  "name": "Askel: Sea Service Log",
+  "short_name": "Askel",
   "description": "Log sea time and track progress towards AMSA near coastal tickets.",
   "start_url": "./index.html",
   "scope": "./",
