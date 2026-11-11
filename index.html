@@ -114,7 +114,7 @@
   .select-wrap { position: relative; margin-bottom: 12px; }
   .select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
     border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); pointer-events: none; }
-  select, input[type=text], input[type=number], input[type=tel], input[type=email], input[type=date], textarea {
+  select, input[type=text], input[type=number], input[type=tel], input[type=email], input[type=password], input[type=date], textarea {
     width: 100%; border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; color: var(--ink);
     background: var(--card-2); font-family: inherit; outline: none; -webkit-appearance: none; appearance: none;
     transition: box-shadow .2s ease, background .2s ease; }
@@ -124,6 +124,34 @@
   input:disabled { opacity: 0.5; }
 
   /* Segmented control with sliding thumb */
+  /* Main tabs: each has its own colour so Tickets is obvious */
+  .main-tabs { padding: 4px; }
+  .segmented.main-tabs .thumb { top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 10px; background: rgba(42,147,255,0.22); box-shadow: inset 0 0 0 1px rgba(42,147,255,0.5); transition: transform .45s var(--spring), background .35s ease, box-shadow .35s ease; }
+  .segmented.main-tabs.right .thumb { background: rgba(48,209,88,0.2); box-shadow: inset 0 0 0 1px rgba(48,209,88,0.5); }
+  .main-tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 14px; font-weight: 700; padding: 11px 6px; }
+  .main-tabs button svg { flex-shrink: 0; }
+  .main-tabs button[data-tab="service"] { color: rgba(110,184,255,0.7); } .main-tabs button[data-tab="service"].active { color: #7CC0FF; }
+  .main-tabs button[data-tab="tickets"] { color: rgba(91,224,127,0.75); } .main-tabs button[data-tab="tickets"].active { color: #5BE07F; }
+  .tab-badge { min-width: 19px; height: 19px; padding: 0 6px; border-radius: 999px; background: #30D158; color: #0b2a14; font-size: 12px; font-weight: 800; display: none; align-items: center; justify-content: center; }
+  .tab-badge.show { display: inline-flex; }
+  /* Goal tickets under the days total */
+  .goal-card { background: var(--card); border-radius: 18px; padding: 12px 14px 6px; margin: 0 0 14px; }
+  .goal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .goal-head span { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .goal-edit { border: none; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 700; padding: 4px 2px; cursor: pointer; }
+  .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; width: 100%; text-align: left; border: none; background: transparent; color: var(--ink); padding: 8px 0 10px; cursor: pointer; transition: transform .2s var(--spring); }
+  .goal-row:active { transform: scale(0.98); }
+  .goal-row + .goal-row { border-top: 1px solid var(--line, rgba(255,255,255,0.07)); }
+  .goal-name { font-size: 14px; font-weight: 700; }
+  .goal-num { font-size: 13px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .goal-row.done .goal-num { color: var(--good, #30D158); }
+  .goal-bar { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--card-2); overflow: hidden; }
+  .goal-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); transition: width .7s var(--spring); }
+  .goal-row.done .goal-bar i { background: var(--good, #30D158); }
+  .goal-empty { display: block; width: 100%; margin: 0 0 14px; padding: 13px; border: 1.5px dashed rgba(255,255,255,0.16); border-radius: 16px; background: transparent; color: var(--ink-2); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .goal-empty:active { transform: scale(0.98); }
+  .goal-btn { margin-top: 10px; }
+
   .segmented { position: relative; display: flex; background: var(--card-2); border-radius: 12px; padding: 3px; margin-bottom: 18px; }
   .segmented .thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px; background: #3A3A40;
     box-shadow: 0 1px 4px rgba(0,0,0,0.12); transition: transform .35s var(--ease); }
@@ -453,10 +481,12 @@
     </div>
   </section>
 
+  <div id="goalStrip"></div>
+
   <div class="segmented main-tabs" id="mainTabs" role="tablist">
     <div class="thumb"></div>
-    <button type="button" data-tab="service" class="active" role="tab">Sea service</button>
-    <button type="button" data-tab="tickets" role="tab">Tickets</button>
+    <button type="button" data-tab="service" class="active" role="tab"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c2 0 2-1.5 4.5-1.5S10 17 12 17s2.5-1.5 4.5-1.5S19 17 21 17"/><path d="M5 12l1.5-5h11L19 12"/><path d="M12 7V3"/></svg>Sea service</button>
+    <button type="button" data-tab="tickets" role="tab"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 21l5-3 5 3-1.5-6.5"/></svg>Tickets<span class="tab-badge" id="ticketsBadge"></span></button>
   </div>
 
   <div id="tabService">
@@ -507,6 +537,7 @@
 
     <p class="ticket-note" id="ticketFilterNote" style="display:none;color:var(--yellow);"></p>
     <p class="ticket-note" id="ticketNote"></p>
+    <button type="button" class="hold-btn goal-btn" id="goalBtn">Work towards this ticket</button>
     <button type="button" class="hold-btn" id="holdBtn">Mark as held</button>
   </section>
 
@@ -569,6 +600,20 @@
     </div>
     <div class="sheet-body" id="settingsBody"></div>
     <div class="sheet-foot"><button class="save-btn" id="settingsDoneBtn" type="button">Done</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="goalsOverlay">
+  <div class="sheet" id="goalsSheet" role="dialog" aria-modal="true" aria-label="Choose tickets">
+    <div class="sheet-head" id="goalsHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>Working towards</h2>
+        <button class="close-btn" id="closeGoalsBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="sheet-body" id="goalsBody"></div>
+    <div class="sheet-foot"><button class="save-btn" id="goalsDoneBtn" type="button">Done</button></div>
   </div>
 </div>
 
@@ -1323,6 +1368,8 @@
       ticketSubProgress.style.display = 'none';
     }
     ticketNote.textContent = ticket.note || '';
+    var gb = $('goalBtn');
+    if (isCustom || !goalAvailable(ticket)) { gb.style.display = 'none'; } else { var isGoal = goalIds.indexOf(ticket.id) !== -1; gb.style.display = ''; gb.classList.toggle('on', isGoal); gb.textContent = isGoal ? '\u2713 Working towards this (tap to remove)' : 'Work towards this ticket'; }
     var hb = $('holdBtn');
     if (isCustom) { hb.style.display = 'none'; } else {
       var held = heldIds.indexOf(ticket.id) !== -1; hb.style.display = ''; hb.classList.toggle('on', held);
@@ -1415,6 +1462,7 @@
       return { t: t, id: t.id, name: t.name, required: required, logged: q.days, catDays: q.catDays, ratio: Math.min(1, q.days / required) };
     });
     var ready = states.filter(function (x) { return x.logged >= x.required; }).sort(function (a, b) { return b.required - a.required; });
+    var bdg = $('ticketsBadge'); if (bdg) { bdg.textContent = ready.length; bdg.classList.toggle('show', ready.length > 0); }
     var prog = states.filter(function (x) { return x.logged > 0 && x.logged < x.required; }).sort(function (a, b) { return b.ratio - a.ratio; });
     var none = states.filter(function (x) { return x.logged === 0; });
     var html = '<div class="working">';
@@ -1429,7 +1477,7 @@
           '<div class="work-track"><div class="work-fill" data-w="' + Math.round(t.ratio * 100) + '"></div></div></button>';
       });
     }
-    if (!ready.length && !prog.length) html += '<p class="working-title">Working towards</p><p class="working-hint" style="margin-top:2px;">No ticket has qualifying days yet. Open Not started below to see what counts toward each one.</p>';
+    if (!ready.length && !prog.length) html += '<p class="working-title">All tickets</p><p class="working-hint" style="margin-top:2px;">No ticket has qualifying days yet. Open Not started below to see what counts toward each one.</p>';
     if (none.length) {
       html += '<button type="button" class="more-toggle' + (notStartedOpen ? ' open' : '') + '" id="notStartedToggle"><span>Not started (' + none.length + ')</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>';
       if (notStartedOpen) none.forEach(function (x) { html += '<button type="button" class="ns-row" data-ticket="' + x.id + '"><b>' + escapeHtml(x.name) + '</b><span>' + escapeHtml(ticketHint(x.t, x.catDays)) + '</span></button>'; });
@@ -1463,7 +1511,7 @@
     var heldN = heldList().length, stT = $('statTickets');
     stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
-    renderWorking();
+    renderWorking(); renderGoals();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
@@ -2447,8 +2495,9 @@
       '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
       '<div class="field"><label class="field-label" for="empCompany">Company</label><input type="text" id="empCompany" autocomplete="organization" autocapitalize="words" placeholder="Who you work for" value="' + escapeHtml(profile.company || '') + '" /></div>' +
       '<button type="button" class="save-btn" id="empSendBtn" style="margin-top:6px;">Send progress to employer</button></div>';
-    html += '<div class="form-card"><p class="section-title">Supervisor links</p><div class="field"><label class="field-label" for="baseInput">Web address of this app</label><input type="text" id="baseInput" placeholder="https://yourname.github.io/record-of-sea-service/" autocapitalize="none" autocomplete="off" value="' + escapeHtml(appBaseOverride) + '" /><p class="field-hint">Links you send must open on your supervisor\u2019s phone. Leave this blank if the app is already on a public address.</p></div>' +
-      '<div class="field"><label class="field-label" for="pasteReply">Paste a signed reply</label><div class="paste-row" style="margin:0;"><input type="text" id="pasteReply" placeholder="The link your supervisor sent back" autocomplete="off" autocapitalize="none" /><button type="button" id="pasteReplyBtn">Add</button></div></div></div>';
+    html += '<details class="form-card adv"><summary class="section-title" style="cursor:pointer;margin:0;">Advanced</summary><p class="field-hint" style="margin:10px 0 12px;">You do not need these. They only matter if you send sign-off links while signed out, or host your own copy of the app.</p>' +
+      '<div class="field"><label class="field-label" for="baseInput">Web address of this app</label><input type="text" id="baseInput" placeholder="Leave blank" autocapitalize="none" autocomplete="off" value="' + escapeHtml(appBaseOverride) + '" /></div>' +
+      '<div class="field"><label class="field-label" for="pasteReply">Paste a signed reply</label><div class="paste-row" style="margin:0;"><input type="text" id="pasteReply" placeholder="A reply link a supervisor sent you" autocomplete="off" autocapitalize="none" /><button type="button" id="pasteReplyBtn">Add</button></div></div></details>';
     html += '<div class="form-card"><p class="section-title">Tickets I hold</p><p class="field-hint" style="margin:-6px 0 10px;">Tick tickets you already have. They leave Working towards and appear on your passport card.</p>';
     ['General', 'Deck', 'Engineering'].forEach(function (g) {
       html += '<div class="group-label">' + g + '</div>';
@@ -2517,6 +2566,57 @@
   $('settingsDoneBtn').addEventListener('click', closeSettings);
   settingsOverlay.addEventListener('click', function (e) { if (e.target === settingsOverlay) closeSettings(); });
   makeDraggable($('settingsHead'), settingsSheet, closeSettings);
+
+  // ---- Goal tickets: the ones the user picked to work towards, shown under the days total ----
+  var GOAL_KEY = 'askel-goals', goalIds = [];
+  try { goalIds = JSON.parse(localStorage.getItem(GOAL_KEY) || '[]') || []; } catch (e) { goalIds = []; }
+  function saveGoals() { try { localStorage.setItem(GOAL_KEY, JSON.stringify(goalIds)); } catch (e) {} }
+  function goalReq(t) { return ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook; }
+  function goalAvailable(t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }
+  function activeGoals() { return goalIds.map(function (id) { return TICKETS.filter(function (t) { return t.id === id; })[0]; }).filter(function (t) { return t && goalAvailable(t); }); }
+  function renderGoals() {
+    var box = $('goalStrip'), gs = activeGoals();
+    if (!gs.length) { box.innerHTML = '<button type="button" class="goal-empty" data-goal-edit="1">+ Choose the tickets you are working towards</button>'; return; }
+    var h = '<div class="goal-card"><div class="goal-head"><span>Working towards</span><button type="button" class="goal-edit" data-goal-edit="1">Edit</button></div>';
+    gs.forEach(function (t) {
+      var req = goalReq(t), lg = qualifying(t, t.categories).days, pct = Math.min(100, Math.round(lg / req * 100)), done = lg >= req;
+      h += '<button type="button" class="goal-row' + (done ? ' done' : '') + '" data-goal="' + t.id + '"><span class="goal-name">' + escapeHtml(t.name) + '</span><span class="goal-num">' + (done ? '\u2713 ' : '') + Math.min(lg, req) + ' / ' + req + '</span><span class="goal-bar"><i style="width:' + pct + '%"></i></span></button>';
+    });
+    box.innerHTML = h + '</div>';
+  }
+  var goalsOverlay = $('goalsOverlay'), goalsSheet = $('goalsSheet'), goalsBody = $('goalsBody');
+  function renderGoalPicker() {
+    var h = '<p class="field-hint" style="margin:0 0 12px;">Pick the tickets you want to earn. They show under your total days with their progress.</p>';
+    ['General', 'Deck', 'Engineering'].forEach(function (g) {
+      var list = TICKETS.filter(function (t) { return t.group === g && goalAvailable(t); }); if (!list.length) return;
+      h += '<div class="group-label">' + g + '</div>';
+      list.forEach(function (t) {
+        h += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '<small>' + goalReq(t) + ' days of sea service</small></span><input type="checkbox" class="switch" data-goalpick="' + t.id + '" ' + (goalIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
+      });
+    });
+    goalsBody.innerHTML = h;
+  }
+  function openGoals() { renderGoalPicker(); goalsBody.scrollTop = 0; document.body.style.overflow = 'hidden'; goalsOverlay.classList.add('open'); fx('open'); }
+  function closeGoals() { goalsOverlay.classList.remove('open'); goalsSheet.style.transform = ''; document.body.style.overflow = ''; renderMain(); }
+  $('closeGoalsBtn').addEventListener('click', closeGoals); $('goalsDoneBtn').addEventListener('click', closeGoals);
+  goalsOverlay.addEventListener('click', function (e) { if (e.target === goalsOverlay) closeGoals(); });
+  goalsBody.addEventListener('change', function (ev) {
+    var id = ev.target.getAttribute && ev.target.getAttribute('data-goalpick'); if (!id) return;
+    var i = goalIds.indexOf(id);
+    if (ev.target.checked && i === -1) goalIds.push(id); else if (!ev.target.checked && i !== -1) goalIds.splice(i, 1);
+    saveGoals(); fx('toggle');
+  });
+  $('goalStrip').addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-goal-edit]')) { openGoals(); return; }
+    var row = ev.target.closest('[data-goal]'); if (!row) return;
+    ticketState.ticketId = row.getAttribute('data-goal'); ticketSelect.value = ticketState.ticketId; saveTicketState(); setTab('tickets'); renderTicketProgress(); fx('tick');
+    setTimeout(function () { $('ticketCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
+  });
+  $('goalBtn').addEventListener('click', function () {
+    var id = ticketState.ticketId, i = goalIds.indexOf(id);
+    if (i === -1) { goalIds.push(id); fx('success'); showToast('Added to Working towards'); } else { goalIds.splice(i, 1); fx('undo'); }
+    saveGoals(); renderMain();
+  });
 
   // ---- Collapsing nav bar ----
   var navbar = $('navbar'), navShown = false;
