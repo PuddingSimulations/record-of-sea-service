@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="color-scheme" content="dark" />
+<title>Askel admin</title>
+<style>
+  :root { --bg: #141416; --card: #202024; --card-2: #2A2A2F; --ink: #F1F1EE; --ink-2: #A6A6AE; --ink-3: #6F6F77; --line: rgba(255,255,255,0.09); --blue: #2A93FF; --green: #30D158; --yellow: #FFD60A; --red: #FF5A52; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; } .muted { color: var(--ink-2); font-size: 14px; }
+  .panel { background: var(--card); border-radius: 20px; padding: 18px; margin-top: 18px; }
+  input, select { background: var(--card-2); color: var(--ink); border: none; border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; outline: none; }
+  input:focus, select:focus { box-shadow: 0 0 0 2px var(--blue); }
+  .btn { border: none; border-radius: 10px; padding: 10px 14px; font: inherit; font-size: 14px; font-weight: 700; background: var(--ink); color: #141416; cursor: pointer; }
+  .btn.ghost { background: var(--card-2); color: var(--ink); } .btn:active { transform: scale(0.97); }
+  .row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; padding: 16px 0; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: none; }
+  .row label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+  .row input, .row select { width: 100%; }
+  .nm b { font-size: 16px; } .nm div { font-size: 13px; color: var(--ink-2); }
+  .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .trial { background: rgba(42,147,255,0.18); color: #7CC0FF; } .active { background: rgba(48,209,88,0.16); color: var(--green); } .expired { background: rgba(255,90,82,0.18); color: #FF8A84; }
+  .note { grid-column: 1 / -1; } .quick { display: flex; gap: 8px; flex-wrap: wrap; grid-column: 1 / -1; }
+  .err { color: var(--red); font-size: 14px; margin-top: 10px; }
+  @media (max-width: 820px) { .row { grid-template-columns: 1fr 1fr; } .nm { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Askel admin</h1>
+  <p class="muted">Companies, licences and trials. Only platform admins can load this.</p>
+  <div class="panel" id="auth"></div>
+  <div class="panel" id="list" style="display:none;"></div>
+</div>
+<script src="cloud.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var msg = '', rows = [];
+  function ymd(iso) { return iso ? new Date(iso).toISOString().slice(0, 10) : ''; }
+  function iso(d, endOfDay) { return d ? new Date(d + (endOfDay ? 'T23:59:59' : 'T00:00:00')).toISOString() : null; }
+  function drawAuth() {
+    var u = Cloud.user();
+    if (!u) { $('auth').innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;"><input type="email" id="e" placeholder="Email" autocomplete="email"><input type="password" id="p" placeholder="Password" autocomplete="current-password"><button class="btn" id="in">Sign in</button></div>' + (msg ? '<p class="err">' + esc(msg) + '</p>' : ''); $('list').style.display = 'none'; return; }
+    $('auth').innerHTML = '<span class="muted">Signed in as ' + esc(u.email) + '</span> <button class="btn ghost" id="out" style="margin-left:10px;">Sign out</button>' + (msg ? '<p class="err">' + esc(msg) + '</p>' : '');
+  }
+  function load() {
+    Cloud.adminCompanies().then(function (r) { rows = r || []; msg = ''; drawAuth(); drawList(); }, function (e) { msg = /allowed/i.test(e.message) ? 'This account is not a platform admin.' : e.message; drawAuth(); $('list').style.display = 'none'; });
+  }
+  function drawList() {
+    var box = $('list'); box.style.display = '';
+    if (!rows.length) { box.innerHTML = '<p class="muted" style="margin:0;">No companies yet.</p>'; return; }
+    box.innerHTML = rows.map(function (c) {
+      return '<div class="row" data-id="' + c.id + '"><div class="nm"><b>' + esc(c.name) + '</b> <span class="pill ' + c.state + '">' + c.state + '</span><div>' + c.crew_count + ' crew · code ' + esc(c.join_code) + ' · ' + esc(c.owner_email || '') + '</div></div>' +
+        '<div><label>Trial ends</label><input type="date" data-f="trial" value="' + ymd(c.trial_ends_at) + '"></div>' +
+        '<div><label>Paid until</label><input type="date" data-f="paid" value="' + ymd(c.paid_until) + '"></div>' +
+        '<div><label>Band</label><select data-f="band"><option value="small"' + (c.band === 'small' ? ' selected' : '') + '>Small</option><option value="medium"' + (c.band === 'medium' ? ' selected' : '') + '>Medium</option><option value="large"' + (c.band === 'large' ? ' selected' : '') + '>Large</option></select></div>' +
+        '<div><label>Created</label><div class="muted">' + ymd(c.created_at) + '</div></div>' +
+        '<div><button class="btn" data-save="' + c.id + '">Save</button></div>' +
+        '<div class="note"><label>Note</label><input type="text" data-f="note" value="' + esc(c.note) + '" placeholder="e.g. Invoice 003 sent, paid by EFT"></div>' +
+        '<div class="quick"><button class="btn ghost" data-add="paid365" data-for="' + c.id + '">Paid +1 year</button><button class="btn ghost" data-add="paid30" data-for="' + c.id + '">Paid +30 days</button><button class="btn ghost" data-add="trial30" data-for="' + c.id + '">Trial +30 days</button><button class="btn ghost" data-add="clearpaid" data-for="' + c.id + '">Clear paid</button></div></div>';
+    }).join('');
+  }
+  function rowEl(id) { return document.querySelector('.row[data-id="' + id + '"]'); }
+  function val(r, f) { return r.querySelector('[data-f="' + f + '"]').value; }
+  function setField(r, f, v) { r.querySelector('[data-f="' + f + '"]').value = v; }
+  function plus(r, f, days) { var cur = val(r, f), base = cur && new Date(cur) > new Date() ? new Date(cur) : new Date(); base.setDate(base.getDate() + days); setField(r, f, base.toISOString().slice(0, 10)); }
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    if (t.id === 'in') { msg = ''; Cloud.signIn($('e').value.trim(), $('p').value).then(load, function (e) { msg = e.message; drawAuth(); }); return; }
+    if (t.id === 'out') { Cloud.signOut(); rows = []; msg = ''; drawAuth(); return; }
+    var add = t.getAttribute && t.getAttribute('data-add');
+    if (add) { var r = rowEl(t.getAttribute('data-for')); if (add === 'paid365') plus(r, 'paid', 365); else if (add === 'paid30') plus(r, 'paid', 30); else if (add === 'trial30') plus(r, 'trial', 30); else if (add === 'clearpaid') setField(r, 'paid', ''); return; }
+    var save = t.getAttribute && t.getAttribute('data-save');
+    if (save) {
+      var r2 = rowEl(save);
+      Cloud.adminSetCompany(save, iso(val(r2, 'paid'), true), iso(val(r2, 'trial'), true), val(r2, 'band'), val(r2, 'note')).then(function () { t.textContent = 'Saved'; setTimeout(load, 500); }, function (e) { msg = e.message; drawAuth(); });
+    }
+  });
+  drawAuth(); if (Cloud.user()) load();
+})();
+</script>
+</body>
+</html>

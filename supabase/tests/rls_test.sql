@@ -1,13 +1,14 @@
 -- Run against a plain Postgres with a stub of Supabase's auth schema.
 create schema auth;
-create table auth.users(id uuid primary key);
+create table auth.users(id uuid primary key, email text);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.uid', true),'')::uuid $$;
 create role anon nologin; create role authenticated nologin;
 grant usage on schema public, auth to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated;
 \i supabase/migrations/0001_core.sql
 \i supabase/migrations/0002_snapshots.sql
 \i supabase/migrations/0003_signing.sql
-grant all on all tables in schema public to authenticated; grant all on all tables in schema public to anon;
+\i supabase/migrations/0006_licences.sql
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c');
 insert into profiles(id,full_name) select id,'u'||right(id::text,1) from auth.users;
 \set ON_ERROR_STOP on
@@ -58,3 +59,28 @@ do $$ begin update sign_requests set signed = '{"forged":1}' where true; raise n
 set request.uid='00000000-0000-0000-0000-00000000000a';
 delete from company_members where user_id='00000000-0000-0000-0000-00000000000b';
 select 'A crew view after removing B (expect 0):' as t, count(*) from company_crew;
+
+-- 0006 licences
+reset role; set request.uid='';
+select 'new company state (expect trial):' as t, public.company_state((select id from companies limit 1));
+set role authenticated; set request.uid='00000000-0000-0000-0000-00000000000a';
+do $$ begin update companies set paid_until = now() + interval '5 years' where true; raise notice 'FAIL employer extended own licence'; exception when others then raise notice 'employer cannot set paid_until ok'; end $$;
+do $$ begin insert into companies(name, created_by, paid_until) values ('Sneaky', '00000000-0000-0000-0000-00000000000a', now() + interval '9 years'); raise notice 'FAIL insert with paid_until'; exception when others then raise notice 'employer cannot insert paid_until ok'; end $$;
+select 'admin regenerates code (expect 8 chars):' as t, length(public.regenerate_join_code((select id from companies where name='Harbour Cruises'))) as n;
+set request.uid='00000000-0000-0000-0000-00000000000c';
+do $$ begin perform public.regenerate_join_code((select id from companies limit 1)); raise notice 'FAIL outsider regenerated'; exception when others then raise notice 'outsider cannot regenerate ok'; end $$;
+do $$ begin perform * from public.admin_companies(); raise notice 'FAIL non-admin listed companies'; exception when others then raise notice 'non-admin cannot list ok'; end $$;
+reset role; select id as hc from companies where name='Harbour Cruises' \gset
+insert into platform_admins values ('00000000-0000-0000-0000-00000000000c');
+insert into company_members(company_id, user_id, role) select id, '00000000-0000-0000-0000-00000000000b', 'crew' from companies where name='Harbour Cruises';
+set role authenticated; set request.uid='00000000-0000-0000-0000-00000000000c';
+select 'platform admin sees companies:' as t, count(*) from public.admin_companies();
+select public.admin_set_company(:'hc', now() - interval '1 day', now() - interval '1 day', 'medium', 'invoice 001 unpaid');
+set request.uid='00000000-0000-0000-0000-00000000000a';
+select 'expired company: crew view rows (expect 0):' as t, count(*) from company_crew;
+select 'my_companies state (expect expired):' as t, state from public.my_companies() where name='Harbour Cruises';
+set request.uid='00000000-0000-0000-0000-00000000000c';
+select public.admin_set_company(:'hc', now() + interval '1 year', null, 'medium', null);
+set request.uid='00000000-0000-0000-0000-00000000000a';
+select 'paid company: crew view rows (expect 1):' as t, count(*) from company_crew;
+select 'my_companies state (expect active):' as t, state from public.my_companies() where name='Harbour Cruises';
