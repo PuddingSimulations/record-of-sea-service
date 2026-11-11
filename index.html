@@ -134,6 +134,14 @@
   .main-tabs button[data-tab="tickets"] { color: rgba(91,224,127,0.75); } .main-tabs button[data-tab="tickets"].active { color: #5BE07F; }
   .tab-badge { min-width: 19px; height: 19px; padding: 0 6px; border-radius: 999px; background: #30D158; color: #0b2a14; font-size: 12px; font-weight: 800; display: none; align-items: center; justify-content: center; }
   .tab-badge.show { display: inline-flex; }
+  .more-card { background: var(--card); border-radius: 18px; padding: 12px 14px 4px; margin: 14px 0 90px; }
+  .more-title { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3, #8a8a92); margin: 0 0 4px; }
+  .more-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; border: none; background: transparent; color: var(--ink); padding: 11px 0; cursor: pointer; font-family: inherit; }
+  .more-row + .more-row { border-top: 1px solid var(--line, rgba(255,255,255,0.07)); }
+  .more-row span b { display: block; font-size: 15px; } .more-row span small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-3, #8a8a92); font-weight: 500; }
+  .more-row i { font-style: normal; font-size: 22px; color: var(--ink-3, #8a8a92); }
+  .letter-card { background: var(--card-2); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+  .letter-card + .letter-card { border-top: none; }
   /* Goal tickets under the days total */
   .goal-card { background: var(--card); border-radius: 18px; padding: 12px 14px 6px; margin: 0 0 14px; }
   .goal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
@@ -501,6 +509,7 @@
 
   <div id="tabService">
     <div id="entriesSection"></div>
+    <div id="moreEvidence"></div>
   </div>
 
   <div id="tabTickets" style="display:none;">
@@ -613,6 +622,19 @@
   </div>
 </div>
 
+<div class="overlay" id="letterOverlay">
+  <div class="sheet" id="letterSheet" role="dialog" aria-modal="true" aria-label="Sea service letter">
+    <div class="sheet-head" id="letterHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2 id="letterTitle">Sea service letter</h2>
+        <button class="close-btn" id="closeLetterBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="sheet-body" id="letterBody"></div>
+  </div>
+</div>
+
 <div class="overlay" id="goalsOverlay">
   <div class="sheet" id="goalsSheet" role="dialog" aria-modal="true" aria-label="Choose tickets">
     <div class="sheet-head" id="goalsHead">
@@ -698,6 +720,7 @@
         </div>
         <div id="signDone" style="display:none;"></div>
       </div>
+      <div class="form-card" id="yachtCard" style="display:none;"><p class="section-title">Luxury yacht: extra evidence</p><p class="field-hint" style="margin:-6px 0 8px;">AMSA may accept commercial service on a luxury yacht if you were paid and the duties relate to the certificate. Send these with your application, as well as the standard evidence:</p><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:var(--ink-2);"><li>A copy of the vessel’s Safety Management System with your signed induction, <b>or</b> a crew list or muster stations list with your name on it</li><li>Plus any of: a letter from the owner or operator (vessel details, paid employment, duties, period), your employment contract naming the vessel, duties and period, or pay slips</li></ul></div>
       <div class="pdf-prev"><canvas id="pdfCanvas" width="10" height="10" style="display:none;"></canvas><span class="pdf-status" id="pdfMsg">Building the form…</span></div>
       <p class="pdf-status" id="pdfStatus"></p>
 
@@ -837,6 +860,7 @@
           <div class="select-wrap" style="margin:0;"><select id="modeOfOperation"></select></div>
         </div>
       </div>
+      <label class="set-row" style="margin:6px 0 2px;"><span class="n">Private luxury yacht<small>Tick for a privately owned “white boat”. AMSA asks for extra evidence.</small></span><input type="checkbox" class="switch" id="yachtBox" /></label>
 
       <div class="form-card">
         <p class="section-title">Your role</p>
@@ -1216,10 +1240,11 @@
   function settingsChanged() { try { localStorage.setItem(SDIRTY, '1'); } catch (e) {} cloudSoon(); }
   function settingsBlob() {
     var p = Object.assign({}, profile); delete p.uid;   // uid is per-device identity for the link-based flow
-    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn };
+    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, letters: letters, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn };
   }
   function applySettings(d) {
     if (!d || d.v !== 1) return;
+    if (d.letters) { letters = d.letters; try { localStorage.setItem(LETTERS_KEY, JSON.stringify(letters)); } catch (e) {} }
     heldIds = d.held || []; goalIds = d.goals || []; goalTB = d.goalTB || {}; checklist = d.checklist || {};
     if (d.ticket) { ticketState = Object.assign(ticketState, d.ticket); }
     if (d.profile) { var keepUid = profile.uid; profile = Object.assign(profile, d.profile); profile.uid = keepUid; }
@@ -1246,6 +1271,7 @@
     return Cloud.signedRequests().then(function (rows) {
       var next = {}, fresh = 0;
       (rows || []).forEach(function (row) {
+        if (row.signed && row.signed.k === 'letter') { applyLetterSigned(row); return; }
         var ent = entries.filter(function (x) { return x.id === row.entry_id; })[0];
         if (!ent) { Cloud.markApplied(row.token).catch(function () {}); return; }
         if (ent.supSig) { Cloud.markApplied(row.token).catch(function () {}); return; }
@@ -1351,7 +1377,7 @@
   // ---- Ticket progress ----
   // Days that count toward a ticket: right duty category AND the vessel meets the ticket's rules.
   function qualifying(ticket, categories, opts) {
-    var res = { days: 0, catDays: 0, unverified: 0 };
+    var res = { days: 0, catDays: 0, unverified: 0, notUnderway: 0, capped: 0, cap: 0 };
     entries.forEach(function (e) {
       if (categories && categories.indexOf(e.category) === -1) return;
       if (opts && opts.verifiedOnly && !e.supSig) return;   // only days a supervisor has signed
@@ -1363,9 +1389,16 @@
       if (ticket.inboard && e.propulsion && e.propulsion !== 'I') return;
       var needCommercial = ticket.commercial === 'always' || (ticket.commercial === 'with' && ((opts && opts.taskBook) || ticketState.taskBook) === 'with');
       if (needCommercial && e.operationType && e.operationType !== 'C') return;
-      res.days += d;
+      res.days += d; if (e.modeOfOperation === 'NUD' || e.modeOfOperation === 'NUE') res.notUnderway += d;
       if ((ticket.minLength && len === null) || (ticket.minPower && pow === null)) res.unverified += d;
     });
+    // AMSA: sea service while the vessel is not underway counts up to 15% of the days a deck certificate needs, and 33% for an engineering certificate.
+    var pct = ticket.group === 'Deck' ? 0.15 : ticket.group === 'Engineering' ? 0.33 : 0;
+    if (pct && res.notUnderway) {
+      var tbMode = (opts && opts.taskBook) || ticketState.taskBook, reqDays = tbMode === 'with' ? ticket.withTaskBook : ticket.withoutTaskBook;
+      res.cap = Math.floor(reqDays * pct);
+      if (res.notUnderway > res.cap) { res.capped = res.notUnderway - res.cap; res.days -= res.capped; }
+    }
     return res;
   }
   function sumFor(ticket, categories) { return qualifying(ticket, categories).days; }
@@ -1418,7 +1451,8 @@
     var bits = [];
     if (!isCustom && heldIds.indexOf(ticket.id) !== -1) bits.push('You already hold this ticket \u2713');
     else if (!isCustom && coveredBy(ticket.id)) bits.push('Covered by your ' + coveredBy(ticket.id).name + ' \u2713');
-    if (!isCustom && q.catDays > q.days) bits.push((q.catDays - q.days) + ' day' + (q.catDays - q.days === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
+    if (!isCustom && q.capped) bits.push(q.capped + ' not-underway day' + (q.capped === 1 ? '' : 's') + ' not counted: AMSA allows up to ' + q.cap + ' (' + (ticket.group === 'Deck' ? '15% of a deck' : '33% of an engineering') + ' certificate\u2019s days).');
+    if (!isCustom && q.catDays - q.capped > q.days) bits.push((q.catDays - q.days - q.capped) + ' day' + (q.catDays - q.days - q.capped === 1 ? '' : 's') + ' not counted: the vessel is too small, too low-powered, not inboard or not commercial for this ticket.');
     if (!isCustom && ticket.verify) bits.push('\u26A0 Check this one: ' + ticket.verify);
     if (!isCustom && q.unverified) bits.push(q.unverified + ' day' + (q.unverified === 1 ? '' : 's') + ' counted without vessel length/power on record.');
     ticketFilterNote.textContent = bits.join(' '); ticketFilterNote.style.display = bits.length ? '' : 'none';
@@ -1551,7 +1585,7 @@
     var heldN = heldList().length, stT = $('statTickets');
     stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
-    renderWorking(); renderGoals();
+    renderWorking(); renderGoals(); renderMore();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
@@ -1592,7 +1626,7 @@
 
       var detailParts = [];
       if (e.position) detailParts.push(e.position);
-      if (e.vesselId) detailParts.push('ID ' + e.vesselId);
+      if (e.vesselId) detailParts.push('ID ' + e.vesselId); if (e.yacht) detailParts.push('Luxury yacht');
       if (e.vesselLength || e.vesselPower) {
         detailParts.push((e.vesselLength ? e.vesselLength + 'm' : '') + (e.vesselLength && e.vesselPower ? ', ' : '') + (e.vesselPower ? e.vesselPower + 'kW' : ''));
       }
@@ -2230,7 +2264,7 @@
   function openPdfSheet(id) {
     pdfEntry = entries.filter(function (e) { return e.id === id; })[0]; if (!pdfEntry) return;
     $('pfName').value = profile.name; $('pfDob').value = profile.dob; $('pfPhone').value = profile.phone; $('pfEmail').value = profile.email || '';
-    $('pfEngines').value = pdfEntry.numEngines || ''; $('pfRoleOther').value = pdfEntry.supRoleOther || '';
+    $('yachtCard').style.display = pdfEntry.yacht ? '' : 'none'; $('pfEngines').value = pdfEntry.numEngines || ''; $('pfRoleOther').value = pdfEntry.supRoleOther || '';
     var role = pdfEntry.supRole || guessRole(pdfEntry); syncRole(role); showSentNote(pdfEntry);
     $('seaCard').style.display = (!pdfEntry.numEngines || !role) ? '' : 'none';   // hide it when there is nothing left to fill in
     $('pdfMsg').textContent = 'Building the form…'; $('pdfMsg').style.display = ''; $('pdfCanvas').style.display = 'none'; $('pdfStatus').textContent = '';
@@ -2357,7 +2391,7 @@
     form = defaultForm(); autoCalc = true; calendarMonth = new Date();
     vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = ''; vesselEnginesInput.value = ''; vesselOwnerInput.value = '';
     [supNameInput, supPositionInput, supCertInput, supPhoneInput, supEmailInput].forEach(function (el) { el.value = ''; });
-    propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU';
+    propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU'; $('yachtBox').checked = false;
     positionInput.value = ''; dutyCategorySelect.value = 'D'; notesInput.value = ''; daysInput.value = 1;
     autoCalcBtn.classList.add('active'); autoCalcBtn.textContent = 'Auto (from dates)';
     sheetBody.scrollTop = 0;
@@ -2404,7 +2438,7 @@
     editingId = id; resetForm();
     vesselNameInput.value = e.vessel || ''; vesselIdInput.value = e.vesselId || ''; vesselLengthInput.value = e.vesselLength || ''; vesselPowerInput.value = e.vesselPower || '';
     vesselEnginesInput.value = e.numEngines || ''; vesselOwnerInput.value = e.owner || '';
-    propulsionSelect.value = e.propulsion || 'I'; operationTypeSelect.value = e.operationType || 'C'; modeOfOperationSelect.value = e.modeOfOperation || 'VU';
+    propulsionSelect.value = e.propulsion || 'I'; operationTypeSelect.value = e.operationType || 'C'; $('yachtBox').checked = !!e.yacht; modeOfOperationSelect.value = e.modeOfOperation || 'VU';
     positionInput.value = e.position || ''; dutyCategorySelect.value = e.category || 'D'; notesInput.value = e.notes || '';
     supNameInput.value = e.supName || ''; supPositionInput.value = e.supPosition || ''; supCertInput.value = e.supCert || ''; supPhoneInput.value = e.supPhone || ''; supEmailInput.value = e.supEmail || '';
     form.start = e.start || ''; form.end = e.end || ''; form.days = e.days;
@@ -2495,7 +2529,7 @@
       id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
       vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, numEngines: vesselEnginesInput.value, owner: vesselOwnerInput.value.trim(),
       supName: supNameInput.value.trim(), supPosition: supPositionInput.value.trim(), supCert: supCertInput.value.trim(), supPhone: supPhoneInput.value.trim(), supEmail: supEmailInput.value.trim(),
-      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, category: dutyCategorySelect.value,
+      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, yacht: $('yachtBox').checked, category: dutyCategorySelect.value,
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
     entries.push(entry); lastAddedId = entry.id; saveEntries();
@@ -2669,6 +2703,186 @@
     saveGoals(); renderMain();
   });
 
+  // ---- Sea service letter (AMSA accepts one instead of a Form 771) and the statutory declaration helper ----
+  var LETTERS_KEY = 'askel-letters', letters = [];
+  try { letters = JSON.parse(localStorage.getItem(LETTERS_KEY) || '[]') || []; } catch (e) { letters = []; }
+  function saveLetters() { try { localStorage.setItem(LETTERS_KEY, JSON.stringify(letters)); } catch (e) {} settingsChanged(); }
+  var letterOverlay = $('letterOverlay'), letterSheet = $('letterSheet'), letterBody = $('letterBody'), letterView = 'list', letterCur = null, letterSigPad = null;
+  var STATDEC_URL = 'https://www.amsa.gov.au/forms/commonwealth-statutory-declaration';
+  function renderMore() {
+    var box = $('moreEvidence'); if (!box) return;
+    if (!entries.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="more-card"><p class="more-title">Other ways to prove sea service</p>' +
+      '<button type="button" class="more-row" data-more="letter"><span><b>Sea service letter</b><small>A signed letter from a supervisor, owner or master that AMSA accepts instead of a Form 771</small></span><i>›</i></button>' +
+      '<button type="button" class="more-row" data-more="statdec"><span><b>Can’t get a signature?</b><small>Help writing the statutory declaration AMSA accepts</small></span><i>›</i></button></div>';
+  }
+  $('moreEvidence').addEventListener('click', function (ev) { var b = ev.target.closest('[data-more]'); if (!b) return; openLetters(b.getAttribute('data-more') === 'statdec' ? 'statdec' : 'list'); });
+  function letterRow(e) { return { id: e.id, vessel: e.vessel, vid: e.vesselId || '', len: e.vesselLength || '', pow: e.vesselPower || '', prop: e.propulsion || '', mode: e.modeOfOperation || '', duty: e.category || '', s: e.start, e: e.end || e.start, d: Number(e.days) || 0, pos: e.position || '' }; }
+  function letterTotal(L) { return L.rows.reduce(function (n, r) { return n + (Number(r.d) || 0); }, 0); }
+  function openLetters(view, id) {
+    letterView = view || 'list'; letterCur = id || null; renderLetters(); letterBody.scrollTop = 0;
+    document.body.style.overflow = 'hidden'; letterOverlay.classList.add('open'); fx('open');
+  }
+  function closeLetters() { letterOverlay.classList.remove('open'); letterSheet.style.transform = ''; document.body.style.overflow = ''; letterSigPad = null; }
+  $('closeLetterBtn').addEventListener('click', closeLetters);
+  letterOverlay.addEventListener('click', function (e) { if (e.target === letterOverlay) closeLetters(); });
+  makeDraggable($('letterHead'), letterSheet, closeLetters);
+  function statusPill(L) { return L.supSig ? '<span class="pill green">Signed</span>' : L.status === 'sent' ? '<span class="pill yellow">Waiting for signature</span>' : '<span class="pill blue">Draft</span>'; }
+  function renderLetters() {
+    var h = '', title = 'Sea service letter';
+    if (letterView === 'list') {
+      h += '<p class="field-hint" style="margin:0 0 12px;">AMSA accepts a sea service letter signed by a supervisor, the vessel operator, owner, master or chief engineer, instead of a Form 771. It lists your periods of service in a table.</p>';
+      letters.forEach(function (L) { h += '<button type="button" class="more-row letter-card" data-letter="' + L.id + '"><span><b>' + escapeHtml(L.company || 'Letter') + '</b><small>' + L.rows.length + ' period' + (L.rows.length === 1 ? '' : 's') + ' · ' + letterTotal(L) + ' days · ' + escapeHtml(L.supName || 'No signer') + '</small></span>' + statusPill(L) + '</button>'; });
+      h += '<button type="button" class="save-btn" data-act="new" style="margin-top:12px;">Create a new letter</button>';
+    } else if (letterView === 'new') {
+      title = 'New letter';
+      var by = {}; entries.forEach(function (e) { var k = (e.owner || '') + '|' + (e.supName || ''); by[k] = (by[k] || 0) + 1; });
+      var best = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; })[0] || '|', ownerGuess = best.split('|')[0], supGuess = best.split('|')[1];
+      var sample = entries.filter(function (e) { return (e.owner || '') === ownerGuess && (e.supName || '') === supGuess; })[0] || {};
+      h += '<p class="field-hint" style="margin:0 0 12px;">One letter is signed by one person. Pick the company, who will sign, and the periods they can confirm.</p>' +
+        '<div class="form-card"><p class="section-title">Company and signer</p>' +
+        '<div class="field"><label class="field-label" for="lcCompany">Company name</label><input type="text" id="lcCompany" autocomplete="organization" value="' + escapeHtml(ownerGuess) + '" /></div>' +
+        '<div class="field"><label class="field-label" for="lcAddress">Company address</label><input type="text" id="lcAddress" autocomplete="street-address" placeholder="Street, suburb, state, postcode" /></div>' +
+        '<div class="field"><label class="field-label" for="lcSup">Who will sign</label><input type="text" id="lcSup" autocapitalize="words" value="' + escapeHtml(supGuess) + '" /></div>' +
+        '<div class="field"><label class="field-label" for="lcPos">Their position in the company</label><input type="text" id="lcPos" autocapitalize="words" value="' + escapeHtml(sample.supPosition || '') + '" /></div></div>' +
+        '<div class="form-card"><p class="section-title">Periods to include</p>';
+      entries.slice().sort(function (a, b) { return (a.start < b.start) ? 1 : -1; }).forEach(function (e) {
+        var on = (e.owner || '') === ownerGuess && (e.supName || '') === supGuess;
+        h += '<label class="set-row"><span class="n">' + escapeHtml(e.vessel) + '<small>' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ' · ' + e.days + ' days · ' + escapeHtml(e.category || '') + '</small></span><input type="checkbox" class="switch" data-pick="' + e.id + '" ' + (on ? 'checked' : '') + ' /></label>';
+      });
+      h += '</div><p class="field-hint" id="lcErr" style="color:var(--red,#ff5a5f);display:none;"></p><button type="button" class="save-btn" data-act="create">Create letter</button><button type="button" class="link" data-act="back" style="margin-top:12px;">Back</button>';
+    } else if (letterView === 'detail') {
+      var L = letters.filter(function (x) { return x.id === letterCur; })[0]; if (!L) { letterView = 'list'; return renderLetters(); }
+      title = L.company || 'Letter';
+      h += '<div class="form-card"><div class="kv"><span>Status</span><span>' + statusPill(L) + '</span></div><div class="kv"><span>Company</span><span>' + escapeHtml(L.company) + '</span></div><div class="kv"><span>Signer</span><span>' + escapeHtml(L.supName) + (L.supPosition ? ', ' + escapeHtml(L.supPosition) : '') + '</span></div><div class="kv"><span>Periods</span><span>' + L.rows.length + '</span></div><div class="kv"><span>Total days</span><span>' + letterTotal(L) + '</span></div></div>';
+      if (L.supSig) {
+        h += '<div class="form-card"><div class="sig-img"><img alt="Signature" src="' + L.supSig + '"></div><p class="field-hint" style="margin:6px 0 0;">Signed' + (L.signedAt ? ' ' + auDate(L.signedAt.slice(0, 10)) : '') + '</p></div><button type="button" class="save-btn" data-act="pdf">Download letter (PDF)</button>';
+      } else {
+        h += '<button type="button" class="send-btn" data-act="send"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span><b>Send to ' + escapeHtml((L.supName || 'them').split(' ')[0]) + ' to sign</b><small>' + (cloudOn() ? 'They sign on their own phone. No account needed.' : 'Sign in under Settings, Account to send it remotely.') + '</small></span></button>' +
+          '<button type="button" class="link" data-act="inperson" style="margin-top:12px;">Or sign in person</button><div id="lpBox" style="display:none;margin-top:12px;"><div class="sigpad"><canvas id="lpCv"></canvas><div class="x"></div><div class="hint" id="lpHint">Signer draws here</div></div><div class="sig-row"><span class="field-hint" style="margin:0;">Drawn, not typed</span><button type="button" class="link" data-act="lpclear">Clear</button></div></div>';
+      }
+      h += '<button type="button" class="link" data-act="delete" style="margin-top:18px;color:var(--red,#ff5a5f);">Delete this letter</button><button type="button" class="link" data-act="back" style="margin-top:6px;">Back to letters</button>';
+    } else if (letterView === 'statdec') {
+      title = 'Statutory declaration';
+      var vs = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {}));
+      h += '<p class="field-hint" style="margin:0 0 12px;">If you can’t get a supervisor, vessel operator, owner, master or chief engineer to sign your records, AMSA accepts your Form 771s plus a Commonwealth statutory declaration. It must say why you couldn’t get them signed, name every vessel, and say the information is true and correct.</p>' +
+        '<div class="form-card"><p class="section-title">Why couldn’t you get it signed?</p><div class="field"><textarea id="sdReason" rows="3" placeholder="For example: the company closed and I cannot contact the master."></textarea></div></div>' +
+        '<div class="form-card"><p class="section-title">Text for your declaration</p><pre id="sdText" style="white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.55;color:var(--ink-2);margin:0;"></pre></div>' +
+        '<button type="button" class="save-btn" data-act="sdcopy">Copy text</button>' +
+        '<a class="link" href="' + STATDEC_URL + '" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;">Open AMSA’s declaration page</a>' +
+        '<p class="field-hint" style="margin-top:12px;">A statutory declaration must be signed in front of an authorised witness (for example a justice of the peace or a pharmacist). Askel can’t witness it for you. Take the printed form and your Form 771s to a witness.</p>' +
+        '<button type="button" class="link" data-act="back" style="margin-top:6px;">Back</button>';
+      h = h.replace('<pre id="sdText"', '<pre id="sdText" data-v="' + escapeHtml(vs.join('|')) + '"');
+    }
+    $('letterTitle').textContent = title; letterBody.innerHTML = h;
+    if (letterView === 'statdec') updateStatDec();
+  }
+  function updateStatDec() {
+    var pre = $('sdText'); if (!pre) return;
+    var vs = (pre.getAttribute('data-v') || '').split('|').filter(Boolean), r = ($('sdReason') && $('sdReason').value.trim()) || '[reason]';
+    pre.textContent = 'I, ' + (profile.name.trim() || '[your full name]') + ', declare that:\n\n1. I was unable to get my sea service record signed because ' + r + '.\n2. The vessels named on my Record of sea service (Form 771) forms are: ' + (vs.join(', ') || '[vessel names]') + '.\n3. The information on those Record of sea service (Form 771) forms is true and correct.';
+  }
+  letterBody.addEventListener('input', function (ev) { if (ev.target.id === 'sdReason') updateStatDec(); });
+  letterBody.addEventListener('click', function (ev) {
+    var open = ev.target.closest('[data-letter]'); if (open) { letterView = 'detail'; letterCur = open.getAttribute('data-letter'); fx('tick'); renderLetters(); return; }
+    var b = ev.target.closest('[data-act]'); if (!b) return; var act = b.getAttribute('data-act');
+    var L = letters.filter(function (x) { return x.id === letterCur; })[0];
+    if (act === 'new') { letterView = 'new'; renderLetters(); }
+    else if (act === 'back') { letterView = (letterView === 'new' || letterView === 'detail' || letterView === 'statdec') ? 'list' : 'list'; renderLetters(); }
+    else if (act === 'create') {
+      var rows = [], picks = letterBody.querySelectorAll('[data-pick]'); Array.prototype.forEach.call(picks, function (c) { if (c.checked) { var e = entries.filter(function (x) { return x.id === c.getAttribute('data-pick'); })[0]; if (e) rows.push(letterRow(e)); } });
+      var err = $('lcErr'), fail = function (m) { err.textContent = m; err.style.display = ''; };
+      var company = $('lcCompany').value.trim(), sup = $('lcSup').value.trim();
+      if (!company) return fail('Enter the company name.'); if (!sup) return fail('Enter who will sign.'); if (!rows.length) return fail('Pick at least one period.'); if (rows.length > 30) return fail('A letter holds up to 30 periods. Pick fewer, or make two letters.');
+      var nl = { id: uuid(), created: new Date().toISOString(), company: company, address: $('lcAddress').value.trim(), supName: sup, supPosition: $('lcPos').value.trim(), rows: rows, status: 'draft', supSig: '' };
+      rows.sort(function (a, b) { return a.s < b.s ? -1 : 1; }); letters.push(nl); saveLetters(); letterCur = nl.id; letterView = 'detail'; fx('success'); renderLetters();
+    }
+    else if (act === 'send' && L) sendLetter(L);
+    else if (act === 'inperson' && L) {
+      $('lpBox').style.display = ''; b.style.display = 'none';
+      setTimeout(function () { letterSigPad = sigPad($('lpCv'), $('lpHint'), function (url) { if (!url) return; L.supSig = url; L.signedAt = new Date().toISOString(); L.status = 'signed'; saveLetters(); fx('success'); renderLetters(); }); }, 60);
+    }
+    else if (act === 'lpclear' && letterSigPad) letterSigPad.clear();
+    else if (act === 'pdf' && L) { buildLetterPdf(L).then(function (bytes) { deliverPdf(bytes, 'Sea-service-letter-' + (L.company || 'letter').replace(/[^A-Za-z0-9]+/g, '-') + '.pdf', 'Sea service letter'); }, function (e) { showToast(e.message || 'Could not build the letter'); }); }
+    else if (act === 'delete' && L) {
+      if (b.getAttribute('data-sure') !== '1') { b.setAttribute('data-sure', '1'); b.textContent = 'Tap again to delete'; setTimeout(function () { b.removeAttribute('data-sure'); b.textContent = 'Delete this letter'; }, 3000); return; }
+      letters = letters.filter(function (x) { return x.id !== L.id; }); saveLetters(); letterView = 'list'; fx('undo'); renderLetters();
+    }
+    else if (act === 'sdcopy') { var t = $('sdText').textContent; try { navigator.clipboard.writeText(t).then(function () { showToast('Copied'); }, function () { showToast('Could not copy'); }); } catch (e) { showToast('Could not copy'); } }
+  });
+  function sendLetter(L) {
+    if (!profile.name.trim()) { showToast('Add your name first under Settings, Employer'); return; }
+    if (!cloudOn()) { showToast('Sign in under Settings, Account to send it'); return; }
+    var base = appBase(); if (baseIsPrivate(base)) { showToast('Signers cannot open links from this address.'); return; }
+    var req = { v: 1, k: 'letter', id: L.id, n: profile.name.trim(), co: L.company, ca: L.address, sn: L.supName, sp: L.supPosition, rows: L.rows, b: base };
+    var first = (L.supName || '').split(' ')[0];
+    var text = 'Hi' + (first ? ' ' + first : '') + ', could you sign a sea service letter confirming my time with ' + L.company + ' for my AMSA application? It takes about 30 seconds on your phone. No account needed.';
+    Cloud.createSign(L.id, req).then(function (token) {
+      var url = base + 'sign.html#t=' + token; L.status = 'sent'; L.sentAt = new Date().toISOString(); saveLetters(); renderLetters();
+      function share() { return navigator.share({ title: 'Sea service letter', text: text, url: url }); }
+      if (navigator.share) { share().catch(function (err) { if (err && err.name === 'NotAllowedError') showToast('Link ready', 'Share', function () { share().catch(function () {}); }); }); }
+      else { try { navigator.clipboard.writeText(text + '\n' + url).then(function () { showToast('Message and link copied'); }, function () { showToast('Could not copy the link'); }); } catch (e) { showToast('Could not copy the link'); } }
+    }, function (e) { showToast(e.message || 'Could not create the link'); });
+  }
+  function applyLetterSigned(row) {
+    var L = letters.filter(function (x) { return x.id === row.entry_id; })[0];
+    Cloud.markApplied(row.token).catch(function () {}); if (!L || L.supSig) return;
+    var r = row.signed || {}; L.supSig = strokesToPng(r.g, r.a); L.signedAt = r.t || new Date().toISOString(); L.status = 'signed';
+    if (r.sn) L.supName = r.sn; if (r.sp) L.supPosition = r.sp; saveLetters();
+    fx('success'); showToast((r.sn || 'Your signer') + ' signed your letter'); if (letterOverlay.classList.contains('open')) renderLetters();
+  }
+  function deliverPdf(bytes, name, title) {
+    var blob = new Blob([bytes], { type: 'application/pdf' }), file = null;
+    try { file = new File([bytes], name, { type: 'application/pdf' }); } catch (e) {}
+    function openIt() { try { var url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.download = name; document.body.appendChild(a); a.click(); a.remove(); showToast('PDF ready'); } catch (e) { showToast('Saving a PDF is not available in this view.'); } }
+    if (NATIVE && nativePlugin('Share')) { nativeShareFile(blob, name, title).catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) openIt(); }); return; }
+    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: title }).catch(function (err) { if (err && err.name !== 'AbortError') openIt(); }); } else openIt();
+  }
+  function buildLetterPdf(L) {
+    var PL = window.PDFLib; if (!PL) return Promise.reject(new Error('The PDF tool did not load.'));
+    var wa = function (t) { return String(t == null ? '' : t).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '?'); };
+    return PL.PDFDocument.create().then(function (doc) {
+      return Promise.all([doc.embedFont(PL.StandardFonts.Helvetica), doc.embedFont(PL.StandardFonts.HelveticaBold), L.supSig ? doc.embedPng(L.supSig) : Promise.resolve(null)]).then(function (r) {
+        var F = r[0], B = r[1], sig = r[2], ink = PL.rgb(0.08, 0.08, 0.08);
+        var p = doc.addPage([595.28, 841.89]), M = 56, y = 790, W = 595.28 - M * 2;
+        function txt(page, t, x, yy, size, font) { page.drawText(wa(t), { x: x, y: yy, size: size, font: font || F, color: ink }); }
+        function wrap(t, width, size, font) { var words = wa(t).split(/\s+/), lines = [], cur = ''; words.forEach(function (w) { var tryLine = cur ? cur + ' ' + w : w; if ((font || F).widthOfTextAtSize(tryLine, size) > width && cur) { lines.push(cur); cur = w; } else cur = tryLine; }); if (cur) lines.push(cur); return lines; }
+        function para(t, size, font, gap) { wrap(t, W, size, font).forEach(function (ln) { txt(p, ln, M, y, size, font); y -= size * 1.45; }); y -= (gap == null ? 8 : gap); }
+        txt(p, L.company, M, y, 15, B); y -= 20; if (L.address) { wrap(L.address, W, 10.5, F).forEach(function (ln) { txt(p, ln, M, y, 10.5); y -= 14; }); } y -= 14;
+        ['Australian Maritime Safety Authority', 'Seafarer Certification Service', 'GPO Box 2181', 'Canberra', 'ACT 2601'].forEach(function (ln) { txt(p, ln, M, y, 10.5); y -= 14; }); y -= 10;
+        var when = L.signedAt ? new Date(L.signedAt) : new Date();
+        para('Date: ' + when.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }), 10.5, F, 12);
+        para('To whom it may concern', 10.5, F, 12);
+        para('CONFIRMATION OF SEA SERVICE', 12, B, 10);
+        var dob = profile.dob ? ', born ' + auDate(profile.dob) : '';
+        para('I confirm that ' + (profile.name.trim() || '[applicant]') + dob + ', has completed sea service with ' + L.company + ' for the periods specified in the table that follows (' + L.rows.length + ' period' + (L.rows.length === 1 ? '' : 's') + ', ' + letterTotal(L) + ' days of 8 hours).', 10.5, F, 10);
+        para('I have reviewed the content of this letter and to the best of my knowledge, the information given by me is true and correct in every detail.', 10.5, F, 14);
+        para('Yours faithfully', 10.5, F, 6);
+        if (sig) { var sc = Math.min(190 / sig.width, 64 / sig.height); p.drawImage(sig, { x: M, y: y - sig.height * sc, width: sig.width * sc, height: sig.height * sc }); y -= sig.height * sc + 8; } else y -= 40;
+        txt(p, L.supName || '', M, y, 10.5, B); y -= 14; if (L.supPosition) { txt(p, L.supPosition, M, y, 10.5); y -= 14; }
+        // table pages (landscape)
+        var cols = [['Name of vessel', 140, 'vessel'], ['Unique identifier / IMO', 82, 'vid'], ['Vessel measured length (m)', 62, 'len'], ['Propulsion power (kW)', 62, 'pow'], ['Propulsion type', 48, 'prop'], ['Mode of operation', 52, 'mode'], ['Duties performed', 52, 'duty'], ['Start date', 58, 's'], ['End date', 58, 'e'], ['Days (8 hours)', 46, 'd'], ['Position on board', 96, 'pos']];
+        var PW = 841.89, PH = 595.28, TM = 36, rowH = 22, perPage = 19, idx = 0;
+        function tableHeader(pg, top) { var x = TM; cols.forEach(function (c) { var ls = wrap(c[0], c[1] - 4, 7, B); ls.slice(0, 3).forEach(function (ln, i) { txt(pg, ln, x + 2, top - 10 - i * 8.5, 7, B); }); x += c[1]; }); pg.drawLine({ start: { x: TM, y: top - 32 }, end: { x: TM + cols.reduce(function (n, c) { return n + c[1]; }, 0), y: top - 32 }, thickness: 0.8, color: ink }); return top - 32; }
+        while (idx < L.rows.length || idx === 0) {
+          var tp = doc.addPage([PW, PH]), ty = tableHeader(tp, PH - TM), n = 0;
+          while (idx < L.rows.length && n < perPage) {
+            var row = L.rows[idx], x = TM; ty -= rowH;
+            cols.forEach(function (c) { var v = c[2] === 's' || c[2] === 'e' ? auDate(row[c[2]]) : row[c[2]]; var t = wa(v); while (t.length > 1 && F.widthOfTextAtSize(t, 8) > c[1] - 5) t = t.slice(0, -1); txt(tp, t, x + 2, ty + 7, 8); x += c[1]; });
+            tp.drawLine({ start: { x: TM, y: ty }, end: { x: TM + cols.reduce(function (a, c) { return a + c[1]; }, 0), y: ty }, thickness: 0.3, color: PL.rgb(0.7, 0.7, 0.7) });
+            idx++; n++;
+          }
+          if (idx >= L.rows.length) {
+            var ly = ty - 20; ['Mode of operation: VU = vessel underway; NUD = not underway, deck or refit work; NUE = not underway, engine or refit work.',
+              'Duties: AE = assistant to engineer or engine driver; E = engineer or engine driver; EW = engineer watchkeeper; EIC = engineer in charge; D = deck work; DE = deck and engineering work; GPH = general purpose hand; INW = in charge of navigation watch; C = coxswain grade 1, 2 or 3.',
+              'Propulsion type: I = inboard; O = outboard; S = steam.'].forEach(function (ln) { wrap(ln, PW - TM * 2, 7.5, F).forEach(function (w) { txt(tp, w, TM, ly, 7.5); ly -= 10; }); });
+            break;
+          }
+        }
+        return doc.save();
+      });
+    });
+  }
   // ---- Collapsing nav bar ----
   var navbar = $('navbar'), navShown = false;
   window.addEventListener('scroll', function () {

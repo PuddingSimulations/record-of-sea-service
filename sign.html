@@ -173,6 +173,20 @@ window.__boot = function () {
     row.appendChild(a); row.appendChild(b); $('facts').appendChild(row);
   });
   ['sn', 'sp', 'sc', 'sph', 'sem'].forEach(function (k) { $(k).value = R[k] || ''; });
+  var LETTER = R.k === 'letter';
+  if (LETTER) {
+    var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    var lrows = R.rows || [], ltot = lrows.reduce(function (n, r) { return n + (Number(r.d) || 0); }, 0);
+    $('title').textContent = who + ' asks you to sign a sea service letter';
+    $('lead').textContent = 'Check the periods below, then sign. About 30 seconds.';
+    var fh = '<div class="kv"><span>Applicant</span><span>' + esc(R.n) + '</span></div><div class="kv"><span>Company</span><span>' + esc(R.co || '') + '</span></div><div class="kv"><span>Periods</span><span>' + lrows.length + '</span></div><div class="kv"><span>Total days</span><span>' + ltot + '</span></div>';
+    lrows.forEach(function (r) { fh += '<div class="kv"><span>' + esc(r.vessel) + '</span><span>' + au(r.s) + (r.e && r.e !== r.s ? ' to ' + au(r.e) : '') + ' \u00b7 ' + esc(r.d) + 'd \u00b7 ' + esc(DUTY[r.duty] || r.duty || '') + '</span></div>'; });
+    $('facts').innerHTML = fh + '<span id="datesVal" style="display:none"></span><button type="button" id="datesChange" style="display:none"></button>';
+    ['datesEdit', 'datesNote', 'changed', 'roles', 'otherBox'].forEach(function (i) { var el = $(i); if (el) el.style.display = 'none'; });
+    var dc = document.querySelector('.days'); if (dc && dc.closest('.card')) dc.closest('.card').style.display = 'none';
+    var rl = $('roles').previousElementSibling; if (rl) rl.style.display = 'none';
+    document.querySelector('.decl').textContent = 'I have reviewed the content of this letter and, to the best of my knowledge, the information given by me is true and correct in every detail.';
+  }
   var g = (R.sp || '').toLowerCase(); role = /master|skipper|captain/.test(g) ? 'master' : /engineer/.test(g) ? 'engineer' : /owner/.test(g) ? 'owner' : '';
   function spanDays(s, e) { return s && e ? Math.round((new Date(e + 'T00:00:00') - new Date(s + 'T00:00:00')) / 86400000) + 1 : 0; }
   var calDays = spanDays(curS, curE);
@@ -243,6 +257,7 @@ window.__boot = function () {
   function sendToServer() {
     var resp = { v: 1, id: R.id, d: days, dl: Number(R.d), s: curS, e: curE, sn: $('sn').value.trim(), sp: $('sp').value.trim(), sc: $('sc').value.trim(), sph: $('sph').value.trim(), sem: $('sem').value.trim(),
       r: role, ro: $('ro').value.trim(), t: new Date().toISOString(), a: Math.round(1000 * Hh / W), g: strokes.filter(function (s) { return s.length >= 4; }) };
+    if (LETTER) resp = { v: 1, k: 'letter', id: R.id, sn: resp.sn, sp: resp.sp, sc: resp.sc, sph: resp.sph, sem: resp.sem, t: resp.t, a: resp.a, g: resp.g };
     var btn = $('go'); btn.disabled = true; btn.textContent = 'Sending\u2026';
     Cloud.submitSign(TOKEN, resp).then(function (ok) {
       $('form').style.display = 'none'; $('doneBox').style.display = 'block'; window.scrollTo(0, 0); $('sendGrid').style.display = 'none'; $('copyLink').style.display = 'none';
