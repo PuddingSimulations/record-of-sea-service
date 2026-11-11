@@ -1,4 +1,4 @@
--- Licences: every company starts on a 90-day trial; after that it needs a "paid until" date.
+-- Licences: every company starts on a trial (changed to 30 days in 0008); after that it needs a "paid until" date.
 -- When a company is expired its employer dashboard locks (the roster view returns nothing).
 -- Crew keep full use of their own app and records either way.
 
