@@ -1579,7 +1579,7 @@
       var hv = grandTotalEl.parentNode; hv.classList.remove('bump'); void hv.offsetWidth; hv.classList.add('bump');
     }
     countTo(grandTotalEl, grandTotal);
-    var vesselCount = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
+    var vesselCount = Object.keys(entries.reduce(function (m, e) { m[String(e.vessel || '').trim().toLowerCase()] = 1; return m; }, {})).length;
     $('statEntries').textContent = entries.length + (entries.length === 1 ? ' entry' : ' entries');
     $('statVessels').textContent = vesselCount + (vesselCount === 1 ? ' vessel' : ' vessels');
     var heldN = heldList().length, stT = $('statTickets');
@@ -1778,7 +1778,7 @@
 
     // Stats
     var total = entries.reduce(function (n, e) { return n + Number(e.days); }, 0);
-    var vessels = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
+    var vessels = Object.keys(entries.reduce(function (m, e) { m[String(e.vessel || '').trim().toLowerCase()] = 1; return m; }, {})).length;
     var longest = entries.reduce(function (m, e) { return Math.max(m, Number(e.days)); }, 0);
     var starts = entries.map(function (e) { return e.start; }).filter(Boolean).sort();
     var ends = entries.map(function (e) { return e.end || e.start; }).filter(Boolean).sort();
@@ -2154,7 +2154,7 @@
       var all = qualifying(t, t.categories).days, ver = qualifying(t, t.categories, { verifiedOnly: true }).days;
       return { i: t.id, l: all, v: ver, r: ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook };
     }).filter(function (x) { return x.l > 0; });
-    var vessels = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {})).length;
+    var vessels = Object.keys(entries.reduce(function (m, e) { m[String(e.vessel || '').trim().toLowerCase()] = 1; return m; }, {})).length;
     return { v: 1, k: 'snap', u: profile.uid, n: profile.name.trim(), co: (profile.company || '').trim(), t: new Date().toISOString(), ed: total, vd: verified,
       held: heldList().map(function (t) { return t.id; }), tb: ticketState.taskBook, tk: tk, ve: vessels };
   }
@@ -2780,7 +2780,7 @@
       h += '<button type="button" class="link" data-act="delete" style="margin-top:18px;color:var(--red,#ff5a5f);">Delete this letter</button><button type="button" class="link" data-act="back" style="margin-top:6px;">Back to letters</button>';
     } else if (letterView === 'statdec') {
       title = 'Statutory declaration';
-      var vs = Object.keys(entries.reduce(function (m, e) { m[e.vessel] = 1; return m; }, {}));
+      var seenV = {}, vs = []; entries.forEach(function (e) { var k = String(e.vessel || '').trim().toLowerCase(); if (k && !seenV[k]) { seenV[k] = 1; vs.push(String(e.vessel).trim()); } });
       h += '<p class="field-hint" style="margin:0 0 12px;">If you can’t get a supervisor, vessel operator, owner, master or chief engineer to sign your records, AMSA accepts your Form 771s plus a Commonwealth statutory declaration. It must say why you couldn’t get them signed, name every vessel, and say the information is true and correct.</p>' +
         '<div class="form-card"><p class="section-title">Why couldn’t you get it signed?</p><div class="field"><textarea id="sdReason" rows="3" placeholder="For example: the company closed and I cannot contact the master."></textarea></div></div>' +
         '<div class="form-card"><p class="section-title">Text for your declaration</p><pre id="sdText" style="white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.55;color:var(--ink-2);margin:0;"></pre></div>' +
