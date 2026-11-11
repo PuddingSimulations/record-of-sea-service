@@ -142,7 +142,8 @@
 
 <header class="hero" id="top">
   <div class="wrap">
-    <p class="eyebrow">For marine operators</p>
+    <p class="eyebrow" id="fromPill" style="display:none;"></p>
+    <p class="eyebrow" id="heroEyebrow">For marine operators</p>
     <h1>Know who is ready<br>for their next ticket.</h1>
     <p class="lead">Askel gives your crew a fast way to log sea service and get it signed from a phone, and gives you a live view of every crew member's progress toward AMSA near coastal tickets.</p>
     <div class="cta-row">
@@ -297,6 +298,12 @@
 </footer>
 
 <script>
+(function () {
+  // A crew member or supervisor can send this page with ?from=Name. Show a friendly note, nothing is stored or sent anywhere.
+  var f = (new URLSearchParams(location.search).get('from') || '').trim().slice(0, 30), pill = document.getElementById('fromPill');
+  if (f && f !== 'signer') { pill.textContent = f + ' from your crew thinks Askel could help'; pill.style.display = ''; pill.style.color = '#30D158'; }
+  else if (f === 'signer') { pill.textContent = 'Thanks for signing. This is what the operator side looks like'; pill.style.display = ''; pill.style.color = '#30D158'; }
+})();
 (function () {
   // Scale the dashboard demo to fit the column, keeping its desktop layout.
   var scaler = document.getElementById('scaler'), frame = document.getElementById('dashFrame');

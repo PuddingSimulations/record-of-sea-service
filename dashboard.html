@@ -120,6 +120,7 @@
   </div>
 
   <div class="printhead" id="printHead"></div>
+  <div class="panel noprint" id="viralBar" style="display:none;background:linear-gradient(135deg,rgba(42,147,255,0.16),rgba(48,209,88,0.08));box-shadow:inset 0 0 0 1px rgba(42,147,255,0.28);"><div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;"><div><b>You are viewing progress a crew member shared with you.</b><div class="small" style="margin-top:3px;">Want your whole crew here, updating automatically? Start a free 90-day pilot.</div></div><a class="btn" href="./#pricing" target="_blank" rel="noopener">See how it works</a></div></div>
   <div class="panel noprint" id="acctBox"></div>
 
   <div class="tiles" id="tiles"></div>
@@ -205,6 +206,7 @@
     var list = Object.keys(roster).map(function (k) { return roster[k]; });
     var empty = !list.length;
     $('emptyBox').style.display = empty ? '' : 'none'; $('listBox').style.display = empty ? 'none' : '';
+    var vb = $('viralBar'); if (vb) { var viewing = !empty && !live && !DEMO && list.some(function (s) { return !s.ex; }) && !(window.Cloud && Cloud.user()); vb.style.display = viewing ? '' : 'none'; }
     var locked = live && !DEMO && admins().some(function (c) { return c.state === 'expired'; });
     if (empty) { var eb = $('emptyBox').querySelector('h2'), ep = $('emptyBox').querySelector('p'); if (eb && ep) { if (locked) { eb.textContent = 'Roster locked'; ep.textContent = 'Your licence has ended, so crew progress is hidden. Renew to see your roster again. Your crew keep full use of their own app and records.'; } else { eb.textContent = 'No crew yet'; ep.innerHTML = 'Ask each crew member to open Settings in their app and tap <b>Send progress to employer</b>. When you open the link they send, they appear here. Each new link updates their row.'; } } }
     var co = (list.filter(function (s) { return s.co; })[0] || {}).co;

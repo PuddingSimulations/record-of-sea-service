@@ -142,6 +142,12 @@
   .more-row i { font-style: normal; font-size: 22px; color: var(--ink-3, #8a8a92); }
   .letter-card { background: var(--card-2); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
   .letter-card + .letter-card { border-top: none; }
+  .boss-card { background: linear-gradient(135deg, rgba(42,147,255,0.16), rgba(48,209,88,0.08)); border-radius: 18px; padding: 16px 16px 14px; margin: 0 0 14px; box-shadow: inset 0 0 0 1px rgba(42,147,255,0.28); position: relative; }
+  .boss-card b { display: block; font-size: 15px; margin-bottom: 3px; padding-right: 26px; }
+  .boss-card p { margin: 0 0 12px; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+  .boss-card .boss-x { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--ink-2); font-size: 16px; line-height: 1; cursor: pointer; }
+  .boss-card .boss-go { border: none; border-radius: 12px; padding: 11px 16px; font-size: 14px; font-weight: 700; background: var(--ink); color: #141416; cursor: pointer; transition: transform .25s var(--spring); }
+  .boss-card .boss-go:active { transform: scale(0.96); }
   /* Goal tickets under the days total */
   .goal-card { background: var(--card); border-radius: 18px; padding: 12px 14px 6px; margin: 0 0 14px; }
   .goal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
@@ -508,6 +514,7 @@
   </div>
 
   <div id="tabService">
+    <div id="bossCard"></div>
     <div id="entriesSection"></div>
     <div id="moreEvidence"></div>
   </div>
@@ -1585,7 +1592,7 @@
     var heldN = heldList().length, stT = $('statTickets');
     stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
-    renderWorking(); renderGoals(); renderMore();
+    renderWorking(); renderGoals(); renderMore(); renderBoss();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
@@ -2570,7 +2577,7 @@
     html += '<div class="form-card"><p class="section-title">Employer</p><p class="field-hint" style="margin:-6px 0 12px;">Send your employer a summary of your progress. They see your name, the tickets you are working on, and how many days are signed. They do not see your date of birth, phone, email, vessels or medical details.</p>' +
       '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
       '<div class="field"><label class="field-label" for="empCompany">Company</label><input type="text" id="empCompany" autocomplete="organization" autocapitalize="words" placeholder="Who you work for" value="' + escapeHtml(profile.company || '') + '" /></div>' +
-      '<button type="button" class="save-btn" id="empSendBtn" style="margin-top:6px;">Send progress to employer</button></div>';
+      '<button type="button" class="save-btn" id="empSendBtn" style="margin-top:6px;">Send progress to employer</button><button type="button" class="link" id="bossBtn" style="display:block;margin:12px auto 0;">Tell my employer about Askel</button></div>';
     html += '<details class="form-card adv"><summary class="section-title" style="cursor:pointer;margin:0;">Advanced</summary><p class="field-hint" style="margin:10px 0 12px;">You do not need these. They only matter if you send sign-off links while signed out, or host your own copy of the app.</p>' +
       '<div class="field"><label class="field-label" for="baseInput">Web address of this app</label><input type="text" id="baseInput" placeholder="Leave blank" autocapitalize="none" autocomplete="off" value="' + escapeHtml(appBaseOverride) + '" /></div>' +
       '<div class="field"><label class="field-label" for="pasteReply">Paste a signed reply</label><div class="paste-row" style="margin:0;"><input type="text" id="pasteReply" placeholder="A reply link a supervisor sent you" autocomplete="off" autocapitalize="none" /><button type="button" id="pasteReplyBtn">Add</button></div></div></details>';
@@ -2605,6 +2612,7 @@
       cloudMsg = ''; ev.target.disabled = true;
       (ev.target.id === 'acctUp' ? function (a, b) { return Cloud.signUp(a, b, location.origin + '/app/'); } : Cloud.signIn)(em, pw).then(function () { cloudStatus = ''; return cloudSync(true); }, function (e) { cloudMsg = e.message; renderSettings(); });
     }
+    else if (ev.target.id === 'bossBtn') tellBoss();
     else if (ev.target.id === 'acctForgot') {
       var fe = $('acctEmail').value.trim(); if (!fe) { cloudMsg = 'Type your email above first.'; renderSettings(); return; }
       Cloud.recover(fe, location.origin + '/app/').then(function () { cloudMsg = ''; showToast('If that email has an account, a reset link is on its way.'); }, function (e) { cloudMsg = e.message; renderSettings(); });
@@ -2899,6 +2907,28 @@
       });
     });
   }
+  // ---- "Tell your boss": the company dashboard is the main thing employers pay for, so crew can introduce it in one tap ----
+  var BOSS_KEY = 'askel-boss-dismissed';
+  function bossMessage() {
+    var first = (profile.name || '').trim().split(' ')[0];
+    return { text: 'I have been tracking my sea time on Askel for my next AMSA ticket. It also has a dashboard for companies that shows who is close to their next ticket and who is waiting on a supervisor signature. Worth a look:', url: 'https://askel.com.au/?from=' + encodeURIComponent(first) + '#operators' };
+  }
+  function tellBoss() {
+    var m = bossMessage();
+    if (navigator.share) { navigator.share({ title: 'Askel for operators', text: m.text, url: m.url }).catch(function () {}); }
+    else { try { navigator.clipboard.writeText(m.text + '\n' + m.url).then(function () { showToast('Message and link copied'); }, function () { showToast('Could not copy'); }); } catch (e) { showToast('Could not copy'); } }
+  }
+  function renderBoss() {
+    var box = $('bossCard'); if (!box) return;
+    var dismissed = false; try { dismissed = localStorage.getItem(BOSS_KEY) === '1'; } catch (e) {}
+    var inCompany = cloudCompanies && cloudCompanies.length;
+    if (dismissed || inCompany || !entries.length || NATIVE === 'never') { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="boss-card"><button type="button" class="boss-x" id="bossX" aria-label="Dismiss">\u00d7</button><b>Does your company track tickets?</b><p>Show your boss the crew dashboard: everyone\u2019s progress toward their next ticket, and who is waiting on a signature. Free 90-day pilot.</p><button type="button" class="boss-go" id="bossGo">Send to my boss</button></div>';
+  }
+  $('bossCard').addEventListener('click', function (ev) {
+    if (ev.target.id === 'bossGo') { fx('tick'); tellBoss(); }
+    else if (ev.target.id === 'bossX') { try { localStorage.setItem(BOSS_KEY, '1'); } catch (e) {} fx('close'); renderBoss(); }
+  });
   // ---- Collapsing nav bar ----
   var navbar = $('navbar'), navShown = false;
   window.addEventListener('scroll', function () {
