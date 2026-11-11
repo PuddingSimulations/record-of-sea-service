@@ -85,6 +85,8 @@
     removeCrew: function (cid, uid) { return api('/rest/v1/company_members?company_id=eq.' + cid + '&user_id=eq.' + uid, { method: 'DELETE' }); },
     getSettings: function () { return api('/rest/v1/user_settings?select=data,updated_at').then(function (r) { return r && r[0] || null; }); },
     putSettings: function (data) { return api('/rest/v1/user_settings?on_conflict=user_id', { method: 'POST', prefer: 'resolution=merge-duplicates,return=representation', body: { user_id: session.user.id, data: data, updated_at: new Date().toISOString() } }).then(function (r) { return r && r[0] || null; }); },
+    notes: function () { return api('/rest/v1/crew_notes?select=company_id,user_id,note'); },
+    saveNote: function (cid, uid, note) { return api('/rest/v1/crew_notes?on_conflict=company_id,user_id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: { company_id: cid, user_id: uid, note: note, updated_at: new Date().toISOString() } }); },
     myCompanies: function () { return rpc('my_companies'); },
     join: function (code) { return rpc('join_company', { code: code }); },
     leave: function (cid) { return api('/rest/v1/company_members?company_id=eq.' + cid + '&user_id=eq.' + session.user.id, { method: 'DELETE' }); },

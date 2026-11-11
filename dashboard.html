@@ -83,6 +83,25 @@
   .toast.show { transform: translate(-50%, 0); opacity: 1; }
   .link { border: none; background: none; color: var(--blue); font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+  .printhead { display: none; }
+  textarea.note { width: 100%; min-height: 72px; border: none; border-radius: 12px; padding: 11px 13px; font-size: 14px; font-family: inherit; color: var(--ink); background: var(--card-2); outline: none; resize: vertical; }
+  textarea.note:focus { box-shadow: 0 0 0 2px var(--blue); }
+  .notebox { margin-top: 12px; }
+  .notebox .small { margin: 0 0 6px; }
+  @media print {
+    :root { --bg: #fff; --card: #fff; --card-2: #f2f2f4; --ink: #111; --ink-2: #444; --ink-3: #666; --line: rgba(0,0,0,0.15); }
+    body { background: #fff !important; color: #111 !important; }
+    .noprint, .top .btn, .tools, #acctBox, .toast, [data-rm], #emptyBox, #addPanel, .noprint * { display: none !important; }
+    .printhead { display: block; margin: 0 0 14px; }
+    .printhead h1 { font-size: 22px; margin: 0; } .printhead p { margin: 4px 0 0; color: #555; font-size: 13px; }
+    .panel, .tile { box-shadow: none !important; border: 1px solid #ddd; }
+    .tile { break-inside: avoid; } #listBox { break-inside: auto; }
+    .top > div:first-child { display: none !important; }
+    tr { break-inside: avoid; }
+    textarea.note { border: 1px solid #ccc; background: #fff; color: #111; }
+    .notebox:has(textarea.note:placeholder-shown) { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -94,11 +113,13 @@
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn ghost sm" id="csvBtn">Download CSV</button>
+      <button class="btn ghost sm" id="printBtn">Print / save PDF</button>
       <button class="btn ghost sm" id="clearBtn">Clear roster</button>
     </div>
   </div>
 
-  <div class="panel" id="acctBox"></div>
+  <div class="printhead" id="printHead"></div>
+  <div class="panel noprint" id="acctBox"></div>
 
   <div class="tiles" id="tiles"></div>
 
@@ -113,6 +134,7 @@
   <div class="panel" id="listBox">
     <div class="tools">
       <label class="muted" for="fltr">Working towards</label><select id="fltr"></select>
+      <label class="muted" for="sortBy">Sort</label><select id="sortBy"><option value="name">Name</option><option value="progress">Closest to a ticket</option><option value="days">Most days logged</option><option value="unsigned">Most unsigned days</option><option value="recent">Recently updated</option></select>
       <label class="chk"><input type="checkbox" id="onlyUn"> Only with unsigned days</label>
     </div>
     <div class="tblwrap"><table><thead><tr><th>Crew</th><th>Closest ticket</th><th>Progress</th><th>Unsigned</th><th>Updated</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
@@ -125,7 +147,7 @@
     <div class="pipe" id="pipe"></div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="addPanel">
     <h2>Add a crew member from a link</h2>
     <p class="small" style="margin:0 0 10px;">Opening the link they send adds them automatically. If you copied it instead, paste it here.</p>
     <div class="tools" style="margin:0;"><input type="text" id="paste" placeholder="Paste a progress link" autocomplete="off" autocapitalize="none"><button class="btn" id="addBtn">Add</button></div>
@@ -142,7 +164,7 @@
   var ROSTER_KEY = 'sea-dash-roster', NAME = { gph: 'General Purpose Hand', cox3: 'Coxswain Grade 3', cox2: 'Coxswain Grade 2', cox1: 'Coxswain Grade 1', inland: 'Master (Inland Waters)', master24: 'Master <24m', master45: 'Master <45m', master100: 'Master <100m', med3: 'Marine Engine Driver 3', med2: 'Marine Engine Driver 2', med1: 'Marine Engine Driver 1', eng3: 'Engineer Class 3' };
   function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var roster = {}, open = {}, live = false, cos = [], msg = '', busy = false;
+  var roster = {}, open = {}, live = false, cos = [], msg = '', busy = false, notes = {};
   try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; }
   function save() { if (live) return; try { localStorage.setItem(ROSTER_KEY, JSON.stringify(roster)); } catch (e) {} }
   var toastT; function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 3200); }
@@ -166,6 +188,18 @@
     return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d < 60 ? d + ' days ago' : Math.round(d / 30) + ' months ago';
   }
 
+  function score(s) { var ts = tickets(s); if (!ts.length) return -1; if (ts.some(function (t) { return t.signed; })) return 2; if (ts.some(function (t) { return t.done; })) return 1.5; return Math.max.apply(null, ts.map(function (t) { return Math.min(1, t.l / t.r); })); }
+  function sorter(k) {
+    return function (a, b) {
+      var r = 0;
+      if (k === 'progress') r = score(b) - score(a);
+      else if (k === 'days') r = (b.ed || 0) - (a.ed || 0);
+      else if (k === 'unsigned') r = ((b.ed || 0) - (b.vd || 0)) - ((a.ed || 0) - (a.vd || 0));
+      else if (k === 'recent') r = new Date(b.t) - new Date(a.t);
+      return r || a.n.localeCompare(b.n);
+    };
+  }
+  function noteOf(s) { return live ? (notes[s.u] || '') : (s.note || ''); }
   function render() {
     var list = Object.keys(roster).map(function (k) { return roster[k]; });
     var empty = !list.length;
@@ -194,19 +228,19 @@
     var rows = list.filter(function (s) {
       if (f !== 'all' && !s.tk.some(function (t) { return t.i === f; })) return false;
       if (onlyUn && !((s.ed || 0) - (s.vd || 0) > 0)) return false; return true;
-    }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    }).sort(sorter($('sortBy').value));
 
     $('rows').innerHTML = rows.map(function (s) {
       var t = f === 'all' ? closest(s) : tickets(s).filter(function (x) { return x.id === f; })[0], un = Math.max(0, (s.ed || 0) - (s.vd || 0));
       var pctL = t ? Math.min(100, t.l / t.r * 100) : 0, pctV = t ? Math.min(100, t.v / t.r * 100) : 0;
-      var html = '<tr class="row" data-u="' + esc(s.u) + '"><td><div class="nm">' + esc(s.n) + '</div><div class="mt">' + esc((s.held && s.held.length ? s.held.length + ' ticket' + (s.held.length === 1 ? '' : 's') + ' held · ' : '') + (s.ve || 0) + ' vessel' + (s.ve === 1 ? '' : 's')) + '</div></td>' +
+      var html = '<tr class="row" data-u="' + esc(s.u) + '"><td><div class="nm">' + esc(s.n) + '</div><div class="mt">' + (noteOf(s) ? '<span class="pill blue" style="padding:2px 8px;font-size:11px;margin-right:6px;">Note</span>' : '') + esc((s.held && s.held.length ? s.held.length + ' ticket' + (s.held.length === 1 ? '' : 's') + ' held · ' : '') + (s.ve || 0) + ' vessel' + (s.ve === 1 ? '' : 's')) + '</div></td>' +
         '<td>' + (t ? esc(t.name) + (t.signed ? ' <span class="pill green">Ready</span>' : t.done ? ' <span class="pill yellow">Needs signatures</span>' : '') : '<span class="muted">None yet</span>') + '</td>' +
         '<td>' + (t ? '<div style="display:flex;align-items:center;gap:10px;"><div class="bar' + (t.done ? ' done' : '') + '" style="flex:1;"><i class="un" style="width:' + pctL + '%"></i><i class="ve" style="width:' + pctV + '%"></i></div><span style="font-size:13px;min-width:66px;">' + t.l + ' / ' + t.r + '</span></div>' : '') + '</td>' +
         '<td>' + (un ? '<span class="pill blue">' + un + ' days</span>' : '<span class="pill green">All signed</span>') + '</td>' +
         '<td class="muted">' + ago(s.t) + '</td><td style="text-align:right;"><button class="btn ghost sm" data-rm="' + esc(s.u) + '">Remove</button></td></tr>';
       if (open[s.u]) html += '<tr class="detail"><td colspan="6"><div class="dgrid">' + tickets(s).map(function (x) {
         return '<div class="drow"><div class="row"><span>' + esc(x.name) + '</span><span class="muted">' + x.l + ' / ' + x.r + (x.v < x.l ? ' · ' + (x.l - x.v) + ' unsigned' : '') + '</span></div><div class="bar' + (x.done ? ' done' : '') + '"><i class="un" style="width:' + Math.min(100, x.l / x.r * 100) + '%"></i><i class="ve" style="width:' + Math.min(100, x.v / x.r * 100) + '%"></i></div></div>';
-      }).join('') + (s.held && s.held.length ? '<div class="drow muted">Holds: ' + esc(s.held.map(function (h) { return NAME[h] || h; }).join(', ')) + '</div>' : '') + '</div></td></tr>';
+      }).join('') + (s.held && s.held.length ? '<div class="drow muted">Holds: ' + esc(s.held.map(function (h) { return NAME[h] || h; }).join(', ')) + '</div>' : '') + '<div class="notebox"><p class="small">Private note (only you and other managers of this company see it)</p><textarea class="note" data-note="' + esc(s.u) + '" maxlength="5000" placeholder="e.g. Needs 20 more days. Starting Master course in March.">' + esc(noteOf(s)) + '</textarea></div></div></td></tr>';
       return html;
     }).join('') || '<tr><td colspan="6" class="muted">Nobody matches those filters.</td></tr>';
 
@@ -227,7 +261,23 @@
     }
     var r = e.target.closest('tr.row'); if (!r) return; var u = r.getAttribute('data-u'); open[u] = !open[u]; render();
   });
-  $('fltr').addEventListener('change', render); $('onlyUn').addEventListener('change', render);
+  $('fltr').addEventListener('change', render); $('onlyUn').addEventListener('change', render); $('sortBy').addEventListener('change', render);
+  $('rows').addEventListener('focusout', function (e) {
+    var ta = e.target.closest && e.target.closest('textarea[data-note]'); if (!ta) return;
+    var id = ta.getAttribute('data-note'), val = ta.value, person = roster[id]; if (!person || val === noteOf(person)) return;
+    if (live && person.cid) { Cloud.saveNote(person.cid, id, val).then(function () { notes[id] = val; render(); toast('Note saved'); }, function (er) { toast(er.message); }); }
+    else { person.note = val; save(); render(); toast('Note saved on this browser'); }
+  });
+  // Print / save as PDF: expand every row and add a header, then let the browser print.
+  var wasOpen = null;
+  window.addEventListener('beforeprint', function () {
+    wasOpen = Object.assign({}, open); Object.keys(roster).forEach(function (k) { open[k] = true; });
+    var list = Object.keys(roster).map(function (k) { return roster[k]; }), co = (list.filter(function (s) { return s.co; })[0] || {}).co || 'Crew';
+    $('printHead').innerHTML = '<h1>' + esc(co) + ' \u00b7 crew ticket progress</h1><p>Report generated ' + new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) + ' \u00b7 ' + list.length + ' crew \u00b7 Askel</p>';
+    render();
+  });
+  window.addEventListener('afterprint', function () { if (wasOpen) { open = wasOpen; wasOpen = null; } $('printHead').innerHTML = ''; render(); });
+  $('printBtn').addEventListener('click', function () { window.print(); });
 
   // ---- adding crew ----
   function fromText(v) { var m = (v || '').match(/#s=([A-Za-z0-9_-]+)/), p = m ? m[1] : (/^[A-Za-z0-9_-]{20,}$/.test((v || '').trim()) ? v.trim() : ''); return p ? dec(p) : null; }
@@ -271,9 +321,10 @@
     busy = true; drawAcct();
     return Cloud.myCompanies().then(function (c) { cos = c || []; return admins().length ? Cloud.crew() : []; }).then(function (rows) {
       var name = {}; admins().forEach(function (c) { name[c.id] = c.name; });
-      roster = {}; live = true;
+      roster = {}; live = true; notes = {};
       rows.forEach(function (r) { var s = r.snapshot; if (!s || !valid(s)) s = { v: 1, k: 'snap', u: r.user_id, n: r.full_name || 'Crew member', ed: 0, vd: 0, held: [], tk: [], ve: 0, t: r.updated_at || new Date().toISOString() }; s.u = r.user_id; s.n = r.full_name || s.n; s.co = name[r.company_id] || s.co; s.cid = r.company_id; roster[r.user_id] = s; });
       msg = '';
+      return admins().length ? Cloud.notes().then(function (ns) { (ns || []).forEach(function (n) { notes[n.user_id] = n.note; }); }, function () {}) : null;
     }).catch(function (e) { msg = e.message; }).then(function () { busy = false; drawAcct(); render(); });
   }
   function drawAcct() {
