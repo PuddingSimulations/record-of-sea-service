@@ -4,11 +4,11 @@
 Askel lets your crew log sea service, get it signed from a phone in about 30 seconds (no account for the supervisor), and see exactly how close they are to their next AMSA near coastal ticket. You get a live dashboard of the whole crew: who is ready to apply, who is waiting on a signature, and where your training pipeline stands. Crew keep their own record for life.
 
 ## The pilot
-- **Length:** 30 days, free. Longer if you need it to cover a full rotation.
+- **Length:** 90 days, free.
 - **Scope:** one crew or vessel to start (5 to 15 people is ideal). You can add more at any time.
 - **What we ask of you:**
   1. A named contact who can invite crew (they enter your company code in the app).
-  2. A few minutes a fortnight of feedback, and a short chat at day 15 and day 28.
+  2. A few minutes a fortnight of feedback, and a short chat at day 45 and day 85.
   3. If it works for you, permission to name you as a reference.
 - **What we do:** set up your company, help your first crew get started, and fix issues quickly.
 
