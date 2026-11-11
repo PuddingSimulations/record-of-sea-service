@@ -332,6 +332,7 @@
   }
   function daysLeft(iso) { return Math.ceil((new Date(iso) - Date.now()) / 86400000); }
   function planBar(c) {
+    if (!c.state) return '';   // database not updated yet: no licence info to show
     var mail = 'mailto:hello@askel.com.au?subject=' + encodeURIComponent('Askel licence: ' + c.name);
     var box = function (bg, fg, text, link) { return '<div style="background:' + bg + ';color:' + fg + ';border-radius:12px;padding:11px 14px;margin:0 0 12px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><span>' + text + '</span>' + (link ? '<a href="' + mail + '" style="color:inherit;font-weight:700;">' + link + '</a>' : '') + '</div>'; };
     if (c.state === 'expired') return box('rgba(255,90,82,0.16)', '#FF8A84', '<b>Licence ended.</b> Your roster is locked. Your crew still have their own records.', 'Renew');
