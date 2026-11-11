@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Askel</string>
+    <string name="title_activity_main">Askel</string>
+    <string name="package_name">au.com.askel.app</string>
+    <string name="custom_url_scheme">au.com.askel.app</string>
+</resources>

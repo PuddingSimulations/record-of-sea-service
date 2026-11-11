@@ -1,0 +1,23 @@
+name: iOS build
+on:
+  push:
+    branches: [ main, 'claude/**' ]
+  workflow_dispatch:
+jobs:
+  simulator-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run sync
+      - name: Install pods
+        working-directory: ios/App
+        run: pod install
+      - name: Build for the iOS simulator (unsigned compile check)
+        working-directory: ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build

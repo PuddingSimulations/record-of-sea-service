@@ -1012,6 +1012,22 @@
     src.connect(f); f.connect(g); g.connect(master); src.start(t);
   }
 
+  // ---- Native app (Capacitor) hooks. All of this is skipped in a normal browser. ----
+  var NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+  var WEB_BASE = 'https://flagmantle.github.io/record-of-sea-service/';   // public address supervisors open; switch to https://askel.com.au/ once its DNS is live
+  function nativePlugin(n) { return NATIVE && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins[n]; }
+  function nativeShareFile(blob, name, title) {
+    var FS = nativePlugin('Filesystem'), SH = nativePlugin('Share');
+    if (!FS || !SH) return Promise.reject(new Error('no native share'));
+    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(String(fr.result).split(',')[1]); }; fr.onerror = rej; fr.readAsDataURL(blob); })
+      .then(function (b64) { return FS.writeFile({ path: name, data: b64, directory: 'CACHE' }); })
+      .then(function (r) { return SH.share({ title: title, url: r.uri }); });
+  }
+  function nativeHaptic(kind) {
+    var H = nativePlugin('Haptics'); if (!H) return false;
+    try { if (kind === 'success') H.notification({ type: 'SUCCESS' }); else H.impact({ style: kind === 'medium' ? 'MEDIUM' : 'LIGHT' }); } catch (e) {} return true;
+  }
+
   // iOS Safari has no vibrate API, but toggling a native switch input fires the system haptic (iOS 17.4+).
   var hapticLabel = null;
   function tap() {
@@ -1026,6 +1042,7 @@
     } catch (e) {}
   }
   function haptic(kind) {
+    if (nativeHaptic(kind)) return;
     try {
       if (kind === 'light') { tap(); if (navigator.vibrate) navigator.vibrate(8); }
       else if (kind === 'medium') { tap(); setTimeout(tap, 70); if (navigator.vibrate) navigator.vibrate(16); }
@@ -1802,6 +1819,7 @@
     if (!passportBlob) return;
     var file = null;
     try { file = new File([passportBlob], 'sea-passport.png', { type: 'image/png' }); } catch (err) {}
+    if (NATIVE && nativePlugin('Share')) { nativeShareFile(passportBlob, 'askel-passport.png', 'My sea service').catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) copyImageFallback(); }); return; }
     if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file], title: 'My sea service' }).catch(function (err) { if (err && err.name !== 'AbortError') copyImageFallback(); });
     } else { copyImageFallback(); }
@@ -1917,7 +1935,7 @@
   function b64enc(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function b64dec(t) { try { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return JSON.parse(decodeURIComponent(escape(atob(t)))); } catch (e) { return null; } }
   function appBase() {
-    var b = appBaseOverride || (location.origin + location.pathname.replace(/[^\/]*$/, ''));
+    var b = appBaseOverride || (NATIVE ? WEB_BASE : location.origin + location.pathname.replace(/[^\/]*$/, ''));
     return /\/$/.test(b) ? b : b + '/';
   }
   function baseIsPrivate(b) { return /^file:|^null|claude\.ai|localhost|127\.0\.0\.1|192\.168\./.test(b); }
@@ -2175,6 +2193,7 @@
   $('pdfShareBtn').addEventListener('click', function () {
     if (!pdfBytes) return; var file = null;
     try { file = new File([pdfBytes], pdfName(), { type: 'application/pdf' }); } catch (e) {}
+    if (NATIVE && nativePlugin('Share')) { nativeShareFile(new Blob([pdfBytes], { type: 'application/pdf' }), pdfName(), 'AMSA Form 771').catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) openPdfBlob(); }); return; }
     if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file], title: 'AMSA Form 771' }).catch(function (err) { if (err && err.name !== 'AbortError') openPdfBlob(); });
     } else { openPdfBlob(); }

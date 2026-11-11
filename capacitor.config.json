@@ -1,0 +1,12 @@
+{
+  "appId": "au.com.askel.app",
+  "appName": "Askel",
+  "webDir": "www",
+  "backgroundColor": "#141416",
+  "ios": { "contentInset": "always", "backgroundColor": "#141416" },
+  "android": { "backgroundColor": "#141416" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 0, "backgroundColor": "#141416" },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#141416" }
+  }
+}
