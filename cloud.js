@@ -76,6 +76,13 @@
     sync: sync,
     saveProfile: function (name, phone) { return api('/rest/v1/profiles?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: { id: session.user.id, full_name: name || '', phone: phone || null } }); },
     pushSnapshot: function (snap) { return api('/rest/v1/progress_snapshots?on_conflict=user_id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: { user_id: session.user.id, snapshot: snap, updated_at: new Date().toISOString() } }); },
+    // ---- server-tracked supervisor sign-off ----
+    createSign: function (entryId, snapshot) { return api('/rest/v1/sign_requests', { method: 'POST', prefer: 'return=representation', body: { user_id: session.user.id, entry_id: entryId, snapshot: snapshot } }).then(function (r) { return r[0].token; }); },
+    getSign: function (t) { return raw('/rest/v1/rpc/get_sign_request', { method: 'POST', body: { t: t } }); },          // supervisor, no account
+    submitSign: function (t, payload) { return raw('/rest/v1/rpc/submit_signature', { method: 'POST', body: { t: t, payload: payload } }); },
+    signedRequests: function () { return api('/rest/v1/sign_requests?status=eq.signed&applied=eq.false&select=token,entry_id,signed'); },
+    markApplied: function (t) { return api('/rest/v1/sign_requests?token=eq.' + encodeURIComponent(t), { method: 'PATCH', body: { applied: true } }); },
+    removeCrew: function (cid, uid) { return api('/rest/v1/company_members?company_id=eq.' + cid + '&user_id=eq.' + uid, { method: 'DELETE' }); },
     myCompanies: function () { return rpc('my_companies'); },
     join: function (code) { return rpc('join_company', { code: code }); },
     leave: function (cid) { return api('/rest/v1/company_members?company_id=eq.' + cid + '&user_id=eq.' + session.user.id, { method: 'DELETE' }); },

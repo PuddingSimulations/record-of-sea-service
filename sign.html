@@ -137,8 +137,9 @@
   </section>
 </main>
 
+<script src="cloud.js"></script>
 <script>
-(function () {
+window.__boot = function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   function enc(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -147,7 +148,7 @@
   var DUTY = { D: 'Deck work', DE: 'Deck and engineering', GPH: 'General purpose hand', INW: 'In charge of navigation watch', C: 'Coxswain', AEIC: 'Assistant to engineer in charge', 'AE/ED': 'Assistant to engineer or engine driver', 'E/ED': 'Engineer or engine driver', EW: 'Engineer watchkeeper', EIC: 'Engineer in charge' };
 
   // ---- the request lives in the link ----
-  var m = location.hash.match(/^#r=(.+)$/), raw = window.__REQ || (m && m[1]), R = raw && dec(raw), demo = false;
+  var m = location.hash.match(/^#r=(.+)$/), raw = window.__REQ || (m && m[1]), R = window.__SR || (raw && dec(raw)), demo = false, TOKEN = window.__TOKEN || '';
   if (!R || !R.id) {
     demo = true;
     R = { v: 1, id: 'demo', n: 'Alex Marlow', ve: 'Coral Trader', s: '2026-08-01', e: '2026-09-02', d: 33, p: 'Mate', c: 'INW', sn: 'Sam Rivera', sp: 'Master', sc: '', sph: '', sem: '', b: '' };
@@ -239,7 +240,19 @@
     return base + '#signed=' + payload;
   }
   var lastUrl = '', lastPayload = '';
+  function sendToServer() {
+    var resp = { v: 1, id: R.id, d: days, dl: Number(R.d), s: curS, e: curE, sn: $('sn').value.trim(), sp: $('sp').value.trim(), sc: $('sc').value.trim(), sph: $('sph').value.trim(), sem: $('sem').value.trim(),
+      r: role, ro: $('ro').value.trim(), t: new Date().toISOString(), a: Math.round(1000 * Hh / W), g: strokes.filter(function (s) { return s.length >= 4; }) };
+    var btn = $('go'); btn.disabled = true; btn.textContent = 'Sending\u2026';
+    Cloud.submitSign(TOKEN, resp).then(function (ok) {
+      $('form').style.display = 'none'; $('doneBox').style.display = 'block'; window.scrollTo(0, 0); $('sendGrid').style.display = 'none'; $('copyLink').style.display = 'none';
+      var first = (R.n || 'them').split(' ')[0];
+      if (ok) { $('doneLead').textContent = 'Sent to ' + first + '. You can close this page.'; }
+      else { $('doneBox').querySelector('h1').textContent = 'Not sent'; $('doneLead').textContent = 'This request was already signed or has expired. Nothing was changed.'; }
+    }, function () { btn.disabled = false; btn.textContent = 'Sign and send'; alert('Could not send. Check your connection and try again.'); });
+  }
   function send() {
+    if (TOKEN) { sendToServer(); return; }
     lastUrl = reply();
     var text = 'Signed. ' + ($('sn').value.trim() || 'Your supervisor') + ' confirmed ' + days + ' days for ' + (R.ve || 'your sea service') + '. Open this link on your phone to add it to your Form 771:';
     $('form').style.display = 'none'; $('doneBox').style.display = 'block'; window.scrollTo(0, 0);
@@ -264,9 +277,26 @@
     if (navigator.share) add(n ? 'More ways to send' : 'Send the reply', '', function () { navigator.share({ title: 'Signed sea service', text: text, url: lastUrl }).catch(function () {}); });
     if (!n) { $('copybox').style.display = 'block'; }
   }
+  if (TOKEN) { $('go').textContent = 'Sign and send'; $('lead').textContent = 'Check the details and sign. About 30 seconds.'; $('form').querySelector('.fine').innerHTML = 'No account needed. Your signed confirmation is sent straight to <span id="firstName">' + ((R.n || 'them').split(' ')[0]) + '</span> and the link stops working.'; }
   $('go').onclick = send;
   function copy() { $('copybox').style.display = 'block'; try { navigator.clipboard.writeText(lastUrl).then(function () { $('copyLink').textContent = 'Copied'; }, function () { $('copyLink').textContent = 'Press and hold the link above to copy'; }); } catch (e) { $('copyLink').textContent = 'Press and hold the link above to copy'; } }
   $('copyLink').onclick = copy;
+};
+</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var t = (location.hash.match(/^#t=([a-f0-9]{16,64})$/) || [])[1];
+  if (!t || !window.Cloud || window.__REQ) { window.__boot(); return; }
+  function stop(h, p) { $('form').style.display = 'none'; var b = $('doneBox'); b.style.display = 'block'; b.querySelector('h1').textContent = h; $('doneLead').textContent = p; $('sendGrid').style.display = 'none'; $('copyLink').style.display = 'none'; var tk = b.querySelector('.tick'); if (tk) tk.style.display = 'none'; }
+  $('form').style.display = 'none';
+  Cloud.getSign(t).then(function (r) {
+    if (!r) return stop('Link not found', 'This link is not valid. Ask them to send it again.');
+    if (r.status === 'expired') return stop('Link expired', 'This request has expired. Ask them to send a new one.');
+    if (r.status === 'signed') return stop('Already signed', 'This request has already been signed. Nothing more to do.');
+    if (r.status !== 'pending' || !r.snapshot) return stop('Not available', 'This request can no longer be signed.');
+    window.__SR = r.snapshot; window.__TOKEN = t; $('form').style.display = ''; window.__boot();
+  }, function () { stop('Could not load', 'Check your connection and open the link again.'); });
 })();
 </script>
 </body>

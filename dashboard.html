@@ -216,7 +216,15 @@
   }
   $('rows').addEventListener('click', function (e) {
     var rm = e.target.closest('[data-rm]');
-    if (rm) { e.stopPropagation(); delete roster[rm.getAttribute('data-rm')]; save(); render(); return; }
+    if (rm) {
+      e.stopPropagation(); var id = rm.getAttribute('data-rm'), person = roster[id];
+      if (live && person && person.cid) {
+        if (rm.getAttribute('data-sure') !== '1') { rm.setAttribute('data-sure', '1'); rm.textContent = 'Tap again'; setTimeout(function () { rm.removeAttribute('data-sure'); rm.textContent = 'Remove'; }, 3000); return; }
+        Cloud.removeCrew(person.cid, id).then(function () { delete roster[id]; render(); toast('Removed ' + person.n + ' from your company'); }, function (er) { toast(er.message); });
+        return;
+      }
+      delete roster[id]; save(); render(); return;
+    }
     var r = e.target.closest('tr.row'); if (!r) return; var u = r.getAttribute('data-u'); open[u] = !open[u]; render();
   });
   $('fltr').addEventListener('change', render); $('onlyUn').addEventListener('change', render);
@@ -264,7 +272,7 @@
     return Cloud.myCompanies().then(function (c) { cos = c || []; return admins().length ? Cloud.crew() : []; }).then(function (rows) {
       var name = {}; admins().forEach(function (c) { name[c.id] = c.name; });
       roster = {}; live = true;
-      rows.forEach(function (r) { var s = r.snapshot; if (!s || !valid(s)) s = { v: 1, k: 'snap', u: r.user_id, n: r.full_name || 'Crew member', ed: 0, vd: 0, held: [], tk: [], ve: 0, t: r.updated_at || new Date().toISOString() }; s.u = r.user_id; s.n = r.full_name || s.n; s.co = name[r.company_id] || s.co; roster[r.user_id] = s; });
+      rows.forEach(function (r) { var s = r.snapshot; if (!s || !valid(s)) s = { v: 1, k: 'snap', u: r.user_id, n: r.full_name || 'Crew member', ed: 0, vd: 0, held: [], tk: [], ve: 0, t: r.updated_at || new Date().toISOString() }; s.u = r.user_id; s.n = r.full_name || s.n; s.co = name[r.company_id] || s.co; s.cid = r.company_id; roster[r.user_id] = s; });
       msg = '';
     }).catch(function (e) { msg = e.message; }).then(function () { busy = false; drawAcct(); render(); });
   }
@@ -278,11 +286,17 @@
     }
     var a = admins(), h = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Signed in as ' + esc(u.email) + (busy ? ' · loading…' : '') + '</p>' + err;
     if (!a.length) h += '<p class="small" style="margin:0 0 10px;">Create your company to get a code your crew can enter in their app.</p><div class="tools" style="margin:0;"><input type="text" id="coIn" placeholder="Company name" autocomplete="organization"><button class="btn" id="coMake">Create company</button></div>';
-    else a.forEach(function (c) { h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);"><div><b>' + esc(c.name) + '</b><div class="small">Crew enter this code in the app (Settings, Your company)</div></div><span class="pill blue" style="font-size:18px;letter-spacing:.12em;user-select:all;">' + esc(c.join_code || '') + '</span></div>'; });
+    else a.forEach(function (c) { h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);"><div><b>' + esc(c.name) + '</b><div class="small">Crew enter this code in the app (Settings, Your company)</div></div><div style="display:flex;gap:8px;align-items:center;"><span class="pill blue" style="font-size:18px;letter-spacing:.12em;user-select:all;">' + esc(c.join_code || '') + '</span><button class="btn ghost sm" data-invite="' + esc(c.join_code || '') + '" data-co="' + esc(c.name) + '">Copy invite</button></div></div>'; });
     h += '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn ghost sm" id="aRef">Refresh</button><button class="btn ghost sm" id="aOut">Sign out</button></div>';
     box.innerHTML = h;
   }
   $('acctBox').addEventListener('click', function (ev) {
+    var inv = ev.target.closest && ev.target.closest('[data-invite]');
+    if (inv) {
+      var msg2 = 'Join ' + inv.getAttribute('data-co') + ' on Askel so we can track your ticket progress. Install the Askel app, create an account in Settings, then enter this company code under Your company: ' + inv.getAttribute('data-invite');
+      try { navigator.clipboard.writeText(msg2).then(function () { toast('Invite copied. Paste it into a message to your crew.'); }, function () { toast(msg2); }); } catch (er) { toast(msg2); }
+      return;
+    }
     var id = ev.target.id;
     if (id === 'aIn' || id === 'aUp') {
       var em = $('aE').value.trim(), pw = $('aP').value; if (!em || pw.length < 8) { msg = 'Enter your email and a password of at least 8 characters.'; drawAcct(); return; }

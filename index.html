@@ -1136,9 +1136,26 @@
       return Cloud.myCompanies().then(function (c) { cloudCompanies = c || []; }, function () { cloudCompanies = []; });
     }).then(function () {
       if (cloudCompanies.length && profile.name.trim()) return Cloud.saveProfile(profile.name.trim()).then(function () { return Cloud.pushSnapshot(buildSnapshot()); });
-    }).then(function () { cloudStatus = 'Synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); if (manual) showToast('Synced'); },
+    }).then(function () { return checkSigned(); }).then(function () { cloudStatus = 'Synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); if (manual) showToast('Synced'); },
       function (e) { cloudStatus = 'Could not sync: ' + e.message; if (manual) showToast('Could not sync'); }).then(function () { cloudBusy = false; refreshAccount(); });
   }
+  var pendingSigned = {};
+  function checkSigned() {
+    return Cloud.signedRequests().then(function (rows) {
+      var next = {}, fresh = 0;
+      (rows || []).forEach(function (row) {
+        var ent = entries.filter(function (x) { return x.id === row.entry_id; })[0];
+        if (!ent) { Cloud.markApplied(row.token).catch(function () {}); return; }
+        if (ent.supSig) { Cloud.markApplied(row.token).catch(function () {}); return; }
+        if (!pendingSigned[row.entry_id]) fresh++;
+        next[row.entry_id] = row;
+      });
+      pendingSigned = next; renderMain();
+      if (fresh) { fx('success'); showToast(fresh === 1 ? 'A supervisor signed one of your entries' : fresh + ' entries were signed'); }
+    }, function () {});
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) cloudSoon(); });
+  setInterval(function () { if (!document.hidden && cloudOn() && entries.some(function (x) { return x.sentAt && !x.supSig; })) cloudSync(); }, 45000);
   function refreshAccount() { if (settingsOverlay && settingsOverlay.classList.contains('open')) renderSettings(); }
   window.addEventListener('online', function () { cloudSoon(); });
 
@@ -1480,7 +1497,8 @@
 
       var first = (e.supName || '').split(' ')[0] || 'your supervisor', ago = '';
       if (e.sentAt) { var dd = Math.floor((Date.now() - new Date(e.sentAt).getTime()) / 86400000); ago = dd <= 0 ? 'today' : dd === 1 ? 'yesterday' : dd + ' days ago'; }
-      var act = e.supSig ? '<span class="stat ok">\u2713 Signed' + (e.supName ? ' by ' + escapeHtml(e.supName) : '') + '</span><button type="button" class="act ghost" data-pdf="' + escapeHtml(e.id) + '">Form 771</button>'
+      var act = (!e.supSig && pendingSigned[e.id]) ? '<span class="stat ok">' + escapeHtml(((pendingSigned[e.id].signed || {}).sn) || first) + ' signed this</span><button type="button" class="act primary" style="width:auto;background:var(--green,#30D158);color:#0b2a14;" data-review="' + escapeHtml(e.id) + '">Review</button>'
+        : e.supSig ? '<span class="stat ok">\u2713 Signed' + (e.supName ? ' by ' + escapeHtml(e.supName) : '') + '</span><button type="button" class="act ghost" data-pdf="' + escapeHtml(e.id) + '">Form 771</button>'
         : e.sentAt ? '<span class="stat">Waiting for ' + escapeHtml(first) + ' \u00B7 sent ' + ago + '</span><button type="button" class="act ghost" data-send="' + escapeHtml(e.id) + '">Resend</button>'
         : '<button type="button" class="act primary" data-send="' + escapeHtml(e.id) + '">Send to supervisor to sign</button>';
       listHtml += '<div class="swipe' + (e.id === lastAddedId ? ' new' : '') + (stagger ? ' stagger' : '') + '" style="--i:' + (si++) + '" data-id="' + escapeHtml(e.id) + '">' +
@@ -1915,11 +1933,17 @@
     if (baseIsPrivate(base)) { showToast('Supervisors cannot open links from this address. Put the app on a public address first.'); return; }
     var req = { v: 1, id: e.id, n: profile.name.trim(), ve: e.vessel, s: e.start, e: e.end || e.start, d: Number(e.days), p: e.position || '', c: e.category,
       sn: e.supName || '', sp: e.supPosition || '', sc: e.supCert || '', sph: e.supPhone || '', sem: e.supEmail || '', b: base, rp: profile.phone || '', re: profile.email || '' };
-    var url = base + 'sign.html#r=' + b64enc(req), first = (e.supName || '').split(' ')[0];
+    var first = (e.supName || '').split(' ')[0];
     var text = 'Hi' + (first ? ' ' + first : '') + ', could you confirm my sea service on ' + e.vessel + ' (' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ', ' + e.days + ' days)? It takes about 30 seconds on your phone. No account needed.';
-    e.sentAt = new Date().toISOString(); saveEntries(); showSentNote(e); renderMain();
-    if (navigator.share) { navigator.share({ title: 'Sea service sign-off', text: text, url: url }).catch(function () {}); }
-    else { try { navigator.clipboard.writeText(text + '\n' + url).then(function () { showToast('Message and link copied'); }, function () { showToast('Could not copy the link'); }); } catch (err) { showToast('Could not copy the link'); } }
+    function deliver(url) {
+      e.sentAt = new Date().toISOString(); saveEntries(); showSentNote(e); renderMain();
+      function share() { return navigator.share({ title: 'Sea service sign-off', text: text, url: url }); }
+      if (navigator.share) {
+        share().catch(function (err) { if (err && err.name === 'NotAllowedError') showToast('Link ready', 'Share', function () { share().catch(function () {}); }); });
+      } else { try { navigator.clipboard.writeText(text + '\n' + url).then(function () { showToast('Message and link copied'); }, function () { showToast('Could not copy the link'); }); } catch (err) { showToast('Could not copy the link'); } }
+    }
+    var offline = function () { deliver(base + 'sign.html#r=' + b64enc(req)); };
+    if (cloudOn()) { Cloud.createSign(e.id, req).then(function (token) { deliver(base + 'sign.html#t=' + token); }, offline); } else offline();
   }
   function showSentNote(e) {
     var n = $('sentNote'); if (!e.sentAt) { n.style.display = 'none'; return; }
@@ -1948,6 +1972,7 @@
 
   // Home screen: actions on each entry
   entriesSection.addEventListener('click', function (ev) {
+    var rb = ev.target.closest('[data-review]'); if (rb) { var pr = pendingSigned[rb.getAttribute('data-review')]; if (pr) { fx('tick'); handleSignedPayload(b64enc(pr.signed), pr.token); } return; }
     var sb = ev.target.closest('[data-send]'), pb = ev.target.closest('[data-pdf]'), ob = ev.target.closest('[data-open]');
     var find = function (id) { return entries.filter(function (x) { return x.id === id; })[0]; };
     if (sb) { var e1 = find(sb.getAttribute('data-send')); if (e1) { fx('tick'); sendToSupervisor(e1); } return; }
@@ -2020,8 +2045,8 @@
     try { history.replaceState(null, '', location.pathname + location.search); } catch (err) {}
     handleSignedPayload(m[1]);
   }
-  function handleSignedPayload(payload) {
-    var r = b64dec(payload);
+  function handleSignedPayload(payload, token) {
+    var r = b64dec(payload); if (r && token) r.token = token;
     if (!r || !r.id) { showToast('That link could not be read'); return; }
     var e = entries.filter(function (x) { return x.id === r.id; })[0];
     if (!e) {
@@ -2059,6 +2084,7 @@
     if (Number(r.d) !== Number(e.days)) { e.daysLogged = e.days; e.days = Number(r.d); }
     if (r.s && r.e && (r.s !== e.start || r.e !== (e.end || e.start))) { e.datesLogged = { s: e.start, e: e.end || e.start }; e.start = r.s; e.end = r.e; }
     saveEntries(); renderMain(); closeSigned(); fx('success'); showToast('Added. Check the form and save it.');
+    if (r.token && cloudOn()) { Cloud.markApplied(r.token).catch(function () {}); delete pendingSigned[e.id]; renderMain(); }
     setTimeout(function () { openPdfSheet(e.id); }, 350);
   });
   window.addEventListener('hashchange', handleSignedLink);
