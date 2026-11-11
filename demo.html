@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Askel for operators: know who is ready for their next ticket</title>
+<meta name="description" content="Askel lets crew log sea service, get it signed from a phone in 30 seconds, and see their progress toward AMSA near coastal tickets. Operators see the whole crew pipeline live." />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#141416" />
+<meta property="og:site_name" content="Askel" />
+<meta property="og:title" content="Askel for operators" />
+<meta property="og:description" content="Sea service, signed. Know who is ready for their next ticket." />
+<meta property="og:image" content="https://askel.com.au/og-image.png" />
+<link rel="icon" href="icon-192.png" />
+<style>
+  :root {
+    --bg: #141416; --card: #202024; --card-2: #2A2A2F; --ink: #F1F1EE; --ink-2: #A6A6AE; --ink-3: #6F6F77;
+    --line: rgba(255,255,255,0.09); --blue: #2A93FF; --blue-soft: rgba(42,147,255,0.16); --green: #30D158; --green-soft: rgba(48,209,88,0.15); --yellow: #FFD60A;
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  section { padding: 84px 0; }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); margin: 0 0 14px; }
+  h1 { font-size: clamp(38px, 6.4vw, 68px); line-height: 1.03; letter-spacing: -0.035em; margin: 0; font-weight: 800; }
+  h2 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 14px; font-weight: 800; }
+  h3 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  .lead { font-size: clamp(17px, 2vw, 20px); color: var(--ink-2); max-width: 60ch; margin-top: 18px; }
+  .muted { color: var(--ink-2); }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 20; background: rgba(20,20,22,0.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 19px; letter-spacing: -0.02em; text-decoration: none; }
+  .links { display: flex; align-items: center; gap: 22px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .links a { text-decoration: none; transition: color .2s; } .links a:hover { color: var(--ink); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 14px; padding: 14px 22px; font: inherit; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer; background: var(--ink); color: #141416; transition: transform .25s var(--spring), background .2s; }
+  .btn:hover { transform: translateY(-1px); } .btn:active { transform: scale(0.97); }
+  .btn.ghost { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .btn.sm { padding: 10px 16px; font-size: 14px; border-radius: 12px; }
+  @media (max-width: 760px) { .links a.hide-s { display: none; } .links { gap: 14px; } }
+
+  /* hero */
+  .hero { padding: 96px 0 40px; background: radial-gradient(900px 420px at 85% -10%, rgba(42,147,255,0.22), transparent 60%); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 54px; }
+  .fact { background: var(--card); border-radius: 18px; padding: 18px 20px; font-size: 15px; color: var(--ink-2); }
+  .fact b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 40px; }
+  .step { background: var(--card); border-radius: 22px; padding: 26px; }
+  .num { width: 34px; height: 34px; border-radius: 11px; background: var(--blue-soft); color: var(--blue); font-weight: 800; display: grid; place-items: center; margin-bottom: 18px; }
+  .step p { color: var(--ink-2); font-size: 15px; }
+
+  /* demo frames */
+  .demo-grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 44px; }
+  .demo-block h3 { font-size: 20px; margin-bottom: 8px; } .demo-block > p { color: var(--ink-2); font-size: 15px; margin-bottom: 18px; max-width: 46ch; }
+  .phone { border: 9px solid #2b2b30; border-radius: 40px; overflow: hidden; background: #141416; box-shadow: 0 30px 70px rgba(0,0,0,0.55); max-width: 380px; }
+  .phone iframe { display: block; width: 100%; height: 700px; border: 0; background: #141416; }
+  .browser { border-radius: 16px; overflow: hidden; background: #1b1b1e; box-shadow: 0 30px 70px rgba(0,0,0,0.55), inset 0 0 0 1px var(--line); }
+  .bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: #26262a; border-bottom: 1px solid var(--line); }
+  .bar i { width: 10px; height: 10px; border-radius: 50%; background: #45454b; }
+  .bar span { margin-left: 10px; font-size: 12px; color: var(--ink-3); }
+  .scaler { position: relative; width: 100%; overflow: hidden; }
+  .scaler iframe { position: absolute; top: 0; left: 0; width: 1100px; height: 760px; border: 0; transform-origin: 0 0; background: #141416; }
+  .hint { font-size: 13px; color: var(--ink-3); margin-top: 12px; }
+  @media (max-width: 880px) { .demo-grid { grid-template-columns: 1fr; } .phone { margin: 0 auto; } }
+
+  /* screens */
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px; margin-top: 44px; align-items: start; }
+  .screen figure { margin: 0; }
+  .screen img { display: block; width: 100%; height: auto; border-radius: 26px; box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--line); }
+  .screen figcaption { margin-top: 14px; font-size: 14px; color: var(--ink-2); } .screen figcaption b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 2px; }
+
+  /* features */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 40px; }
+  .card { background: var(--card); border-radius: 20px; padding: 24px; }
+  .card p { color: var(--ink-2); font-size: 15px; }
+  .ico { width: 38px; height: 38px; border-radius: 12px; background: var(--green-soft); color: var(--green); display: grid; place-items: center; margin-bottom: 16px; }
+  .ico.b { background: var(--blue-soft); color: var(--blue); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  @media (max-width: 820px) { .split { grid-template-columns: 1fr; gap: 24px; } }
+  ul.tick { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 12px; }
+  ul.tick li { display: flex; gap: 12px; color: var(--ink-2); font-size: 15px; }
+  ul.tick li::before { content: ""; flex: 0 0 20px; height: 20px; margin-top: 2px; border-radius: 50%; background: var(--green-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2330D158' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/12px no-repeat; }
+  ul.tick b { color: var(--ink); }
+
+  /* cta band */
+  .band { background: linear-gradient(135deg, #232831, #1a1d24); border-radius: 28px; padding: 54px 34px; text-align: center; box-shadow: inset 0 0 0 1px var(--line); }
+  .band .lead { margin-left: auto; margin-right: auto; }
+  .band .cta-row { justify-content: center; }
+
+  details { background: var(--card); border-radius: 16px; padding: 18px 22px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; } summary::after { content: "+"; color: var(--ink-3); font-size: 22px; line-height: 1; transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { margin-top: 12px; color: var(--ink-2); font-size: 15px; max-width: 70ch; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 60px; font-size: 13px; color: var(--ink-3); }
+  footer p + p { margin-top: 8px; }
+
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } .btn { transition: none; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Askel home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="4.2" stroke-linecap="round" aria-hidden="true"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg>Askel
+    </a>
+    <div class="links">
+      <a class="hide-s" href="#how">How it works</a>
+      <a class="hide-s" href="#demo">Live demo</a>
+      <a class="hide-s" href="#operators">For operators</a>
+      <a class="btn sm" href="mailto:hello@askel.com.au?subject=Askel%20pilot">Request a pilot</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <p class="eyebrow">For marine operators</p>
+    <h1>Know who is ready<br>for their next ticket.</h1>
+    <p class="lead">Askel gives your crew a fast way to log sea service and get it signed from a phone, and gives you a live view of every crew member's progress toward AMSA near coastal tickets.</p>
+    <div class="cta-row">
+      <a class="btn" href="#demo">See the live demo</a>
+      <a class="btn ghost" href="mailto:hello@askel.com.au?subject=Askel%20pilot">Request a pilot</a>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>Every near coastal ticket</b>From General Purpose Hand to Master &lt;100m, plus engineering.</div>
+      <div class="fact"><b>Signed in about 30 seconds</b>Supervisors sign from a link. No app, no account, no meeting.</div>
+      <div class="fact"><b>Paperwork ready</b>AMSA Form 771 filled in, or a sea service letter on AMSA's template.</div>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow">How it works</p>
+    <h2>From deck to application, without the chasing.</h2>
+    <div class="steps">
+      <div class="step reveal"><div class="num">1</div><h3>Crew log sea time</h3><p>Add the vessel and days in seconds. Askel counts what qualifies for each ticket, using AMSA's day, vessel size and power rules, and shows exactly how close they are.</p></div>
+      <div class="step reveal"><div class="num">2</div><h3>Supervisors sign from a link</h3><p>A text or email lands on their phone. They check the days, draw their signature and send it back. Signatures are drawn, not typed.</p></div>
+      <div class="step reveal"><div class="num">3</div><h3>Apply with it all in hand</h3><p>The signature is placed straight onto AMSA's own Form 771, or onto a sea service letter, ready to attach to the application.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="demo" style="background: linear-gradient(180deg, transparent, rgba(255,255,255,0.025) 20%, transparent);">
+  <div class="wrap">
+    <p class="eyebrow">Live demo</p>
+    <h2>This is the real product, with example data.</h2>
+    <p class="lead">Try the supervisor's side yourself, then look at what you would see as the operator.</p>
+    <div class="demo-grid">
+      <div class="demo-block reveal">
+        <h3>1. The supervisor's view</h3>
+        <p>Your skipper or operations manager gets this on their phone. Change the days, draw a signature and tap send.</p>
+        <div class="phone"><iframe src="sign.html" title="Supervisor sign-off demo" loading="lazy"></iframe></div>
+        <p class="hint">Example data. Nothing is saved or sent.</p>
+      </div>
+      <div class="demo-block reveal">
+        <h3>2. Your crew dashboard</h3>
+        <p>Who is ready to apply, who is waiting on a signature, and which tickets your crew are heading toward. Click a row to see every ticket.</p>
+        <div class="browser">
+          <div class="bar"><i></i><i></i><i></i><span>askel.com.au/dashboard</span></div>
+          <div class="scaler" id="scaler"><iframe id="dashFrame" src="dashboard.html#demo" title="Operator dashboard demo" loading="lazy"></iframe></div>
+        </div>
+        <p class="hint">Example crew. Sort, filter and open any row.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="crew">
+  <div class="wrap">
+    <p class="eyebrow">The crew app</p>
+    <h2>Clear, fast and built for the deck.</h2>
+    <p class="lead">Crew see their progress at a glance, choose the tickets they are working towards, and keep their own record for life.</p>
+    <div class="screens">
+      <div class="screen reveal"><figure><img src="demo/home.png" width="780" height="1328" alt="Askel home screen showing total qualifying days and tickets being worked towards" loading="lazy"><figcaption><b>Progress at a glance</b>Total days, and a progress bar for each ticket they are chasing.</figcaption></figure></div>
+      <div class="screen reveal"><figure><img src="demo/tickets.png" width="780" height="1328" alt="Tickets tab showing tickets ready to apply and in progress" loading="lazy"><figcaption><b>Ready, in progress, not started</b>Every ticket sorted by how close it is, with what counts toward each.</figcaption></figure></div>
+      <div class="screen reveal"><figure><img src="demo/passport.png" width="780" height="1082" alt="Sea passport share card" loading="lazy"><figcaption><b>A sea passport to share</b>A clean card of days, vessels and tickets held.</figcaption></figure></div>
+      <div class="screen reveal"><figure><img src="demo/form771.png" width="716" height="515" alt="AMSA Form 771 filled in with a supervisor signature" loading="lazy"><figcaption><b>Form 771, filled in</b>Details and the supervisor's signature placed onto AMSA's own form.</figcaption></figure></div>
+    </div>
+  </div>
+</section>
+
+<section id="operators">
+  <div class="wrap">
+    <p class="eyebrow">For operators</p>
+    <h2>See your whole crew pipeline in one place.</h2>
+    <p class="lead">Plan training, shifts and promotions with real numbers instead of chasing paperwork.</p>
+    <div class="grid">
+      <div class="card reveal"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg></div><h3>A live crew roster</h3><p>Crew join with a company code. Their progress updates whenever they log time, with no links to open and no spreadsheets.</p></div>
+      <div class="card reveal"><div class="ico b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div><h3>Upskilling pipeline</h3><p>See how many crew are working toward each ticket, who is close, and who has enough days but needs a signature.</p></div>
+      <div class="card reveal"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h3>Signed versus unsigned</h3><p>Every day is marked as signed by a supervisor or still waiting, so you know exactly what is ready for AMSA.</p></div>
+      <div class="card reveal"><div class="ico b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div><h3>Reports in one tap</h3><p>Download a CSV, or print a clean PDF report for management with every crew member's tickets, progress and notes.</p></div>
+      <div class="card reveal"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div><h3>Private notes</h3><p>Keep a note against each crew member, such as when their Master course starts. Only managers of your company can see them.</p></div>
+      <div class="card reveal"><div class="ico b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Crew stay in control</h3><p>You see names, tickets and signed days. You do not see date of birth, phone, email or vessel history. Crew can leave a company and keep their own record.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="accuracy">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">Built around AMSA's rules</p>
+        <h2>The numbers you can trust.</h2>
+        <p class="lead" style="margin-top:0;">Askel follows AMSA's published near coastal requirements, so crew are not guessing whether a day counts.</p>
+      </div>
+      <ul class="tick reveal">
+        <li><span><b>A day is 8 hours</b> of work that relates to the ticket, as AMSA defines it.</span></li>
+        <li><span><b>Vessel rules applied per ticket</b>: length, propulsion power, inboard engines and commercial service.</span></li>
+        <li><span><b>Not-underway limits</b> of 15% for deck and 33% for engineering tickets are applied automatically.</span></li>
+        <li><span><b>Form 771 and sea service letters</b> are both supported. AMSA's Form 771 allows an electronic supervisor signature, drawn not typed.</span></li>
+        <li><span><b>Task book or not</b>: crew see the days needed both ways for each ticket.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap" style="max-width: 820px;">
+    <p class="eyebrow">Questions</p>
+    <h2>Good to know.</h2>
+    <div style="margin-top:28px;">
+      <details><summary>Does AMSA accept electronically signed records?</summary><p>AMSA's Form 771 page says the supervisor's signature can be signed electronically or physically, but cannot be typed. Askel collects a drawn signature on the supervisor's phone. AMSA assesses sea service when someone applies, so crew should still keep their usual supporting evidence.</p></details>
+      <details><summary>Do my supervisors need an account?</summary><p>No. They open a link, check the details, draw their signature and send. It takes about 30 seconds.</p></details>
+      <details><summary>What do crew need to set up?</summary><p>They install the app, create an account, and enter your company code in Settings. From then on their progress appears on your dashboard.</p></details>
+      <details><summary>What happens to a crew member's record if they leave?</summary><p>The record belongs to the crew member. They can leave your company at any time and keep their sea service log, and you stop seeing their progress.</p></details>
+      <details><summary>Does it work offline at sea?</summary><p>Yes for logging. Entries are saved on the phone and sync when the crew member is next online.</p></details>
+      <details><summary>How is it priced?</summary><p>One flat price for your whole company, with unlimited crew and no per-seat fees. Get in touch for pilot terms.</p></details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top: 20px;">
+  <div class="wrap">
+    <div class="band reveal">
+      <h2>Try it with one vessel.</h2>
+      <p class="lead">Start a pilot with a handful of crew and see how much paperwork disappears.</p>
+      <div class="cta-row"><a class="btn" href="mailto:hello@askel.com.au?subject=Askel%20pilot">Request a pilot</a><a class="btn ghost" href="#demo">Back to the demo</a></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color:var(--ink-2);">Askel</b> · Sea service, signed.</p>
+    <p>Askel is an independent product and is not affiliated with, or endorsed by, the Australian Maritime Safety Authority (AMSA). Always confirm requirements with AMSA before applying. AMSA, Form 771 and related names belong to their owners.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Scale the dashboard demo to fit the column, keeping its desktop layout.
+  var scaler = document.getElementById('scaler'), frame = document.getElementById('dashFrame');
+  function fit() { var w = scaler.clientWidth, k = Math.min(1, w / 1100); frame.style.transform = 'scale(' + k + ')'; scaler.style.height = Math.round(760 * k) + 'px'; }
+  fit(); window.addEventListener('resize', fit);
+  // Gentle reveal as sections scroll into view.
+  var els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }); }, { threshold: 0.12 });
+  els.forEach(function (e) { io.observe(e); });
+})();
+</script>
+</body>
+</html>

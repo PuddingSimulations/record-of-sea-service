@@ -84,6 +84,7 @@
   .link { border: none; background: none; color: var(--blue); font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
+  body.demo #clearBtn, body.demo #addPanel, body.demo #acctBox, body.demo [data-rm], body.demo #csvBtn, body.demo #printBtn { display: none !important; }
   .printhead { display: none; }
   textarea.note { width: 100%; min-height: 72px; border: none; border-radius: 12px; padding: 11px 13px; font-size: 14px; font-family: inherit; color: var(--ink); background: var(--card-2); outline: none; resize: vertical; }
   textarea.note:focus { box-shadow: 0 0 0 2px var(--blue); }
@@ -358,7 +359,11 @@
     else if (id === 'aRef') loadLive();
     else if (id === 'aOut') { Cloud.signOut(); live = false; cos = []; msg = ''; try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; } drawAcct(); render(); }
   });
-  drawAcct(); if (window.Cloud && Cloud.user()) loadLive();
+  // Demo mode (dashboard.html#demo): example crew only, nothing read from or written to this browser. Used on the public demo page.
+  var DEMO = /(^|[#?&])demo(\b|=)/.test(location.search + location.hash);
+  if (DEMO) { live = true; roster = {}; document.body.classList.add('demo'); drawAcct(); }
+  else { drawAcct(); if (window.Cloud && Cloud.user()) loadLive(); }
+  if (DEMO) { $('exampleBtn').click(); $('acctBox').style.display = 'none'; }
   render();
 })();
 </script>

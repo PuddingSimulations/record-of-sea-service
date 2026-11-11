@@ -1877,7 +1877,7 @@
         var ry = workHeadY + 60 + i * 84, done = t.logged >= t.required;
         x.fillStyle = T.ink; x.font = '600 30px ' + F; x.fillText(t.name, PAD, ry);
         x.textAlign = 'right'; x.fillStyle = done ? T.doneText : T.ticketVal; x.font = '700 30px ' + F;
-        x.fillText((done ? '\u2713 ' : '') + t.logged + ' / ' + t.required, W - PAD, ry); x.textAlign = 'left';
+        x.fillText((done ? '\u2713 ' : '') + Math.min(t.logged, t.required) + ' / ' + t.required, W - PAD, ry); x.textAlign = 'left';
         rr(PAD, ry + 18, W - PAD * 2, 10, 5); x.fillStyle = T.track; x.fill();
         var bw = Math.max(10, (W - PAD * 2) * t.ratio);
         var bg = x.createLinearGradient(PAD, 0, PAD + bw, 0);
