@@ -1208,8 +1208,38 @@
       return Cloud.myCompanies().then(function (c) { cloudCompanies = c || []; }, function () { cloudCompanies = []; });
     }).then(function () {
       if (cloudCompanies.length && profile.name.trim()) return Cloud.saveProfile(profile.name.trim()).then(function () { return Cloud.pushSnapshot(buildSnapshot()); });
-    }).then(function () { return checkSigned(); }).then(function () { cloudStatus = 'Synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); if (manual) showToast('Synced'); },
+    }).then(function () { return syncSettings().catch(function () {}); }).then(function () { return checkSigned(); }).then(function () { cloudStatus = 'Synced ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); if (manual) showToast('Synced'); },
       function (e) { cloudStatus = 'Could not sync: ' + e.message; if (manual) showToast('Could not sync'); }).then(function () { cloudBusy = false; refreshAccount(); });
+  }
+  // ---- Settings sync: one blob per account. A change made on this phone since the last sync wins; otherwise the cloud copy is applied. ----
+  var SDIRTY = 'askel-settings-dirty', SMARK = 'askel-settings-marker';
+  function settingsChanged() { try { localStorage.setItem(SDIRTY, '1'); } catch (e) {} cloudSoon(); }
+  function settingsBlob() {
+    var p = Object.assign({}, profile); delete p.uid;   // uid is per-device identity for the link-based flow
+    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn };
+  }
+  function applySettings(d) {
+    if (!d || d.v !== 1) return;
+    heldIds = d.held || []; goalIds = d.goals || []; goalTB = d.goalTB || {}; checklist = d.checklist || {};
+    if (d.ticket) { ticketState = Object.assign(ticketState, d.ticket); }
+    if (d.profile) { var keepUid = profile.uid; profile = Object.assign(profile, d.profile); profile.uid = keepUid; }
+    if (typeof d.holder === 'string') holderInput.value = d.holder;
+    if (d.style && PASSPORT_STYLES[d.style]) passportStyle = d.style;
+    if (typeof d.sound === 'boolean') soundOn = d.sound;
+    try {
+      localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); localStorage.setItem(GOAL_KEY, JSON.stringify(goalIds)); localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB));
+      localStorage.setItem(CHECK_KEY, JSON.stringify(checklist)); localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticketState)); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      localStorage.setItem(HOLDER_KEY, holderInput.value); localStorage.setItem(STYLE_KEY, passportStyle); localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off');
+    } catch (e) {}
+    try { ticketSelect.value = ticketState.ticketId; } catch (e) {}
+    renderMain(); try { syncToggle(); renderTicketProgress(); } catch (e) {}
+  }
+  function syncSettings() {
+    var dirty = false, marker = ''; try { dirty = localStorage.getItem(SDIRTY) === '1'; marker = localStorage.getItem(SMARK) || ''; } catch (e) {}
+    return Cloud.getSettings().then(function (remote) {
+      if (remote && !dirty) { if (remote.updated_at !== marker) { applySettings(remote.data); try { localStorage.setItem(SMARK, remote.updated_at); } catch (e) {} } return; }
+      return Cloud.putSettings(settingsBlob()).then(function (row) { try { localStorage.removeItem(SDIRTY); if (row) localStorage.setItem(SMARK, row.updated_at); } catch (e) {} });
+    });
   }
   var pendingSigned = {};
   function checkSigned() {
@@ -1233,15 +1263,15 @@
 
   var ticketState = { ticketId: 'gph', taskBook: 'with', customDays: 30 };
   try { var rawTicket = localStorage.getItem(TICKET_STORAGE_KEY); if (rawTicket) ticketState = Object.assign(ticketState, JSON.parse(rawTicket)); } catch (e) {}
-  function saveTicketState() { try { localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticketState)); } catch (e) {} }
+  function saveTicketState() { try { localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticketState)); } catch (e) {} settingsChanged(); }
 
   // Tickets the user already holds (excluded from "Working towards", listed on the passport card)
   var HELD_KEY = 'sea-service-held', heldIds = [];
   try { heldIds = JSON.parse(localStorage.getItem(HELD_KEY) || '[]') || []; } catch (e) { heldIds = []; }
   var CHECK_KEY = 'sea-service-checklist', checklist = {};
   try { checklist = JSON.parse(localStorage.getItem(CHECK_KEY) || '{}') || {}; } catch (e) { checklist = {}; }
-  function saveChecklist() { try { localStorage.setItem(CHECK_KEY, JSON.stringify(checklist)); } catch (e) {} }
-  function saveHeld() { try { localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); } catch (e) {} }
+  function saveChecklist() { try { localStorage.setItem(CHECK_KEY, JSON.stringify(checklist)); } catch (e) {} settingsChanged(); }
+  function saveHeld() { try { localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); } catch (e) {} settingsChanged(); }
   // The held ticket (if any) that already covers this one
   function coveredBy(id) {
     for (var i = 0; i < TICKETS.length; i++) {
@@ -1686,7 +1716,7 @@
   $('styleRow').addEventListener('click', function (ev) {
     var chip = ev.target.closest('[data-style]'); if (!chip) return;
     passportStyle = chip.getAttribute('data-style');
-    try { localStorage.setItem(STYLE_KEY, passportStyle); } catch (e) {}
+    try { localStorage.setItem(STYLE_KEY, passportStyle); } catch (e) {} settingsChanged();
     renderStyleRow(); refreshPassport(); fx('tick');
   });
 
@@ -1862,7 +1892,7 @@
   $('closeShareBtn').addEventListener('click', closeShare);
   shareOverlay.addEventListener('click', function (e) { if (e.target === shareOverlay) closeShare(); });
   holderInput.addEventListener('input', function () {
-    try { localStorage.setItem(HOLDER_KEY, holderInput.value); } catch (e) {}
+    try { localStorage.setItem(HOLDER_KEY, holderInput.value); } catch (e) {} settingsChanged();
     clearTimeout(holderTimer); holderTimer = setTimeout(refreshPassport, 200);
   });
 
@@ -1901,7 +1931,7 @@
   // ---- AMSA Form 771 PDF: place answers and signatures onto AMSA's own form ----
   var PROFILE_KEY = 'sea-service-profile', profile = { name: '', dob: '', phone: '', email: '', company: '', uid: '', sig: '' };
   try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch (e) {}
-  function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {} }
+  function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {} settingsChanged(); }
 
   // Boxes on the blank AMSA form (version 3, 3/26), in PDF points from the bottom-left: [x, y, width, height]
   var B771 = {
@@ -2557,7 +2587,7 @@
     var el = ev.target;
     if (el.id === 'soundSwitch') {
       soundOn = el.checked;
-      try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) {}
+      try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) {} settingsChanged();
       if (soundOn) fx('toggle'); else haptic('light');
       return;
     }
@@ -2580,10 +2610,10 @@
   // ---- Goal tickets: the ones the user picked to work towards, shown under the days total ----
   var GOAL_KEY = 'askel-goals', goalIds = [];
   try { goalIds = JSON.parse(localStorage.getItem(GOAL_KEY) || '[]') || []; } catch (e) { goalIds = []; }
-  function saveGoals() { try { localStorage.setItem(GOAL_KEY, JSON.stringify(goalIds)); } catch (e) {} }
+  function saveGoals() { try { localStorage.setItem(GOAL_KEY, JSON.stringify(goalIds)); } catch (e) {} settingsChanged(); }
   var GOALTB_KEY = 'askel-goal-tb', goalTB = {}, goalOptOpen = null;
   try { goalTB = JSON.parse(localStorage.getItem(GOALTB_KEY) || '{}') || {}; } catch (e) { goalTB = {}; }
-  function saveGoalTB() { try { localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB)); } catch (e) {} }
+  function saveGoalTB() { try { localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB)); } catch (e) {} settingsChanged(); }
   function goalMode(t) { return goalTB[t.id] || ticketState.taskBook; }
   function goalReq(t) { return goalMode(t) === 'with' ? t.withTaskBook : t.withoutTaskBook; }
   function goalAvailable(t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }
