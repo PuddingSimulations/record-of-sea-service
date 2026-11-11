@@ -18,7 +18,7 @@
 <meta property="og:site_name" content="Askel" />
 <meta property="og:title" content="Askel: Sea Service Log" />
 <meta property="og:description" content="Log sea time, track every Australian near coastal ticket, get your supervisor to sign it, and fill AMSA Form 771." />
-<meta property="og:image" content="https://flagmantle.github.io/record-of-sea-service/og-image.png" />
+<meta property="og:image" content="https://askel.com.au/og-image.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -1059,7 +1059,7 @@
 
   // ---- Native app (Capacitor) hooks. All of this is skipped in a normal browser. ----
   var NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
-  var WEB_BASE = 'https://flagmantle.github.io/record-of-sea-service/';   // public address supervisors open; switch to https://askel.com.au/ once its DNS is live
+  var WEB_BASE = 'https://askel.com.au/';   // public address supervisors open
   function nativePlugin(n) { return NATIVE && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins[n]; }
   function nativeShareFile(blob, name, title) {
     var FS = nativePlugin('Filesystem'), SH = nativePlugin('Share');

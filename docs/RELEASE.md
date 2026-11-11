@@ -31,5 +31,5 @@ Apple only lets Xcode (macOS) build and sign iOS apps. Use a cloud Mac:
 
 ## Before real users
 - Turn Supabase "Confirm email" on and set up custom SMTP (Resend, Brevo, etc.) with a sender on askel.com.au.
-- Change `WEB_BASE` in index.html to https://askel.com.au/ once its DNS works.
+- WEB_BASE in index.html already points at https://askel.com.au/.
 - File the trade mark when a pilot customer signs.
