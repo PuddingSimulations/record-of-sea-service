@@ -55,7 +55,7 @@ language plpgsql security definer set search_path = public as $$
 declare n text;
 begin
   if not public.is_company_admin(cid) then raise exception 'Not allowed'; end if;
-  n := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 8));
+  n := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   update companies set join_code = n where id = cid;
   return n;
 end $$;

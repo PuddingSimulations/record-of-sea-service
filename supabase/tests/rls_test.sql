@@ -9,6 +9,7 @@ alter default privileges in schema public grant all on tables to anon, authentic
 \i supabase/migrations/0002_snapshots.sql
 \i supabase/migrations/0003_signing.sql
 \i supabase/migrations/0006_licences.sql
+\i supabase/migrations/0007_fix_code.sql
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c');
 insert into profiles(id,full_name) select id,'u'||right(id::text,1) from auth.users;
 \set ON_ERROR_STOP on
