@@ -337,15 +337,17 @@
     }
     var a = admins(), h = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Signed in as ' + esc(u.email) + (busy ? ' · loading…' : '') + '</p>' + err;
     if (!a.length) h += '<p class="small" style="margin:0 0 10px;">Create your company to get a code your crew can enter in their app.</p><div class="tools" style="margin:0;"><input type="text" id="coIn" placeholder="Company name" autocomplete="organization"><button class="btn" id="coMake">Create company</button></div>';
-    else a.forEach(function (c) { h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);"><div><b>' + esc(c.name) + '</b><div class="small">Crew enter this code in the app (Settings, Your company)</div></div><div style="display:flex;gap:8px;align-items:center;"><span class="pill blue" style="font-size:18px;letter-spacing:.12em;user-select:all;">' + esc(c.join_code || '') + '</span><button class="btn ghost sm" data-invite="' + esc(c.join_code || '') + '" data-co="' + esc(c.name) + '">Copy invite</button></div></div>'; });
+    else a.forEach(function (c) { h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);"><div><b>' + esc(c.name) + '</b><div class="small">Crew enter this code in the app (Settings, Your company)</div></div><div style="display:flex;gap:8px;align-items:center;"><span class="pill blue" style="font-size:18px;letter-spacing:.12em;user-select:all;">' + esc(c.join_code || '') + '</span><button class="btn ghost sm" data-code="' + esc(c.join_code || '') + '">Copy code</button><button class="btn ghost sm" data-invite="' + esc(c.join_code || '') + '" data-co="' + esc(c.name) + '">Copy message</button></div></div>'; });
     h += '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn ghost sm" id="aRef">Refresh</button><button class="btn ghost sm" id="aOut">Sign out</button></div>';
     box.innerHTML = h;
   }
   $('acctBox').addEventListener('click', function (ev) {
+    var cb = ev.target.closest && ev.target.closest('[data-code]');
+    if (cb) { var code = cb.getAttribute('data-code'); try { navigator.clipboard.writeText(code).then(function () { toast('Code ' + code + ' copied'); }, function () { toast('Your code is ' + code); }); } catch (er) { toast('Your code is ' + code); } return; }
     var inv = ev.target.closest && ev.target.closest('[data-invite]');
     if (inv) {
       var msg2 = 'Join ' + inv.getAttribute('data-co') + ' on Askel so we can track your ticket progress. Install the Askel app, create an account in Settings, then enter this company code under Your company: ' + inv.getAttribute('data-invite');
-      try { navigator.clipboard.writeText(msg2).then(function () { toast('Invite copied. Paste it into a message to your crew.'); }, function () { toast(msg2); }); } catch (er) { toast(msg2); }
+      try { navigator.clipboard.writeText(msg2).then(function () { toast('Message copied. Paste it to your crew.'); }, function () { toast(msg2); }); } catch (er) { toast(msg2); }
       return;
     }
     var id = ev.target.id;

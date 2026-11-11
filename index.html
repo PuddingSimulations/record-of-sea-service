@@ -2571,7 +2571,7 @@
     else if (ev.target.id === 'acctSync') cloudSync(true);
     else if (ev.target.id === 'acctOut') { Cloud.signOut(); cloudCompanies = []; cloudStatus = ''; renderSettings(); showToast('Signed out. Your entries stay on this phone.'); }
     else if (ev.target.id === 'joinBtn') {
-      var code = $('joinCode').value.trim(); if (!code) return;
+      var code = $('joinCode').value.trim(); var all8 = code.match(/(?:^|[^A-Za-z0-9])[A-Fa-f0-9]{8}(?![A-Za-z0-9])/g); if (code.length > 8 && all8) code = all8[all8.length - 1].replace(/[^A-Fa-f0-9]/g, ''); if (!code) return;
       if (!profile.name.trim()) { showToast('Add your name under Employer first'); return; }
       Cloud.saveProfile(profile.name.trim()).then(function () { return Cloud.join(code); }).then(function () { showToast('Joined'); return cloudSync(); }, function (e) { showToast(e.message); });
     }
