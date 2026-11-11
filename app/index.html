@@ -2539,19 +2539,21 @@
 
   // ---- Settings sheet ----
   var settingsOverlay = $('settingsOverlay'), settingsSheet = $('settingsSheet'), settingsBody = $('settingsBody');
+  var recoveryMode = false;
   function accountCard() {
     if (!window.Cloud) return '';
+    if (recoveryMode && Cloud.user()) return '<div class="form-card"><p class="section-title">Set a new password</p><p class="field-hint" style="margin:-6px 0 12px;">Choose a new password for ' + escapeHtml(Cloud.user().email) + '.</p><div class="field"><label class="field-label" for="newPw">New password</label><input type="password" id="newPw" autocomplete="new-password" placeholder="At least 8 characters" /></div>' + (cloudMsg ? '<p class="field-hint" style="color:var(--red,#ff5a5f);margin:0 0 10px;">' + escapeHtml(cloudMsg) + '</p>' : '') + '<button type="button" class="save-btn" id="acctSetPw">Save password</button></div>';
     var u = Cloud.user(), h;
     if (!u) {
       h = '<div class="form-card"><p class="section-title">Account</p><p class="field-hint" style="margin:-6px 0 12px;">Back up your sea service, use it on more than one device, and join your employer. Optional — the app works without it.</p>' +
         '<div class="field"><label class="field-label" for="acctEmail">Email</label><input type="email" id="acctEmail" autocomplete="email" autocapitalize="none" /></div>' +
         '<div class="field"><label class="field-label" for="acctPw">Password</label><input type="password" id="acctPw" autocomplete="current-password" placeholder="At least 8 characters" /></div>' +
         (cloudMsg ? '<p class="field-hint" style="color:var(--red,#ff5a5f);margin:0 0 10px;">' + escapeHtml(cloudMsg) + '</p>' : '') +
-        '<button type="button" class="save-btn" id="acctIn">Sign in</button><button type="button" class="save-btn" id="acctUp" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Create account</button></div>';
+        '<button type="button" class="link" id="acctForgot" style="display:block;margin:0 0 12px;">Forgot password?</button><button type="button" class="save-btn" id="acctIn">Sign in</button><button type="button" class="save-btn" id="acctUp" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Create account</button></div>';
       return h;
     }
     h = '<div class="form-card"><p class="section-title">Account</p><p class="field-hint" style="margin:-6px 0 12px;">Signed in as ' + escapeHtml(u.email) + '<br>' + escapeHtml(cloudStatus || 'Not synced yet') + '</p>' +
-      '<button type="button" class="save-btn" id="acctSync">Sync now</button><button type="button" class="save-btn" id="acctOut" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Sign out</button></div>';
+      '<button type="button" class="save-btn" id="acctSync">Sync now</button><button type="button" class="save-btn" id="acctOut" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Sign out</button><button type="button" class="link" id="acctDel" style="display:block;margin:14px auto 0;color:var(--red,#ff5a5f);">Delete my account</button></div>';
     h += '<div class="form-card"><p class="section-title">Your company</p>';
     if (cloudCompanies.length) cloudCompanies.forEach(function (c) {
       h += '<label class="set-row"><span class="n">' + escapeHtml(c.name) + '<small>' + (c.role === 'crew' ? 'Your progress is shared with this employer' : 'You manage this company on the employer dashboard') + '</small></span>' + (c.role === 'crew' ? '<button type="button" class="more-toggle" data-leave="' + c.id + '" style="width:auto;">Leave</button>' : '') + '</label>';
@@ -2579,6 +2581,7 @@
         html += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '<small data-cov="' + t.id + '"></small></span><input type="checkbox" class="switch" data-held="' + t.id + '" ' + (heldIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
       });
     });
+    html += '<p class="field-hint" style="text-align:center;margin:18px 0 6px;"><a href="https://askel.com.au/privacy.html" target="_blank" rel="noopener" style="color:inherit;">Privacy policy</a> \u00b7 <a href="https://askel.com.au/terms.html" target="_blank" rel="noopener" style="color:inherit;">Terms</a></p>';
     settingsBody.innerHTML = html + '</div>';
     updateCoverHints();
   }
@@ -2600,7 +2603,20 @@
       var em = $('acctEmail').value.trim(), pw = $('acctPw').value;
       if (!em || pw.length < 8) { cloudMsg = 'Enter your email and a password of at least 8 characters.'; renderSettings(); return; }
       cloudMsg = ''; ev.target.disabled = true;
-      (ev.target.id === 'acctUp' ? Cloud.signUp : Cloud.signIn)(em, pw).then(function () { cloudStatus = ''; return cloudSync(true); }, function (e) { cloudMsg = e.message; renderSettings(); });
+      (ev.target.id === 'acctUp' ? function (a, b) { return Cloud.signUp(a, b, location.origin + '/app/'); } : Cloud.signIn)(em, pw).then(function () { cloudStatus = ''; return cloudSync(true); }, function (e) { cloudMsg = e.message; renderSettings(); });
+    }
+    else if (ev.target.id === 'acctForgot') {
+      var fe = $('acctEmail').value.trim(); if (!fe) { cloudMsg = 'Type your email above first.'; renderSettings(); return; }
+      Cloud.recover(fe, location.origin + '/app/').then(function () { cloudMsg = ''; showToast('If that email has an account, a reset link is on its way.'); }, function (e) { cloudMsg = e.message; renderSettings(); });
+    }
+    else if (ev.target.id === 'acctSetPw') {
+      var np = $('newPw').value; if (np.length < 8) { cloudMsg = 'Use at least 8 characters.'; renderSettings(); return; }
+      Cloud.setPassword(np).then(function () { recoveryMode = false; cloudMsg = ''; fx('success'); showToast('Password updated'); cloudSync(); renderSettings(); }, function (e) { cloudMsg = e.message; renderSettings(); });
+    }
+    else if (ev.target.id === 'acctDel') {
+      var db = ev.target;
+      if (db.getAttribute('data-sure') !== '1') { db.setAttribute('data-sure', '1'); db.textContent = 'Tap again to permanently delete your account and cloud data'; setTimeout(function () { db.removeAttribute('data-sure'); db.textContent = 'Delete my account'; }, 5000); return; }
+      Cloud.deleteAccount().then(function () { cloudCompanies = []; cloudStatus = ''; fx('undo'); renderSettings(); showToast('Account deleted. Your entries stay on this phone.'); }, function (e) { showToast(e.message || 'Could not delete the account'); });
     }
     else if (ev.target.id === 'acctSync') cloudSync(true);
     else if (ev.target.id === 'acctOut') { Cloud.signOut(); cloudCompanies = []; cloudStatus = ''; renderSettings(); showToast('Signed out. Your entries stay on this phone.'); }
@@ -2890,6 +2906,15 @@
     if (show !== navShown) { navShown = show; navbar.classList.toggle('show', show); }
   }, { passive: true });
 
+  // Email links (password reset, confirmation) arrive with tokens in the address.
+  if (window.Cloud && /access_token=|error_description=/.test(location.hash)) {
+    var authHash = location.hash; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    Cloud.fromHash(authHash).then(function (type) {
+      if (!type) return;
+      if (type === 'recovery') { recoveryMode = true; setTimeout(openSettings, 400); }
+      else { showToast('Email confirmed. You are signed in.'); cloudSync(); }
+    }, function (e) { showToast(e.message || 'That link did not work. Try again.'); });
+  }
   // ---- Init ----
   renderMain();
   if (cloudOn()) setTimeout(cloudSync, 600);

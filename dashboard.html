@@ -165,7 +165,7 @@
   var ROSTER_KEY = 'sea-dash-roster', NAME = { gph: 'General Purpose Hand', cox3: 'Coxswain Grade 3', cox2: 'Coxswain Grade 2', cox1: 'Coxswain Grade 1', inland: 'Master (Inland Waters)', master24: 'Master <24m', master45: 'Master <45m', master100: 'Master <100m', med3: 'Marine Engine Driver 3', med2: 'Marine Engine Driver 2', med1: 'Marine Engine Driver 1', eng3: 'Engineer Class 3' };
   function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var roster = {}, open = {}, live = false, cos = [], msg = '', busy = false, notes = {};
+  var roster = {}, open = {}, live = false, cos = [], msg = '', busy = false, notes = {}, recoveryMode = false;
   try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; }
   function save() { if (live) return; try { localStorage.setItem(ROSTER_KEY, JSON.stringify(roster)); } catch (e) {} }
   var toastT; function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 3200); }
@@ -342,10 +342,11 @@
   function drawAcct() {
     var box = $('acctBox'), u = window.Cloud && Cloud.user();
     if (!window.Cloud) { box.style.display = 'none'; return; }
+    if (recoveryMode && u) { box.innerHTML = '<h2>Set a new password</h2><p class="small" style="margin:0 0 12px;">Choose a new password for ' + esc(u.email) + '.</p>' + (msg ? '<p class="small" style="color:var(--red);margin:0 0 10px;">' + esc(msg) + '</p>' : '') + '<div class="tools" style="margin:0;"><input type="password" id="newPw" placeholder="New password (8+ characters)" autocomplete="new-password"><button class="btn" id="aSetPw">Save password</button></div>'; return; }
     var err = msg ? '<p class="small" style="color:var(--red);margin:0 0 10px;">' + esc(msg) + '</p>' : '';
     if (!u) {
       box.innerHTML = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Sign in to see crew who join your company by code, with no links to open. Crew sign up in their app.</p>' + err +
-        '<div class="tools" style="margin:0;flex-wrap:wrap;"><input type="email" id="aE" placeholder="Email" autocomplete="email" autocapitalize="none"><input type="password" id="aP" placeholder="Password (8+ characters)" autocomplete="current-password"><button class="btn" id="aIn">Sign in</button><button class="btn ghost" id="aUp">Create account</button></div>'; return;
+        '<div class="tools" style="margin:0;flex-wrap:wrap;"><input type="email" id="aE" placeholder="Email" autocomplete="email" autocapitalize="none"><input type="password" id="aP" placeholder="Password (8+ characters)" autocomplete="current-password"><button class="btn" id="aIn">Sign in</button><button class="btn ghost" id="aUp">Create account</button></div><p class="small" style="margin:10px 0 0;"><a href="#" id="aForgot" style="color:var(--blue);">Forgot password?</a></p>'; return;
     }
     var a = admins(), h = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Signed in as ' + esc(u.email) + (busy ? ' · loading…' : '') + '</p>' + err;
     if (!a.length) h += '<p class="small" style="margin:0 0 10px;">Create your company to get a code your crew can enter in their app.</p><div class="tools" style="margin:0;"><input type="text" id="coIn" placeholder="Company name" autocomplete="organization"><button class="btn" id="coMake">Create company</button></div>';
@@ -370,11 +371,18 @@
     var id = ev.target.id;
     if (id === 'aIn' || id === 'aUp') {
       var em = $('aE').value.trim(), pw = $('aP').value; if (!em || pw.length < 8) { msg = 'Enter your email and a password of at least 8 characters.'; drawAcct(); return; }
-      msg = ''; (id === 'aUp' ? Cloud.signUp : Cloud.signIn)(em, pw).then(loadLive, function (e) { msg = e.message; drawAcct(); });
+      msg = ''; (id === 'aUp' ? function (a, b) { return Cloud.signUp(a, b, location.origin + location.pathname); } : Cloud.signIn)(em, pw).then(loadLive, function (e) { msg = e.message; drawAcct(); });
     } else if (id === 'coMake') { var n = $('coIn').value.trim(); if (n) Cloud.createCompany(n).then(loadLive, function (e) { msg = e.message; drawAcct(); }); }
+    else if (id === 'aForgot') { ev.preventDefault(); var fe = ($('aE') && $('aE').value.trim()) || ''; if (!fe) { msg = 'Type your email above first.'; drawAcct(); return; } Cloud.recover(fe, location.origin + location.pathname).then(function () { msg = ''; drawAcct(); toast('If that email has an account, a reset link is on its way.'); }, function (e) { msg = e.message; drawAcct(); }); }
+    else if (id === 'aSetPw') { var np = $('newPw').value; if (np.length < 8) { msg = 'Use at least 8 characters.'; drawAcct(); return; } Cloud.setPassword(np).then(function () { recoveryMode = false; msg = ''; toast('Password updated'); loadLive(); }, function (e) { msg = e.message; drawAcct(); }); }
     else if (id === 'aRef') loadLive();
     else if (id === 'aOut') { Cloud.signOut(); live = false; cos = []; msg = ''; try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY) || '{}') || {}; } catch (e) { roster = {}; } drawAcct(); render(); }
   });
+  // Email links (password reset, confirmation) arrive with tokens in the address.
+  if (window.Cloud && /access_token=|error_description=/.test(location.hash)) {
+    var authHash = location.hash; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    Cloud.fromHash(authHash).then(function (type) { if (type === 'recovery') recoveryMode = true; drawAcct(); if (type && type !== 'recovery') loadLive(); }, function (e) { msg = e.message || 'That link did not work.'; drawAcct(); });
+  }
   // Demo mode (dashboard.html#demo): example crew only, nothing read from or written to this browser. Used on the public demo page.
   var DEMO = /(^|[#?&])demo(\b|=)/.test(location.search + location.hash);
   if (DEMO) { live = true; roster = {}; document.body.classList.add('demo'); drawAcct(); }

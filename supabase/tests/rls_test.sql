@@ -10,6 +10,7 @@ alter default privileges in schema public grant all on tables to anon, authentic
 \i supabase/migrations/0003_signing.sql
 \i supabase/migrations/0006_licences.sql
 \i supabase/migrations/0007_fix_code.sql
+\i supabase/migrations/0009_delete_account.sql
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c');
 insert into profiles(id,full_name) select id,'u'||right(id::text,1) from auth.users;
 \set ON_ERROR_STOP on
@@ -85,3 +86,17 @@ select public.admin_set_company(:'hc', now() + interval '1 year', null, 'medium'
 set request.uid='00000000-0000-0000-0000-00000000000a';
 select 'paid company: crew view rows (expect 1):' as t, count(*) from company_crew;
 select 'my_companies state (expect active):' as t, state from public.my_companies() where name='Harbour Cruises';
+
+-- 0009 delete account: C owns no company; A owns Harbour Cruises with crew B. Deleting A removes A's data and company, B survives.
+reset role; set request.uid='';
+insert into entries values ('00000000-0000-0000-0000-00000000000a','ea','{}');
+insert into progress_snapshots values ('00000000-0000-0000-0000-00000000000a','{}');
+set role authenticated; set request.uid='00000000-0000-0000-0000-00000000000a';
+select public.delete_my_account();
+reset role;
+select 'A user rows left (expect 0):' as t, count(*) from auth.users where id='00000000-0000-0000-0000-00000000000a';
+select 'A entries left (expect 0):' as t, count(*) from entries where user_id='00000000-0000-0000-0000-00000000000a';
+select 'A companies left (expect 0):' as t, count(*) from companies where created_by='00000000-0000-0000-0000-00000000000a';
+select 'B still exists (expect 1):' as t, count(*) from auth.users where id='00000000-0000-0000-0000-00000000000b';
+select 'B entries kept (expect 1):' as t, count(*) from entries where user_id='00000000-0000-0000-0000-00000000000b';
+set role anon; do $$ begin perform public.delete_my_account(); raise notice 'FAIL anon deleted'; exception when others then raise notice 'anon cannot delete ok'; end $$;

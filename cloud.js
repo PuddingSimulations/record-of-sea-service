@@ -31,8 +31,8 @@
   function api(path, opts) { return fresh().then(function (t) { return raw(path, opts, t); }); }
   function rpc(fn, args) { return api('/rest/v1/rpc/' + fn, { method: 'POST', body: args || {} }); }
 
-  function auth(kind, email, pw) {
-    var p = kind === 'up' ? raw('/auth/v1/signup', { method: 'POST', body: { email: email, password: pw } }) : raw('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: email, password: pw } });
+  function auth(kind, email, pw, redirect) {
+    var p = kind === 'up' ? raw('/auth/v1/signup' + (redirect ? '?redirect_to=' + encodeURIComponent(redirect) : ''), { method: 'POST', body: { email: email, password: pw } }) : raw('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: email, password: pw } });
     return p.then(function (s) {
       if (!s.access_token) throw new Error('Check your email to confirm your account, then sign in.');
       keep(s); return session.user;
@@ -70,12 +70,24 @@
   window.Cloud = {
     configured: true,
     user: function () { return session ? session.user : null; },
-    signUp: function (e, p) { return auth('up', e, p); },
+    signUp: function (e, p, r) { return auth('up', e, p, r); },
     signIn: function (e, p) { return auth('in', e, p); },
     signOut: function () { setSession(null); try { localStorage.removeItem(MAP); localStorage.removeItem(PULL); localStorage.removeItem('askel-settings-marker'); localStorage.removeItem('askel-settings-dirty'); } catch (e) {} },
     sync: sync,
     saveProfile: function (name, phone) { return api('/rest/v1/profiles?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: { id: session.user.id, full_name: name || '', phone: phone || null } }); },
     pushSnapshot: function (snap) { return api('/rest/v1/progress_snapshots?on_conflict=user_id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: { user_id: session.user.id, snapshot: snap, updated_at: new Date().toISOString() } }); },
+    // ---- password reset, email confirmation links and account deletion ----
+    recover: function (email, redirect) { return raw('/auth/v1/recover' + (redirect ? '?redirect_to=' + encodeURIComponent(redirect) : ''), { method: 'POST', body: { email: email } }); },
+    setPassword: function (pw) { return api('/auth/v1/user', { method: 'PUT', body: { password: pw } }); },
+    deleteAccount: function () { return rpc('delete_my_account').then(function () { window.Cloud.signOut(); }); },
+    // Reads the tokens Supabase puts in the address after someone taps an email link. Resolves with 'recovery', 'signup', etc., or null.
+    fromHash: function (hash) {
+      var m = new URLSearchParams(String(hash || '').replace(/^#/, '')), at = m.get('access_token');
+      if (m.get('error_description')) return Promise.reject(new Error(m.get('error_description').replace(/\+/g, ' ')));
+      if (!at) return Promise.resolve(null);
+      var type = m.get('type') || 'signin', rt = m.get('refresh_token') || '', exp = Number(m.get('expires_at')) || Math.floor(Date.now() / 1000) + Number(m.get('expires_in') || 3600);
+      return raw('/auth/v1/user', {}, at).then(function (u) { setSession({ access_token: at, refresh_token: rt, expires_at: exp, user: { id: u.id, email: u.email } }); return type; });
+    },
     // ---- server-tracked supervisor sign-off ----
     createSign: function (entryId, snapshot) { return api('/rest/v1/sign_requests', { method: 'POST', prefer: 'return=representation', body: { user_id: session.user.id, entry_id: entryId, snapshot: snapshot } }).then(function (r) { return r[0].token; }); },
     getSign: function (t) { return raw('/rest/v1/rpc/get_sign_request', { method: 'POST', body: { t: t } }); },          // supervisor, no account
