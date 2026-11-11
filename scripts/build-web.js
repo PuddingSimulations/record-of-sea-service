@@ -1,8 +1,10 @@
-// Copies the web files the native app needs into www/ (Capacitor's webDir). The app is plain HTML, so there is no bundler.
+// Builds www/ (Capacitor's webDir) for the native apps: the app from app/ plus the shared files, flattened into one folder.
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..'), out = path.join(root, 'www');
-const files = ['index.html', 'sign.html', 'dashboard.html', 'cloud.js', 'pdf-lib.min.js', 'AMSA_771.pdf', 'manifest.json', 'og-image.png', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 fs.rmSync(out, { recursive: true, force: true }); fs.mkdirSync(out, { recursive: true });
-files.forEach(f => fs.copyFileSync(path.join(root, f), path.join(out, f)));
-// The service worker is for the web version only; the native app already ships these files inside itself.
-console.log('Copied ' + files.length + ' files to www/');
+let html = fs.readFileSync(path.join(root, 'app', 'index.html'), 'utf8');
+html = html.replace(/(["'])\.\.\//g, '$1');   // ../cloud.js -> cloud.js, since everything sits in one folder here
+fs.writeFileSync(path.join(out, 'index.html'), html);
+['sign.html', 'dashboard.html', 'cloud.js', 'pdf-lib.min.js', 'AMSA_771.pdf', 'og-image.png', 'icon-180.png', 'icon-192.png', 'icon-512.png'].forEach(f => fs.copyFileSync(path.join(root, f), path.join(out, f)));
+fs.copyFileSync(path.join(root, 'app', 'manifest.json'), path.join(out, 'manifest.json'));
+console.log('Built www/ for the native app');
