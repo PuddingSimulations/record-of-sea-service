@@ -115,7 +115,7 @@
   .select-wrap { position: relative; margin-bottom: 12px; }
   .select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
     border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); pointer-events: none; }
-  select, input[type=text], input[type=number], input[type=tel], input[type=email], input[type=password], input[type=date], textarea {
+  select, input[type=text], input[type=number], input[type=tel], input[type=email], input[type=password], input[type=date], input[type=time], textarea {
     width: 100%; border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; color: var(--ink);
     background: var(--card-2); font-family: inherit; outline: none; -webkit-appearance: none; appearance: none;
     transition: box-shadow .2s ease, background .2s ease; }
@@ -572,9 +572,30 @@
   .qk-step button { width: 52px; height: 52px; border: none; border-radius: 16px; background: var(--card-2); color: var(--ink); font-size: 26px; font-weight: 600; transition: transform .2s var(--spring); }
   .qk-step button:active { transform: scale(0.92); }
   .qk-step input { flex: 1; min-width: 0; height: 52px; text-align: center; font-size: 26px; font-weight: 800; border: none; border-radius: 16px; background: var(--card-2); color: var(--ink); font-variant-numeric: tabular-nums; }
+  /* splash */
+  #splash { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; align-items: center; justify-content: center; transition: opacity .45s ease, visibility .45s; }
+  #splash.out { opacity: 0; visibility: hidden; }
+  #splash svg { width: 112px; height: 112px; overflow: visible; color: var(--ink); animation: splashLogo 1.9s cubic-bezier(.3,.7,.2,1) both; }
+  #splash path { opacity: 0; animation: splashBar .8s cubic-bezier(.2,.9,.2,1) forwards; }
+  #splash .b1 { --x: -34px; --o: .45; animation-delay: .05s; } #splash .b2 { --x: 34px; --o: .75; animation-delay: .2s; } #splash .b3 { --x: -34px; --o: 1; animation-delay: .35s; }
+  @keyframes splashBar { from { opacity: 0; transform: translateX(var(--x)); } to { opacity: var(--o); transform: translateX(0); } }
+  @keyframes splashLogo { 0%, 55% { transform: scale(1); } 100% { transform: scale(1.12); } }
+  @media (prefers-reduced-motion: reduce) { #splash { display: none; } }
+  /* reminders and expiry */
+  .rem-days { margin: 4px 0 2px; }
+  .exp-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .exp-row:first-of-type { border-top: none; }
+  .exp-row b { font-size: 14px; display: block; } .exp-row small { font-size: 12px; color: var(--ink-3); }
+  .exp-row input[type=date] { width: 150px; }
+  .exp-row .x { border: none; background: var(--card-2); color: var(--ink-2); width: 30px; height: 30px; border-radius: 50%; font-size: 16px; }
+  .exp-soon { color: #FFB020; } .exp-over { color: var(--red, #FF5A52); }
+  .exp-home { background: var(--card); border-radius: 18px; padding: 14px 16px; margin: 0 0 14px; box-shadow: var(--shadow); cursor: pointer; }
+  .exp-home b { display: block; font-size: 15px; margin-bottom: 6px; } .exp-home div { display: flex; justify-content: space-between; font-size: 13.5px; padding: 3px 0; color: var(--ink-2); }
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"><path class="b1" d="M4 18.5H20"/><path class="b2" d="M8 12H20"/><path class="b3" d="M12 5.5H20"/></svg></div>
+<script>(function(){var s=document.getElementById('splash');if(!s)return;var go=function(){s.classList.add('out');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);};var t0=Date.now();var done=false;function fin(){if(done)return;done=true;var w=Math.max(0,1500-(Date.now()-t0));setTimeout(go,w);}if(document.readyState==='complete')fin();else window.addEventListener('load',fin);setTimeout(fin,2600);})();</script>
 
 <div class="wrap">
   <div class="navbar" id="navbar" aria-hidden="true"><span>Askel</span></div>
@@ -612,6 +633,7 @@
   </div>
 
   <div id="tabService">
+    <div id="expCard"></div>
     <div id="bossCard"></div>
     <div id="entriesSection"></div>
     <div id="moreEvidence"></div>
@@ -1397,7 +1419,7 @@
   }
   form = defaultForm();
 
-  function saveEntries() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} cloudSoon(); }
+  function saveEntries() { schedSoon(); try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} cloudSoon(); }
   // ---- Cloud sync (optional: only when signed in) ----
   var cloudT, cloudBusy = false, cloudCompanies = [], cloudMsg = '', cloudStatus = '';
   function cloudOn() { return window.Cloud && Cloud.user(); }
@@ -1417,7 +1439,7 @@
   function settingsChanged() { try { localStorage.setItem(SDIRTY, '1'); } catch (e) {} cloudSoon(); }
   function settingsBlob() {
     var p = Object.assign({}, profile); delete p.uid;   // uid is per-device identity for the link-based flow
-    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, letters: letters, theme: themePref, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn };
+    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, letters: letters, theme: themePref, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn, remind: remindGet(), expiry: expGet() };
   }
   function applySettings(d) {
     if (!d || d.v !== 1) return;
@@ -1428,6 +1450,7 @@
     if (typeof d.holder === 'string') holderInput.value = d.holder;
     if (d.style && PASSPORT_STYLES[d.style]) passportStyle = d.style;
     if (typeof d.sound === 'boolean') soundOn = d.sound;
+    if (d.remind) { try { localStorage.setItem(REM_KEY, JSON.stringify(d.remind)); } catch (e) {} } if (Array.isArray(d.expiry)) { try { localStorage.setItem(EXP_KEY, JSON.stringify(d.expiry)); } catch (e) {} } schedSoon();
     if (d.theme) { themePref = d.theme; try { localStorage.setItem(THEME_KEY, themePref); } catch (e) {} applyTheme(); }
     try {
       localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); localStorage.setItem(GOAL_KEY, JSON.stringify(goalIds)); localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB));
@@ -1774,7 +1797,7 @@
     var heldN = heldList().length, stT = $('statTickets');
     stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
-    renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); var gr = $('greet'); if (gr) gr.textContent = greeting();
+    renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); renderExpiry(); var gr = $('greet'); if (gr) gr.textContent = greeting();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
@@ -2880,6 +2903,8 @@
       '<label class="set-row"><span class="n">Sounds<small>Taps, calendar notes and confirmations. Your silent switch still mutes them.</small></span>' +
       '<input type="checkbox" class="switch" id="soundSwitch" ' + (soundOn ? 'checked' : '') + ' /></label></div>';
     html += '<div class="form-card"><p class="section-title">Appearance</p>' + themeChips() + '</div>';
+    html += '<div class="form-card"><p class="section-title">Reminders</p>' + remindHTML() + '</div>';
+    html += expCard();
     html += accountCard();
     html += '<div class="form-card"><p class="section-title">Employer</p><p class="field-hint" style="margin:-6px 0 12px;">Send your employer a summary of your progress. They see your name, the tickets you are working on, and how many days are signed. They do not see your date of birth, phone, email, vessels or medical details.</p>' +
       '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
@@ -3301,8 +3326,108 @@
     fr.readAsText(file);
   }
 
+  // ---- Daily reminder + expiry dates (local notifications in the phone app) ----
+  var REM_KEY = 'askel-remind', EXP_KEY = 'askel-expiry';
+  function remindGet() { var r = null; try { r = JSON.parse(localStorage.getItem(REM_KEY) || 'null'); } catch (e) {} r = r || {}; return { on: !!r.on, time: /^\d\d:\d\d$/.test(r.time || '') ? r.time : '18:00', days: Array.isArray(r.days) ? r.days : [0, 1, 2, 3, 4, 5, 6] }; }
+  function remindSet(r) { try { localStorage.setItem(REM_KEY, JSON.stringify(r)); } catch (e) {} settingsChanged(); schedSoon(); }
+  function expGet() { var x = []; try { x = JSON.parse(localStorage.getItem(EXP_KEY) || '[]'); } catch (e) {} return Array.isArray(x) ? x : []; }
+  function expSet(x) { try { localStorage.setItem(EXP_KEY, JSON.stringify(x)); } catch (e) {} settingsChanged(); schedSoon(); renderExpiry(); }
+  function remindHTML() {
+    var r = remindGet(), h = '<label class="set-row"><span class="n">Daily reminder<small>A nudge at the end of your day. Tap Yes to add 1 day.</small></span><input type="checkbox" class="switch" id="remOn"' + (r.on ? ' checked' : '') + ' /></label>';
+    if (r.on) {
+      h += '<div class="field" style="margin-top:12px;"><label class="field-label" for="remTime">Time</label><input type="time" id="remTime" value="' + r.time + '" /></div><div class="role-chips rem-days">' +
+        [['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6], ['Sun', 0]].map(function (d) { return '<button type="button" data-rd="' + d[1] + '"' + (r.days.indexOf(d[1]) !== -1 ? ' class="on"' : '') + '>' + d[0] + '</button>'; }).join('') + '</div>';
+      if (!NATIVE) h += '<p class="field-hint" style="margin:10px 0 0;">Reminders are sent by the Askel phone app. On the website your choice is saved, and applies once you use the app.</p>';
+    }
+    return h;
+  }
+  function notifyReady() {
+    var LN = nativePlugin('LocalNotifications'); if (!LN) return Promise.resolve(false);
+    return LN.checkPermissions().then(function (p) { return p.display === 'granted' ? true : LN.requestPermissions().then(function (q) { return q.display === 'granted'; }); })
+      .then(function (ok) { if (!ok) showToast('Notifications are off for Askel. Turn them on in your phone settings.'); return ok; }, function () { return false; });
+  }
+  function remindEvent(ev, redraw) {
+    var t = ev.target, r = remindGet();
+    if (ev.type === 'change' && t.id === 'remOn') { r.on = t.checked; remindSet(r); fx('toggle'); if (r.on) notifyReady(); redraw(); return true; }
+    if (ev.type === 'change' && t.id === 'remTime') { if (t.value) { r.time = t.value; remindSet(r); } return true; }
+    var b = ev.type === 'click' && t.closest && t.closest('[data-rd]');
+    if (b) { var d = Number(b.getAttribute('data-rd')), i = r.days.indexOf(d); if (i === -1) r.days.push(d); else if (r.days.length > 1) r.days.splice(i, 1); remindSet(r); fx('tick'); redraw(); return true; }
+    return false;
+  }
+  function daysLeft(iso) { var a = new Date(iso + 'T00:00:00'), n = new Date(); n.setHours(0, 0, 0, 0); return Math.round((a - n) / 86400000); }
+  function expText(iso) { if (!iso) return ['Add the expiry date', '']; var d = daysLeft(iso); return d < 0 ? ['Expired ' + (-d) + ' day' + (d === -1 ? '' : 's') + ' ago', 'exp-over'] : d === 0 ? ['Expires today', 'exp-over'] : [d + ' day' + (d === 1 ? '' : 's') + ' left', d <= 30 ? 'exp-over' : d <= 90 ? 'exp-soon' : '']; }
+  function expCard() {
+    var list = expGet(), h = '<div class="form-card"><p class="section-title">Expiry dates</p><p class="field-hint" style="margin:-6px 0 10px;">Add your tickets, medical, first aid and radio licence. Askel warns you 90, 30 and 7 days before they expire.</p>';
+    list.forEach(function (x) { var st = expText(x.date); h += '<div class="exp-row"><span><b>' + escapeHtml(x.name) + '</b><small class="' + st[1] + '">' + st[0] + '</small></span><input type="date" data-xd="' + escapeHtml(x.id) + '" value="' + escapeHtml(x.date || '') + '" /><button type="button" class="x" data-xdel="' + escapeHtml(x.id) + '" aria-label="Remove">\u00d7</button></div>'; });
+    var opts = heldList().map(function (t) { return '<option>' + escapeHtml(t.name) + '</option>'; }).join('') + '<option>AMSA medical (1850 or 303)</option><option>First aid (HLTAID011)</option><option>Marine radio (LROCP)</option><option value="__other">Something else…</option>';
+    return h + '<div class="field" style="margin-top:12px;"><label class="field-label" for="expKind">Add</label><div class="select-wrap" style="margin:0;"><select id="expKind">' + opts + '</select></div></div><div class="field" id="expOtherRow" style="display:none;"><input type="text" id="expOther" placeholder="What is it?" /></div><button type="button" class="save-btn" id="expAdd" style="margin-top:4px;">Add</button></div>';
+  }
+  function expEvent(ev, redraw) {
+    var t = ev.target;
+    if (ev.type === 'change' && t.id === 'expKind') { $('expOtherRow').style.display = t.value === '__other' ? '' : 'none'; return true; }
+    if (ev.type === 'change' && t.getAttribute && t.getAttribute('data-xd')) { var l = expGet(), id = t.getAttribute('data-xd'); l.forEach(function (x) { if (x.id === id) x.date = t.value; }); expSet(l); if (t.value) notifyReady(); redraw(); return true; }
+    if (ev.type === 'click' && t.getAttribute && t.getAttribute('data-xdel')) { var id2 = t.getAttribute('data-xdel'); expSet(expGet().filter(function (x) { return x.id !== id2; })); redraw(); fx('undo'); return true; }
+    if (ev.type === 'click' && t.id === 'expAdd') {
+      var k = $('expKind').value, name = k === '__other' ? $('expOther').value.trim() : k; if (!name) return true;
+      var l2 = expGet(); l2.push({ id: uuid(), name: name, date: '' }); expSet(l2); fx('success'); redraw(); return true;
+    }
+    return false;
+  }
+  function renderExpiry() {
+    var box = $('expCard'); if (!box) return;
+    var soon = expGet().filter(function (x) { return x.date && daysLeft(x.date) <= 90; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
+    if (!soon.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="exp-home" id="expHome"><b>Renewals coming up</b>' + soon.slice(0, 4).map(function (x) { var st = expText(x.date); return '<div><span>' + escapeHtml(x.name) + '</span><span class="' + st[1] + '">' + st[0] + '</span></div>'; }).join('') + '</div>';
+  }
+  document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#expHome')) openSettings(); });
+  ['click', 'change'].forEach(function (type) {
+    settingsBody.addEventListener(type, function (ev) { var keep = settingsBody.scrollTop; var redraw = function () { renderSettings(); settingsBody.scrollTop = keep; }; if (!remindEvent(ev, redraw)) expEvent(ev, redraw); });
+    $('onbBody').addEventListener(type, function (ev) { remindEvent(ev, renderOnb); });
+  });
+
+  // Scheduling. A rolling three weeks of reminders is planned each time the app opens or something changes,
+  // so a day you have already logged does not get a nudge.
+  var schedTimer = null;
+  function schedSoon() { clearTimeout(schedTimer); schedTimer = setTimeout(scheduleAll, 1500); }
+  function scheduleAll() {
+    var LN = nativePlugin('LocalNotifications'); if (!LN) return;
+    var r = remindGet(), items = [], now = Date.now(), today = isoDay(new Date());
+    if (r.on) {
+      var hm = r.time.split(':'), logged = entries.some(function (e) { return e.start === today || e.end === today; });
+      for (var i = 0; i < 21; i++) {
+        var d = new Date(); d.setDate(d.getDate() + i); d.setHours(Number(hm[0]), Number(hm[1]), 0, 0);
+        if (d.getTime() <= now || (i === 0 && logged) || r.days.indexOf(d.getDay()) === -1) continue;
+        items.push({ id: 2000 + i, title: 'Did you work today?', body: 'Tap Yes to add a day, or open Askel to log it.', schedule: { at: d, allowWhileIdle: true }, actionTypeId: 'LOG_DAY', extra: { k: 'log' } });
+      }
+    }
+    expGet().forEach(function (x, xi) { if (!x.date || xi > 90) return; [90, 30, 7, 0].forEach(function (off, k) {
+      var d = new Date(x.date + 'T09:00:00'); d.setDate(d.getDate() - off);
+      if (d.getTime() > now) items.push({ id: 3000 + xi * 4 + k, title: off ? x.name + ' expires in ' + off + ' days' : x.name + ' expires today', body: 'Open Askel to see what to renew.', schedule: { at: d }, extra: { k: 'exp' } });
+    }); });
+    LN.getPending().then(function (p) { var ids = (p.notifications || []).filter(function (n) { return n.id >= 2000 && n.id < 4000; }).map(function (n) { return { id: n.id }; }); return ids.length ? LN.cancel({ notifications: ids }) : null; })
+      .catch(function () {}).then(function () { return items.length ? LN.schedule({ notifications: items }) : null; }).catch(function () {});
+  }
+  function quickAddLast() {
+    var sv = null; try { sv = JSON.parse(localStorage.getItem(QUICK_KEY) || 'null'); } catch (e) {}
+    if (!sv || !sv.vessel || !entries.some(function (e) { return e.vessel === sv.vessel; })) { openQuick(); return; }
+    qk.vessel = sv.vessel; qk.duties = sv.duties && sv.duties.length ? sv.duties : ['D']; qk.when = 'today'; qk.days = 1; qk.nu = false; qk.tally = true; qk.newv = false;
+    drawQuick(); $('quickSave').click();
+    var LN = nativePlugin('LocalNotifications');
+    if (LN) LN.schedule({ notifications: [{ id: 1999, title: 'Logged', body: '1 day added to ' + sv.vessel + '.', schedule: { at: new Date(Date.now() + 1500) } }] }).catch(function () {});
+  }
+  (function () {
+    var LN = nativePlugin('LocalNotifications'); if (!LN) return;
+    try { LN.registerActionTypes({ types: [{ id: 'LOG_DAY', actions: [{ id: 'yes', title: 'Yes, add 1 day' }, { id: 'no', title: 'No' }] }] }); } catch (e) {}
+    LN.addListener('localNotificationActionPerformed', function (ev) {
+      var a = ev && ev.actionId, k = ev && ev.notification && ev.notification.extra && ev.notification.extra.k;
+      if (a === 'yes') quickAddLast(); else if (a === 'no') { /* nothing to log */ } else if (k === 'exp') openSettings(); else openQuick();
+    });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) schedSoon(); });
+    schedSoon();
+  })();
+
   // ---- First-run setup: one window, a few questions ----
-  var ONB_KEY = 'askel-onboarded', onbStep = 0, ONB_STEPS = 5, onbMsg = '';
+  var ONB_KEY = 'askel-onboarded', onbStep = 0, ONB_STEPS = 6, onbMsg = '';
   var onbEl = $('onb'), onbBody = $('onbBody');
   function onbGroupList(kind) {
     var h = '';
@@ -3329,6 +3454,8 @@
     } else if (onbStep === 2) {
       h = '<div class="onb-step"><h2>What are you working towards?</h2><p class="sub">Pick the tickets you want. They’ll sit under your total days with live progress. You can change this any time.</p>' + onbGroupList('goal') + '</div>';
     } else if (onbStep === 3) {
+      h = '<div class="onb-step"><h2>Remind you to log your days?</h2><p class="sub">Casual or charter work is easy to forget. We can nudge you at the end of the day. Tap Yes to add 1 day without even opening the app. You can change this any time in Settings.</p><div class="form-card" style="margin:0;">' + remindHTML() + '</div></div>';
+    } else if (onbStep === 4) {
       var signed = cloudOn();
       h = '<div class="onb-step"><h2>' + (signed ? 'You’re signed in' : 'Keep it safe and sync it') + '</h2><p class="sub">' + (signed ? 'Your records will back up and follow you to any phone.' : 'Add your email to back up your sea time, use it on more than one phone, send sign-off links to supervisors, and join your employer. Optional. Askel works without it.') + '</p>' +
         (signed ? '' : '<input type="email" id="onbEmail" autocomplete="email" autocapitalize="none" placeholder="Email" /><input type="password" id="onbPw" autocomplete="new-password" placeholder="Password (8+ characters)" />' + (onbMsg ? '<p class="sub" style="color:var(--red);margin:0 0 12px;">' + escapeHtml(onbMsg) + '</p>' : '') + '<button type="button" class="alt" id="onbMake" style="color:var(--tab-blue);font-size:16px;">Create account</button>') + '</div>';
@@ -3338,7 +3465,7 @@
     }
     onbBody.innerHTML = h; onbBody.scrollTop = 0;
     $('onbBack').style.visibility = onbStep === 0 ? 'hidden' : '';
-    $('onbNext').textContent = onbStep === ONB_STEPS - 1 ? 'Start' : (onbStep === 3 && !cloudOn() ? 'Not now' : 'Continue');
+    $('onbNext').textContent = onbStep === ONB_STEPS - 1 ? 'Start' : (onbStep === 4 && !cloudOn() ? 'Not now' : 'Continue');
     $('onbSkip').style.visibility = onbStep === ONB_STEPS - 1 ? 'hidden' : '';
   }
   function openOnb(step) { onbStep = step || 0; onbMsg = ''; renderOnb(); document.body.style.overflow = 'hidden'; onbEl.classList.add('open'); fx('open'); }
