@@ -595,7 +595,11 @@
 </head>
 <body>
 <div id="splash" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"><path class="b1" d="M4 18.5H20"/><path class="b2" d="M8 12H20"/><path class="b3" d="M12 5.5H20"/></svg></div>
-<script>(function(){var s=document.getElementById('splash');if(!s)return;var go=function(){s.classList.add('out');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);};var t0=Date.now();var done=false;function fin(){if(done)return;done=true;var w=Math.max(0,1500-(Date.now()-t0));setTimeout(go,w);}if(document.readyState==='complete')fin();else window.addEventListener('load',fin);setTimeout(fin,2600);})();</script>
+<script>(function(){var s=document.getElementById('splash');if(!s)return;var go=function(){s.classList.add('out');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);};var t0=Date.now();var done=false;
+  // haptic taps as each bar settles (phone app; Android browsers only after a touch; iPhone Safari has no API)
+  function tap(st){try{var H=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.Haptics;if(H){H.impact({style:st});return;}if(navigator.vibrate&&navigator.userActivation&&navigator.userActivation.hasBeenActive)navigator.vibrate(st==='MEDIUM'?18:10);}catch(e){}}
+  if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){setTimeout(function(){tap('LIGHT');},560);setTimeout(function(){tap('LIGHT');},710);setTimeout(function(){tap('MEDIUM');},860);}
+  function fin(){if(done)return;done=true;var w=Math.max(0,1500-(Date.now()-t0));setTimeout(go,w);}if(document.readyState==='complete')fin();else window.addEventListener('load',fin);setTimeout(fin,2600);})();</script>
 
 <div class="wrap">
   <div class="navbar" id="navbar" aria-hidden="true"><span>Askel</span></div>
