@@ -1,5 +1,5 @@
 // Offline support: cache the app shell, serve cache first, refresh in background.
-var CACHE = 'askel-app-v14';
+var CACHE = 'askel-app-v15';
 var ASSETS = ['./', 'index.html', 'manifest.json', '../icon-180.png', '../icon-192.png', '../icon-512.png', '../AMSA_771.pdf', '../pdf-lib.min.js', '../cloud.js', '../sign.html', '../dashboard.html'];
 
 self.addEventListener('install', function (e) {

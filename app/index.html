@@ -247,7 +247,6 @@
   .swipe.swiping, .swipe.removing { background: var(--danger); }
   .swipe.removing { opacity: 0; transform: translateX(-30%); max-height: 0; margin-top: -10px; }
   .swipe-action svg { transition: transform .3s var(--spring); }
-  .swipe.armed .swipe-action svg { transform: scale(1.35); }
   .swipe-action { position: absolute; inset: 0 0 0 auto; width: 100px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; gap: 6px; }
   .entry-card { position: relative; background: var(--card); border-radius: 20px; padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; touch-action: pan-y; will-change: transform; box-shadow: var(--shadow); }
   .entry-card.snap { transition: transform .35s var(--ease); }
@@ -1829,7 +1828,7 @@
         : e.sentAt ? '<span class="stat">Waiting for ' + escapeHtml(first) + ' \u00B7 sent ' + ago + '</span><button type="button" class="act ghost" data-send="' + escapeHtml(e.id) + '">Resend</button>'
         : '<button type="button" class="act primary" data-send="' + escapeHtml(e.id) + '">Send to supervisor to sign</button>';
       listHtml += '<div class="swipe' + (e.id === lastAddedId ? ' new' : '') + (stagger ? ' stagger' : '') + '" style="--i:' + (si++) + '" data-id="' + escapeHtml(e.id) + '">' +
-        '<div class="swipe-action">' + TRASH_SVG + 'Delete</div>' +
+        '<div class="swipe-action" role="button" aria-label="Delete entry">' + TRASH_SVG + 'Delete</div>' +
         '<div class="entry-card"><div class="entry-top" data-open="' + escapeHtml(e.id) + '">' +
           '<div class="entry-main">' +
             '<div class="entry-title-row"><span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
@@ -1848,13 +1847,17 @@
   }
 
   // ---- Swipe to delete (with undo) ----
+  // Swipe left to reveal Delete; the entry is only removed when you tap Delete (with Undo afterwards).
+  var openSwipe = null;
+  function closeSwipe(row) { if (!row) return; var c = row.querySelector('.entry-card'); c.classList.add('snap'); c.style.transform = ''; row.classList.remove('open'); setTimeout(function () { if (!row.classList.contains('open')) row.classList.remove('swiping'); }, 360); if (openSwipe === row) openSwipe = null; }
+  document.addEventListener('touchstart', function (ev) { if (openSwipe && !openSwipe.contains(ev.target)) closeSwipe(openSwipe); }, { passive: true });
   function attachSwipe(row) {
-    var card = row.querySelector('.entry-card');
-    var sx = 0, sy = 0, dx = 0, tracking = false, horizontal = null, width = 0, armed = false;
+    var card = row.querySelector('.entry-card'), REV = 100;
+    var sx = 0, sy = 0, dx = 0, base = 0, tracking = false, horizontal = null;
     row.addEventListener('touchstart', function (ev) {
       if (ev.touches.length !== 1) return;
       sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; dx = 0; tracking = true; horizontal = null;
-      width = row.offsetWidth; card.classList.remove('snap');
+      base = row.classList.contains('open') ? -REV : 0; card.classList.remove('snap');
     }, { passive: true });
     row.addEventListener('touchmove', function (ev) {
       if (!tracking) return;
@@ -1862,22 +1865,26 @@
       if (horizontal === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horizontal = Math.abs(mx) > Math.abs(my);
       if (!horizontal) return;
       ev.preventDefault(); row.classList.add('swiping');
-      dx = Math.min(0, mx);
-      var shown = dx < -100 ? -100 + (dx + 100) * 0.35 : dx; // rubber-band past the action
-      card.style.transform = 'translateX(' + shown + 'px)';
-      var isArmed = dx < -Math.min(110, width * 0.3);
-      if (isArmed !== armed) { armed = isArmed; row.classList.toggle('armed', armed); if (armed) fx('detent'); else haptic('light'); }
+      dx = mx; var pos = Math.min(0, base + dx);
+      card.style.transform = 'translateX(' + (pos < -REV ? -REV + (pos + REV) * 0.3 : pos) + 'px)';
     }, { passive: false });
     function end() {
       if (!tracking) return; tracking = false;
-      card.classList.add('snap'); if (!(horizontal && dx < -Math.min(110, width * 0.3))) { armed = false; row.classList.remove('armed'); }
-      if (horizontal && dx < -Math.min(110, width * 0.3)) { fx('delete'); removeEntry(row.getAttribute('data-id'), row); }
-      else { card.style.transform = ''; setTimeout(function () { row.classList.remove('swiping'); }, 360); }
+      if (!horizontal) return;
+      var pos = Math.min(0, base + dx);
+      card.classList.add('snap');
+      if (pos < -REV * 0.45) {
+        if (openSwipe && openSwipe !== row) closeSwipe(openSwipe);
+        card.style.transform = 'translateX(' + (-REV) + 'px)'; if (!row.classList.contains('open')) fx('detent'); row.classList.add('open', 'swiping'); openSwipe = row;
+      } else closeSwipe(row);
     }
     row.addEventListener('touchend', end);
     row.addEventListener('touchcancel', end);
-    // Desktop / accessibility fallback: right-click or long-press-free delete via keyboard Delete on focus isn't needed; allow dblclick on action area.
-    row.querySelector('.swipe-action').addEventListener('click', function () { removeEntry(row.getAttribute('data-id'), row); });
+    // While open, tapping the card closes it instead of opening the entry.
+    row.addEventListener('click', function (ev) {
+      if (row.classList.contains('open') && !ev.target.closest('.swipe-action')) { ev.stopPropagation(); ev.preventDefault(); closeSwipe(row); }
+    }, true);
+    row.querySelector('.swipe-action').addEventListener('click', function () { fx('delete'); openSwipe = null; removeEntry(row.getAttribute('data-id'), row); });
   }
 
   function removeEntry(id, row) {
