@@ -565,6 +565,9 @@
   :root[data-theme="light"] .segmented.main-tabs .thumb, :root[data-theme="light"] .segmented.main-tabs.right .thumb { background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.14); }
   .main-tabs button[data-tab] { color: var(--ink-2) !important; opacity: 1 !important; }
   .main-tabs button[data-tab].active { color: var(--ink) !important; }
+  /* logo watermark behind the total */
+  .hero::after { content: ""; position: absolute; right: 20px; top: 24px; bottom: auto; width: 210px; height: 210px; border: 0; border-radius: 0; box-shadow: none; opacity: 0.09;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M4 18.5H20' opacity='.45'/%3E%3Cpath d='M8 12H20' opacity='.75'/%3E%3Cpath d='M12 5.5H20'/%3E%3C/svg%3E") center/contain no-repeat; pointer-events: none; }
 </style>
 </head>
 <body>
