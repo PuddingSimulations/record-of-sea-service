@@ -163,7 +163,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var ROSTER_KEY = 'sea-dash-roster', NAME = { gph: 'General Purpose Hand', cox3: 'Coxswain Grade 3', cox2: 'Coxswain Grade 2', cox1: 'Coxswain Grade 1', inland: 'Master (Inland Waters)', master24: 'Master <24m', master45: 'Master <45m', master100: 'Master <100m', med3: 'Marine Engine Driver 3', med2: 'Marine Engine Driver 2', med1: 'Marine Engine Driver 1', eng3: 'Engineer Class 3' };
+  var ROSTER_KEY = 'sea-dash-roster', NAME = { gph: 'General Purpose Hand', sailcoastal: 'Sailing Master Coastal', sailoffshore: 'Sailing Master Offshore', cox3: 'Coxswain Grade 3', cox2: 'Coxswain Grade 2', cox1: 'Coxswain Grade 1', inland: 'Master (Inland Waters)', master24: 'Master <24m', master45: 'Master <45m', master100: 'Master <100m', med3: 'Marine Engine Driver 3', med2: 'Marine Engine Driver 2', med1: 'Marine Engine Driver 1', eng3: 'Engineer Class 3' };
   function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var roster = {}, open = {}, live = false, cos = [], msg = '', busy = false, notes = {}, recoveryMode = false;

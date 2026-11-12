@@ -1070,31 +1070,33 @@
       note: '5 days of sea service on commercial vessels of any size. No task book reduction applies.' },
     { id: 'cox3', group: 'Deck', name: 'Coxswain Grade 3 NC', categories: null, withTaskBook: 1, withoutTaskBook: 1, commercial: 'always',
       note: 'If you use a state or territory recreational boat licence, you need 1 day on a commercial vessel plus on-water tasks signed off on AMSA form 1882. If you complete an approved training course instead, there is no sea service day requirement.' },
-    { id: 'cox2', group: 'Deck', name: 'Coxswain Grade 2 NC', categories: DECK_ROLE, withTaskBook: 10, withoutTaskBook: 50,
-      verify: 'AMSA\u2019s recent wording allows commercial or recreational vessels, but an older source asked for commercial vessels with a task book. This app counts both.',
-      note: 'Deck, or deck and engineering duties.' },
+    { id: 'cox2', group: 'Deck', name: 'Coxswain Grade 2 NC', categories: null, withTaskBook: 10, withoutTaskBook: 50,
+      note: 'Experience working at sea on commercial or recreational vessels. AMSA does not limit this ticket to particular duties or vessel sizes.' },
     { id: 'cox1', group: 'Deck', name: 'Coxswain Grade 1 NC', categories: DECK_ROLE, withTaskBook: 30, withoutTaskBook: 150, minLength: 5, commercial: 'with',
       note: 'Deck, or deck and engineering duties, on vessels at least 5m long. Without a task book the days can be on commercial or recreational vessels.' },
-    { id: 'inland', group: 'Deck', name: 'Master (Inland Waters) NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 30, withoutTaskBook: 150, commercial: 'with',
-      verify: 'Only one AMSA source gave these figures. Confirm the days and the role with AMSA.',
-      note: 'Deck duties. Without a task book the days can be on commercial or recreational vessels.' },
+    { id: 'inland', group: 'Deck', name: 'Master (Inland Waters) NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 60, withoutTaskBook: 120, minLength: 7.5, commercial: 'with',
+      note: 'Deck, or deck and engineering duties, on vessels at least 7.5m long. With a task book the 60 days must be on commercial vessels. Without one the 120 days can be commercial or recreational.' },
     { id: 'master24', group: 'Deck', name: 'Master <24m NC', categories: ['D', 'DE', 'INW', 'C'], withTaskBook: 120, withoutTaskBook: 360, minLength: 7.5, commercial: 'with',
       note: 'Deck, or deck and engineering duties, on vessels at least 7.5m long. Without a task book at least half must be on commercial vessels.' },
     { id: 'master45', group: 'Deck', name: 'Master <45m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 12, commercial: 'always',
       subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
-      note: 'On commercial vessels ≥12m long while holding Master <24m. Only days in charge of a navigational watch (INW) or as coxswain/master (C) are counted here; plain deck work (D) is not.' },
+      verify: 'AMSA says the service must be in charge of the navigational watch, and the 180 / 360 total includes 120 / 240 watch days. It does not say whether the remaining days must also be watch days. This app counts watch (INW) and master/coxswain (C) days toward the total. Confirm with AMSA.',
+      note: 'On commercial vessels at least 12m long, while holding Master <24m or Mate <80m (Mate <80m was phased out on 1 January 2023). Plain deck work (D) is not counted here.' },
     { id: 'master100', group: 'Deck', name: 'Master <100m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 24, commercial: 'always',
       subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
-      verify: 'AMSA\u2019s page says 240 watch days without a task book, but its older guidance PDF says 120. This app uses the page. Confirm with AMSA.',
-      note: 'For Master <45m holders, on commercial vessels \u226524m long. Other routes (Mate <80m holders) need 360/720 days with 120/240 on watch.' },
+      note: 'On commercial vessels at least 24m long. While holding Master <45m (or the phased-out Master <35m): 180 / 360 days including 120 / 240 in charge of the navigational watch, as shown here. While holding Mate <80m or another non-command certificate: 360 / 720 days including 120 / 240 on watch.' },
     { id: 'med3', group: 'Engineering', name: 'Marine Engine Driver Grade 3 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'C'], withTaskBook: 20, withoutTaskBook: 60, minPower: 75, commercial: 'always',
-      note: 'As GPH, Coxswain 1/2, or assistant to an engineer/engine driver, on vessels ≥75kW. At least half (10 or 30 days) must be on an inboard diesel engine — this app doesn’t track that split, so check it yourself.' },
-    { id: 'med2', group: 'Engineering', name: 'Marine Engine Driver Grade 2 NC', categories: ['GPH', 'AE/ED', 'AEIC', 'E/ED', 'EW', 'EIC'], withTaskBook: 180, withoutTaskBook: 360, minPower: 150, inboard: true, commercial: 'always',
-      note: 'As GPH, engineer, engine driver, or assistant to an engine driver/chief/second engineer, on commercial vessels \u2265150kW with inboard diesel engines. With a workshop skill equivalent qualification it is 90 / 180 days, and you include a copy of that qualification.' },
+      note: 'As a general purpose hand, Coxswain Grade 1 or 2 (Coxswain 3 service does not count), or assisting an engineer, on commercial vessels of at least 75kW. At least half (10 or 30 days) must be on vessels with inboard diesel engines. This app does not track that split, so check it yourself.' },
+    { id: 'med2', group: 'Engineering', name: 'Marine Engine Driver Grade 2 NC', categories: ['AE/ED', 'AEIC', 'E/ED', 'EW', 'EIC'], withTaskBook: 180, withoutTaskBook: 360, minPower: 150, inboard: true, commercial: 'always',
+      note: 'As an engineer or assisting an engineer, on commercial vessels with inboard engines of at least 150kW. With a workshop skill equivalent qualification it is 90 / 180 days, and you include a copy of that qualification.' },
     { id: 'med1', group: 'Engineering', name: 'Marine Engine Driver Grade 1 NC', categories: ENGINE_ROLE, withTaskBook: 120, withoutTaskBook: 240, minPower: 375, inboard: true, commercial: 'always',
-      note: 'Engineering duties on commercial vessels ≥375kW with inboard diesel engines, while holding Marine Engine Driver Grade 2. With a workshop skill equivalent qualification it is 90 / 180 days. AMSA’s published figures are hard to read, so double-check.' },
+      note: 'As an engineer or assisting an engineer, on commercial vessels with inboard engines of at least 375kW, while holding Marine Engine Driver Grade 2 (120 / 240 days) or a workshop skill equivalent qualification (90 / 180 days). Include a copy of that certificate or qualification.' },
     { id: 'eng3', group: 'Engineering', name: 'Engineer Class 3 NC', categories: ENGINE_ROLE, withTaskBook: 180, withoutTaskBook: 360, minPower: 400, inboard: true, commercial: 'always',
-      note: 'Engineering duties on commercial vessels ≥400kW with inboard diesel engines, while holding Marine Engine Driver Grade 1. Workshop skill equivalent: 120 / 240 days. Engineer Watchkeeper holders: 90 days on watch.' },
+      note: 'As an engineer or assisting an engineer, on commercial vessels with inboard engines of at least 400kW, while holding Marine Engine Driver Grade 1 (180 / 360 days). With a workshop skill equivalent qualification it is 120 / 240 days. Holders of an AMSA Engineer Watchkeeper certificate need 90 days.' },
+    { id: 'sailcoastal', group: 'Deck', name: 'Sailing Master Coastal NC', categories: null, withTaskBook: 0, withoutTaskBook: 0, qualOnly: true,
+      note: 'AMSA asks for no sea service days for this certificate. You qualify with a commercially endorsed RYA Yachtmaster Coastal or an IYT Master of Yachts Coastal (Sail or Power and Sail), plus an engine or powerboat qualification. It covers sailing vessels under 24m and under 100kW in inshore waters, and also lets you act as chief mate or deck watchkeeper on sailing vessels under 45m inshore.' },
+    { id: 'sailoffshore', group: 'Deck', name: 'Sailing Master Offshore NC', categories: null, withTaskBook: 0, withoutTaskBook: 0, qualOnly: true,
+      note: 'AMSA asks for no sea service days for this certificate. You qualify with a commercially endorsed RYA Yachtmaster Offshore, a Yachtmaster Ocean, or an IYT Master of Yachts Limited (Sail or Power and Sail), plus an engine or powerboat qualification. It covers sailing vessels under 24m and under 100kW within the EEZ (no more than 12 passengers beyond inshore waters), and also lets you act as chief mate or deck watchkeeper on sailing vessels under 45m in the EEZ.' },
     { id: 'custom', group: 'Other', name: 'Custom / other ticket', categories: null, custom: true,
       note: 'Tracks your total logged days against a day count you set yourself.' }
   ];
@@ -1102,11 +1104,14 @@
   // Holding a ticket covers the lower tickets listed here, so they stop showing as "working towards".
   // Deck ladder: GPH < Coxswain 3 < 2 < 1 < Master <24m < <45m < <100m. Engineering ladder: MED 3 < 2 < 1 < Engineer Class 3.
   var COVERS = {
-    cox2: ['cox3', 'gph'],
+    cox2: ['cox3'],
     cox1: ['cox2', 'cox3', 'gph'],
     master24: ['inland', 'cox1', 'cox2', 'cox3', 'gph'],
     master45: ['master24', 'inland', 'cox1', 'cox2', 'cox3', 'gph'],
     master100: ['master45', 'master24', 'inland', 'cox1', 'cox2', 'cox3', 'gph'],
+    inland: ['gph'],
+    sailcoastal: ['gph'],
+    sailoffshore: ['gph'],
     med2: ['med3'],
     med1: ['med2', 'med3'],
     eng3: ['med1', 'med2', 'med3']
@@ -1114,8 +1119,9 @@
 
   // What a new certificate needs besides sea service. From AMSA's certificate pages, steps page and
   // medical standards (Nov 2026). Items marked unsure could not be confirmed and are flagged in the app.
-  var MEDICAL_TXT = 'Certificate of medical fitness for near coastal seafarers (AMSA form 1850), or a current AMSA 303, completed by a doctor. Your first certificate needs it. Renewals for the lower tickets (GPH, Coxswain, Master Inland Waters, Master <24m, MED 2 and 3) accept a self-declaration, but Master <45m and <100m renewals need a new 1850.';
+  var MEDICAL_TXT = 'Certificate of medical fitness for near coastal seafarers (AMSA form 1850), or a current AMSA 303, completed by a doctor. Your first certificate needs it. Renewals for the lower tickets (GPH, Coxswain, Master Inland Waters, Master <24m, MED 2 and 3) accept a self-declaration, but Master <45m, Master <100m, MED 1 and Engineer Class 3 renewals need a new 1850.';
   var EYES_DECK = 'Tested as part of your 1850 medical. Distance vision 6/6 in the better eye and 6/9 in the other, near vision N8 for charts, and colour vision by the Ishihara plate test (a lantern test is the fallback). If you are colour-deficient you can still qualify but are limited to daylight hours. No coloured lenses during the test.';
+  var EYES_GPH = 'Tested as part of your 1850 medical, including colour vision. If you are colour-deficient you are restricted from performing lookout duties at night unless under direct supervision.';
   var EYES_ENG = 'Tested as part of your 1850 medical, including colour vision. If you are colour-deficient, check what that means for your duties.';
   var FIRSTAID_TXT = 'Provide first aid (HLTAID011) or equivalent, current when you apply. AMSA may ask for a new one if it expires within 90 days.';
   var RADIO_S = 'Marine radio Short Range Operator Certificate of Proficiency (SROCP) or higher, issued through the Office of Maritime Communications.';
@@ -1123,18 +1129,20 @@
   var AMPA_TXT = 'AMSA Mandated Practical Assessment (AMPA) with a registered training organisation. Submit its cover page with your application.';
   var ORAL_TXT = 'You must pass an AMSA oral examination before this certificate is issued.';
   var REQS = {
-    gph: { course: 'Certificate I in Maritime Operations (General Purpose Hand NC) from a registered training organisation.', eyes: 'deck' },
+    gph: { course: 'Certificate I in Maritime Operations (General Purpose Hand NC) from a registered training organisation. The final assessment is optional for this ticket.', eyes: 'gph' },
     cox3: { course: 'Either an approved training course (such as the units MARI003, MARK007 and MARN008, an Australian Sailing Powerboat Handling course, an RYA Level 2 Powerboat course or an IYT Small Powerboat & RIB Master certificate), or a state or territory recreational boat licence.', tasks: 'Only on the licence route: practical on-water tasks witnessed and signed off by an observer on AMSA form 1882.', eyes: 'deck' },
     cox2: { course: 'Certificate I in Maritime Operations (Coxswain Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'deck' },
-    cox1: { course: 'Certificate II in Maritime Operations (Coxswain Grade 1 NC) from a registered training organisation.', ampa: 'AMSA Mandated Practical Assessment (AMPA) on a vessel over 5m long, with a registered training organisation.', radio: RADIO_S, eyes: 'deck' },
-    inland: { course: 'Course details were not confirmed. Check the AMSA page.', courseUnsure: true, firstAidUnsure: true, eyes: 'deck' },
+    cox1: { course: 'Certificate II in Maritime Operations (Coxswain Grade 1 NC) from a registered training organisation.', ampa: AMPA_TXT, radio: RADIO_S, eyes: 'deck' },
+    inland: { course: 'Certificate III in Maritime Operations (Master Inland Waters NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'deck' },
     master24: { course: 'Certificate III in Maritime Operations (Master <24m NC) from a registered training organisation.', ampa: AMPA_TXT, radio: RADIO_L, eyes: 'deck' },
-    master45: { course: 'Certificate IV level Master <45m course from a registered training organisation. Confirm the exact course name with AMSA.', courseUnsure: true, ampa: 'An approved final assessment, or 60 days of sea service in the 6 months before you apply.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
-    master100: { course: 'Diploma level Master <100m course from a registered training organisation. Confirm the exact course name with AMSA.', courseUnsure: true, radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
-    med3: { course: 'Certificate II in Maritime Operations (Marine Engine Driver Grade 3 NC) from a registered training organisation.', ampa: AMPA_TXT + ' It covers engine room tasks, deck machinery and low-voltage electrical systems.', eyes: 'eng' },
+    master45: { course: 'Certificate IV in Maritime Operations (Master up to 45 metres NC) from a registered training organisation.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
+    master100: { course: 'Diploma of Maritime Operations from a registered training organisation.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
+    med3: { course: 'Certificate II in Maritime Operations (Marine Engine Driver Grade 3 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'eng' },
     med2: { course: 'Certificate III in Maritime Operations (Marine Engine Driver Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'eng' },
     med1: { course: 'Certificate IV in Maritime Operations (Marine Engine Driver Grade 1 NC) from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' },
-    eng3: { course: 'Diploma of Marine Engineering (or the Engineer Class 3 NC course) from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' }
+    eng3: { course: 'Diploma of Marine Engineering from a registered training organisation.', oral: ORAL_TXT, eyes: 'eng' },
+    sailcoastal: { course: 'A commercially endorsed RYA Yachtmaster Coastal, or an IYT Master of Yachts Coastal (Sail or Power and Sail). You also need one engine or powerboat qualification: Coxswain Grade 1 NC, Marine Engine Driver Grade 3 NC, MAR037 Operate inboard and outboard motors, RYA Diesel Engine plus an Australian Sailing Powerboat Handling or RYA Level 2 Powerboat course, or IYT Boat Engineer Grade 1 plus Small Powerboat & RIB Master.', radio: RADIO_S, eyes: 'deck' },
+    sailoffshore: { course: 'A commercially endorsed RYA Yachtmaster Offshore, a Yachtmaster Ocean, or an IYT Master of Yachts Limited (Sail or Power and Sail). You also need one engine or powerboat qualification: Coxswain Grade 1 NC, Marine Engine Driver Grade 3 NC, MAR037 Operate inboard and outboard motors, RYA Diesel Engine plus an Australian Sailing Powerboat Handling or RYA Level 2 Powerboat course, or IYT Boat Engineer Grade 1 plus Small Powerboat & RIB Master.', radio: RADIO_L, eyes: 'deck' }
   };
 
   // ---- Helpers ----
@@ -1524,6 +1532,14 @@
     var isCustom = !!ticket.custom;
     customDaysField.style.display = isCustom ? 'block' : 'none';
     taskBookToggle.style.display = isCustom ? 'none' : 'flex';
+    var rr = document.querySelector('.ring-row'); if (rr) rr.style.display = ticket.qualOnly ? 'none' : '';
+    if (ticket.qualOnly) {
+      taskBookToggle.style.display = 'none'; ticketSubProgress.style.display = 'none'; ticketNote.textContent = ticket.note || '';
+      var ab0 = $('applyBtn'); if (ab0) ab0.style.display = ''; $('goalBtn').style.display = 'none';
+      var hb0 = $('holdBtn'), held0 = heldIds.indexOf(ticket.id) !== -1; hb0.style.display = ''; hb0.classList.toggle('on', held0); hb0.textContent = held0 ? '\u2713 You hold this ticket (tap to undo)' : 'Mark as held';
+      ticketFilterNote.textContent = 'Qualification only: no sea service days to count for this certificate.'; ticketFilterNote.style.display = '';
+      wasComplete = false; renderReqs(ticket, 0, 0, false); return;
+    }
 
     var required = isCustom ? (Number(customDaysInput.value) || 1)
       : (ticketState.taskBook === 'with' ? ticket.withTaskBook : ticket.withoutTaskBook);
@@ -1580,14 +1596,14 @@
     if (isCustom || !r) { card.style.display = 'none'; return; }
     card.style.display = '';
     var items = [];
-    items.push({ k: 'sea', t: 'Sea service', d: logged + ' of ' + required + ' days logged. Evidence: Form 771, the on-board record in your task book, a letter from the operator, owner, master or chief engineer, or an approved log book.', auto: logged >= required });
+    if (!ticket.qualOnly) items.push({ k: 'sea', t: 'Sea service', d: logged + ' of ' + required + ' days logged. Evidence: Form 771, the on-board record in your task book, a letter from the operator, owner, master or chief engineer, or an approved log book.', auto: logged >= required });
     items.push({ k: 'course', t: 'Training course', d: r.course, unsure: r.courseUnsure });
     if (r.ampa) items.push({ k: 'ampa', t: 'Practical assessment', d: r.ampa, unsure: r.ampaUnsure });
     if (r.tasks) items.push({ k: 'tasks', t: 'On-water tasks', d: r.tasks });
     items.push({ k: 'firstaid', t: 'First aid', d: FIRSTAID_TXT, unsure: r.firstAidUnsure });
     if (r.radio) items.push({ k: 'radio', t: 'Marine radio', d: r.radio });
     items.push({ k: 'medical', t: 'Medical', d: MEDICAL_TXT });
-    items.push({ k: 'eyes', t: 'Eyesight test', d: r.eyes === 'deck' ? EYES_DECK : EYES_ENG });
+    items.push({ k: 'eyes', t: 'Eyesight test', d: r.eyes === 'deck' ? EYES_DECK : r.eyes === 'gph' ? EYES_GPH : EYES_ENG });
     if (r.oral) items.push({ k: 'oral', t: 'Oral exam', d: r.oral });
     items.push({ k: 'id', t: 'ID and photo', d: 'Proof of identity and a colour passport-style photo. Australia Post can take the photo if you apply there.' });
     items.push({ k: 'apply', t: 'Apply', d: 'Apply on myAMSA with your myID, upload your documents and pay the fee. No myAMSA? Print form 426 and lodge it at a participating Australia Post. Your training organisation can issue an interim certificate for up to 60 days while AMSA assesses it.' });
@@ -1626,7 +1642,7 @@
   // ---- Working towards (tickets with any qualifying sea time) ----
   var workingSection = $('workingSection');
   function workingList() {
-    return TICKETS.filter(function (t) { return !t.custom; }).map(function (t) {
+    return TICKETS.filter(function (t) { return !t.custom && !t.qualOnly; }).map(function (t) {
       var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook;
       var logged = sumFor(t, t.categories);
       return { id: t.id, name: t.name, required: required, logged: logged, ratio: Math.min(1, logged / required) };
@@ -1646,7 +1662,7 @@
   var notStartedOpen = false;
   function renderWorking() {
     if (!entries.length) { workingSection.innerHTML = ''; return; }
-    var states = TICKETS.filter(function (t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
+    var states = TICKETS.filter(function (t) { return !t.custom && !t.qualOnly && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
       var required = ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook, q = qualifying(t, t.categories);
       return { t: t, id: t.id, name: t.name, required: required, logged: q.days, catDays: q.catDays, ratio: Math.min(1, q.days / required) };
     });
@@ -2265,7 +2281,7 @@
   function buildSnapshot() {
     if (!profile.uid) { profile.uid = 'u' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); saveProfile(); }
     var total = entries.reduce(function (n, e) { return n + (Number(e.days) || 0); }, 0), verified = entries.reduce(function (n, e) { return n + (e.supSig ? (Number(e.days) || 0) : 0); }, 0);
-    var tk = TICKETS.filter(function (t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
+    var tk = TICKETS.filter(function (t) { return !t.custom && !t.qualOnly && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
       var all = qualifying(t, t.categories).days, ver = qualifying(t, t.categories, { verifiedOnly: true }).days;
       return { i: t.id, l: all, v: ver, r: ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook };
     }).filter(function (x) { return x.l > 0; });
@@ -2789,7 +2805,7 @@
   function saveGoalTB() { try { localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB)); } catch (e) {} settingsChanged(); }
   function goalMode(t) { return goalTB[t.id] || ticketState.taskBook; }
   function goalReq(t) { return goalMode(t) === 'with' ? t.withTaskBook : t.withoutTaskBook; }
-  function goalAvailable(t) { return !t.custom && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }
+  function goalAvailable(t) { return !t.custom && !t.qualOnly && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }
   function activeGoals() { return goalIds.map(function (id) { return TICKETS.filter(function (t) { return t.id === id; })[0]; }).filter(function (t) { return t && goalAvailable(t); }); }
   function renderGoals() {
     var box = $('goalStrip'), gs = activeGoals();
@@ -3222,11 +3238,13 @@
   }
   function packRows(t, docs) {
     var mode = goalMode(t), req = goalReq(t), r = REQS[t.id] || {}, rows = [];
+    if (t.qualOnly) { rows.push({ st: 'info', t: 'Sea service', d: 'AMSA does not ask for sea service days for this certificate. You qualify through the sailing and engine qualifications below.' }); } else {
     var kept = entries.filter(function (e) { return !packEx[e.id]; });
     var signed = withEntries(kept, function () { return qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days; }), all = qualifying(t, t.categories, { taskBook: mode }).days;
     var letterDays = letters.filter(function (L) { return L.supSig && !packEx[L.id]; }).reduce(function (n, L) { return n + letterTotal(L); }, 0);
     var seaOk = signed >= req || letterDays >= req;
     rows.push({ st: seaOk ? 'ok' : (all >= req ? 'warn' : 'todo'), t: 'Sea service evidence', d: signed + ' signed days of ' + req + ' needed' + (letterDays ? ', plus ' + letterDays + ' days on signed letters' : '') + (!seaOk && all > signed ? '. ' + (all - signed) + ' more days are logged but not signed yet.' : '.') + ' AMSA accepts Form 771s, a signed sea service letter, or an approved task book.', act: !seaOk && all > signed ? ['Send for signing', 'home'] : null });
+    }
     var get = function (k) { return docs.filter(function (d) { return d.kind === k; }); };
     var med = get('medical').sort(function (a, b) { return (b.expires || '') < (a.expires || '') ? -1 : 1; })[0];
     if (!med) rows.push({ st: 'todo', t: 'Medical certificate (AMSA 1850)', d: 'A current Certificate of medical fitness for domestic seafarers. It must still be current when your certificate is issued. Add a copy.', act: ['Add it', 'docs:medical'] });
@@ -3250,7 +3268,7 @@
     var h = '', docs = packDocs;
     if (packView === 'pack') {
       $('packTitle').textContent = 'Application pack';
-      var avail = TICKETS.filter(function (t) { return !t.custom && (goalAvailable(t) || t.id === packTicket); }), t = avail.filter(function (x) { return x.id === packTicket; })[0] || avail[0];
+      var avail = TICKETS.filter(function (t) { return !t.custom && (goalAvailable(t) || t.qualOnly || t.id === packTicket); }), t = avail.filter(function (x) { return x.id === packTicket; })[0] || avail[0];
       if (!t) { packBody.innerHTML = '<p class="field-hint">Nothing to apply for yet.</p>'; return; } packTicket = t.id;
       h += '<p class="field-hint" style="margin:0 0 12px;">Askel gathers everything AMSA asks for in one place, so you can upload it in myAMSA in a few minutes. It can’t log in or lodge for you, because myAMSA verifies you with myID on your own phone.</p>' +
         '<div class="select-wrap"><select id="packTicketSel" aria-label="Ticket">' + avail.map(function (x) { return '<option value="' + x.id + '"' + (x.id === t.id ? ' selected' : '') + '>' + escapeHtml(x.name) + '</option>'; }).join('') + '</select></div>';
@@ -3322,7 +3340,7 @@
     var wa = function (x) { return String(x == null ? '' : x).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '?'); };
     return PL.PDFDocument.create().then(function (d) { out = d; return Promise.all([out.embedFont(PL.StandardFonts.Helvetica), out.embedFont(PL.StandardFonts.HelveticaBold)]); }).then(function (f) {
       F = f[0]; B = f[1]; out.addPage([595.28, 841.89]);   // contents page, filled in last
-      var es = entries.filter(function (e) { return e.supSig && !packEx[e.id] && entryCountsFor(e, t, mode); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+      var es = entries.filter(function (e) { return !t.qualOnly && e.supSig && !packEx[e.id] && entryCountsFor(e, t, mode); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
       var chain = Promise.resolve();
       es.forEach(function (e) { chain = chain.then(function () { return build771(e).then(function (bytes) { return addPdf(bytes, 'Form 771: ' + e.vessel + ', ' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ' (' + e.days + ' days)'); }); }); });
       letters.filter(function (L) { return L.supSig && !packEx[L.id]; }).forEach(function (L) { chain = chain.then(function () { return buildLetterPdf(L).then(function (bytes) { return addPdf(bytes, 'Sea service letter: ' + L.company); }); }); });
@@ -3333,7 +3351,7 @@
       function line(txt, size, font, gap) { cp.drawText(wa(txt), { x: M, y: y, size: size, font: font || F, color: PL.rgb(0.08, 0.08, 0.08) }); y -= (gap || size * 1.5); }
       line('Application pack', 24, B, 34); line(wa((profile.name || '').trim() || 'Applicant'), 14, B, 20); line(t.name, 13, F, 18); line('Prepared ' + new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) + ' with Askel', 11, F, 30);
       var signed = withEntries(entries.filter(function (e) { return !packEx[e.id]; }), function () { return qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days; });
-      line('Sea service: ' + signed + ' signed days counted (' + goalReq(t) + ' needed ' + (mode === 'with' ? 'with' : 'without') + ' a task book)', 11, F, 28);
+      if (!t.qualOnly) line('Sea service: ' + signed + ' signed days counted (' + goalReq(t) + ' needed ' + (mode === 'with' ? 'with' : 'without') + ' a task book)', 11, F, 28);
       line('Contents', 14, B, 22);
       toc.forEach(function (it) { var txt = it.label, w = F.widthOfTextAtSize(wa(txt), 11); while (w > W - 60 && txt.length > 10) { txt = txt.slice(0, -2); w = F.widthOfTextAtSize(wa(txt) + '...', 11); } cp.drawText(wa(txt === it.label ? txt : txt + '...'), { x: M, y: y, size: 11, font: F, color: PL.rgb(0.1, 0.1, 0.1) }); var pg = it.from === it.to ? 'p. ' + it.from : 'pp. ' + it.from + '-' + it.to; cp.drawText(pg, { x: M + W - F.widthOfTextAtSize(pg, 11), y: y, size: 11, font: F, color: PL.rgb(0.35, 0.35, 0.35) }); y -= 17; });
       if (!toc.length) line('Nothing to include yet. Get your Form 771s signed and add your documents.', 11, F);
