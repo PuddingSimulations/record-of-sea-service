@@ -3201,6 +3201,10 @@
     if (n <= 90) return { cls: 'warn', text: 'Expires in ' + n + ' day' + (n === 1 ? '' : 's') + ' (AMSA may ask for a new one)' };
     return { cls: 'ok', text: 'Valid until ' + formatDate(d.expires) };
   }
+  var PACKEX_KEY = 'askel-pack-ex', packEx = {};
+  try { packEx = JSON.parse(localStorage.getItem(PACKEX_KEY) || '{}') || {}; } catch (e) { packEx = {}; }
+  function savePackEx() { try { localStorage.setItem(PACKEX_KEY, JSON.stringify(packEx)); } catch (e) {} }
+  function withEntries(list, fn) { var keep = entries; entries = list; try { return fn(); } finally { entries = keep; } }
   var packOverlay = $('packOverlay'), packSheet = $('packSheet'), packBody = $('packBody'), packView = 'pack', packTicket = null, packDocs = [], packKind = 'medical', packMsg = '';
   function openPack(ticketId) {
     var avail = TICKETS.filter(function (t) { return !t.custom && goalAvailable(t); });
@@ -3218,8 +3222,9 @@
   }
   function packRows(t, docs) {
     var mode = goalMode(t), req = goalReq(t), r = REQS[t.id] || {}, rows = [];
-    var signed = qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days, all = qualifying(t, t.categories, { taskBook: mode }).days;
-    var letterDays = letters.filter(function (L) { return L.supSig; }).reduce(function (n, L) { return n + letterTotal(L); }, 0);
+    var kept = entries.filter(function (e) { return !packEx[e.id]; });
+    var signed = withEntries(kept, function () { return qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days; }), all = qualifying(t, t.categories, { taskBook: mode }).days;
+    var letterDays = letters.filter(function (L) { return L.supSig && !packEx[L.id]; }).reduce(function (n, L) { return n + letterTotal(L); }, 0);
     var seaOk = signed >= req || letterDays >= req;
     rows.push({ st: seaOk ? 'ok' : (all >= req ? 'warn' : 'todo'), t: 'Sea service evidence', d: signed + ' signed days of ' + req + ' needed' + (letterDays ? ', plus ' + letterDays + ' days on signed letters' : '') + (!seaOk && all > signed ? '. ' + (all - signed) + ' more days are logged but not signed yet.' : '.') + ' AMSA accepts Form 771s, a signed sea service letter, or an approved task book.', act: !seaOk && all > signed ? ['Send for signing', 'home'] : null });
     var get = function (k) { return docs.filter(function (d) { return d.kind === k; }); };
@@ -3253,6 +3258,13 @@
       h += '<div class="form-card" style="margin-top:6px;"><p class="section-title">Checklist <span style="float:right;text-transform:none;letter-spacing:0;color:var(--ink-3);">' + okN + ' ready</span></p>';
       rows.forEach(function (x) { h += '<div class="pk-row"><div class="pk-dot ' + x.st + '">' + (x.st === 'ok' ? '✓' : x.st === 'warn' ? '!' : x.st === 'info' ? 'i' : '•') + '</div><div><b>' + escapeHtml(x.t) + '</b><small>' + escapeHtml(x.d) + '</small>' + (x.act ? '<button type="button" class="pk-act" data-pk="' + x.act[1] + '">' + x.act[0] + '</button>' : '') + '</div></div>'; });
       h += '</div>';
+      var evs = entries.filter(function (e) { return entryCountsFor(e, t, goalMode(t)); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; }), lts = letters.slice();
+      if (evs.length || lts.length) {
+        h += '<div class="form-card"><p class="section-title">What goes in the pack</p><p class="field-hint" style="margin:-6px 0 6px;">Switch off anything you do not want included.</p>';
+        lts.forEach(function (L) { h += '<div class="doc-item"><div><b>Sea service letter: ' + escapeHtml(L.company || 'Letter') + '</b><small>' + L.rows.length + ' period' + (L.rows.length === 1 ? '' : 's') + ' \u00b7 ' + letterTotal(L) + ' days \u00b7 ' + (L.supSig ? 'Signed' : 'Not signed yet, so not included') + '</small></div><div class="doc-btns"><button type="button" data-letter-open="' + L.id + '">Open</button>' + (L.supSig ? '<input type="checkbox" class="switch" data-ex="' + L.id + '" ' + (packEx[L.id] ? '' : 'checked') + ' />' : '') + '</div></div>'; });
+        evs.forEach(function (e) { h += '<div class="doc-item"><div><b>Form 771: ' + escapeHtml(e.vessel) + '</b><small>' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ' \u00b7 ' + e.days + ' days \u00b7 ' + (e.supSig ? 'Signed' : 'Not signed yet, so not included') + '</small></div><div class="doc-btns">' + (e.supSig ? '<input type="checkbox" class="switch" data-ex="' + e.id + '" ' + (packEx[e.id] ? '' : 'checked') + ' />' : '') + '</div></div>'; });
+        h += '</div>';
+      }
       h += '<button type="button" class="save-btn" data-pkact="build">Build my application pack (PDF)</button><p class="field-hint" id="packStatus" style="margin:8px 0 0;">One PDF with your signed Form 771s, any sea service letters, and the documents you’ve added, with a contents page.</p>' +
         '<a class="save-btn" href="' + MYAMSA_URL + '" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:transparent;border:1px solid var(--line);color:inherit;">Open myAMSA</a>' +
         '<button type="button" class="link" data-pk="docs" style="display:block;margin:14px auto 0;">My documents (' + docs.length + ')</button>';
@@ -3271,6 +3283,8 @@
   }
   packBody.addEventListener('change', function (ev) {
     if (ev.target.id === 'packTicketSel') { packTicket = ev.target.value; fx('toggle'); drawPack(); return; }
+    var exId = ev.target.getAttribute && ev.target.getAttribute('data-ex');
+    if (exId) { if (ev.target.checked) delete packEx[exId]; else packEx[exId] = 1; savePackEx(); fx('toggle'); drawPack(); return; }
     if (ev.target.id === 'docFile' && ev.target.files && ev.target.files[0]) {
       var f = ev.target.files[0], title = ($('docTitle').value || '').trim() || f.name.replace(/\.[^.]+$/, ''), exp = $('docExp') ? $('docExp').value : '';
       if ((packKind === 'medical' || packKind === 'firstaid') && !exp) { packMsg = 'Add the expiry date first.'; ev.target.value = ''; drawPack(); return; }
@@ -3280,6 +3294,7 @@
     }
   });
   packBody.addEventListener('click', function (ev) {
+    var lo = ev.target.closest('[data-letter-open]'); if (lo) { var lid = lo.getAttribute('data-letter-open'); closePack(); setTimeout(function () { openLetters('detail', lid); }, 300); return; }
     var kb = ev.target.closest('[data-kind]'); if (kb) { packKind = kb.getAttribute('data-kind'); packMsg = ''; fx('tick'); drawPack(); return; }
     var pk = ev.target.closest('[data-pk]');
     if (pk) { var v = pk.getAttribute('data-pk'); fx('tick'); if (v === 'home') { closePack(); setTab('service'); return; } if (v.indexOf('docs') === 0) { packView = 'docs'; if (v.indexOf(':') > -1) packKind = v.split(':')[1]; packMsg = ''; drawPack(); } else { packView = 'pack'; drawPack(); } return; }
@@ -3307,24 +3322,24 @@
     var wa = function (x) { return String(x == null ? '' : x).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '?'); };
     return PL.PDFDocument.create().then(function (d) { out = d; return Promise.all([out.embedFont(PL.StandardFonts.Helvetica), out.embedFont(PL.StandardFonts.HelveticaBold)]); }).then(function (f) {
       F = f[0]; B = f[1]; out.addPage([595.28, 841.89]);   // contents page, filled in last
-      var es = entries.filter(function (e) { return e.supSig && entryCountsFor(e, t, mode); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+      var es = entries.filter(function (e) { return e.supSig && !packEx[e.id] && entryCountsFor(e, t, mode); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
       var chain = Promise.resolve();
       es.forEach(function (e) { chain = chain.then(function () { return build771(e).then(function (bytes) { return addPdf(bytes, 'Form 771: ' + e.vessel + ', ' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ' (' + e.days + ' days)'); }); }); });
-      letters.filter(function (L) { return L.supSig; }).forEach(function (L) { chain = chain.then(function () { return buildLetterPdf(L).then(function (bytes) { return addPdf(bytes, 'Sea service letter: ' + L.company); }); }); });
+      letters.filter(function (L) { return L.supSig && !packEx[L.id]; }).forEach(function (L) { chain = chain.then(function () { return buildLetterPdf(L).then(function (bytes) { return addPdf(bytes, 'Sea service letter: ' + L.company); }); }); });
       ['medical', 'course', 'firstaid'].forEach(function (k) { docs.filter(function (d) { return d.kind === k; }).forEach(function (d) { chain = chain.then(function () { var label = (DOC_KINDS.filter(function (x) { return x[0] === k; })[0][1]) + ': ' + d.title; var p = /pdf/i.test(d.mime) ? d.blob.arrayBuffer().then(function (b) { return addPdf(b, label); }) : addImage(d.blob, label); return p.catch(function () { skipped.push(d.title); }); }); }); });
       return chain.then(function () { return es.length; });
     }).then(function (n771) {
       var cp = out.getPage(0), y = 790, M = 56, W = 595.28 - M * 2;
       function line(txt, size, font, gap) { cp.drawText(wa(txt), { x: M, y: y, size: size, font: font || F, color: PL.rgb(0.08, 0.08, 0.08) }); y -= (gap || size * 1.5); }
       line('Application pack', 24, B, 34); line(wa((profile.name || '').trim() || 'Applicant'), 14, B, 20); line(t.name, 13, F, 18); line('Prepared ' + new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) + ' with Askel', 11, F, 30);
-      var signed = qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days;
+      var signed = withEntries(entries.filter(function (e) { return !packEx[e.id]; }), function () { return qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days; });
       line('Sea service: ' + signed + ' signed days counted (' + goalReq(t) + ' needed ' + (mode === 'with' ? 'with' : 'without') + ' a task book)', 11, F, 28);
       line('Contents', 14, B, 22);
       toc.forEach(function (it) { var txt = it.label, w = F.widthOfTextAtSize(wa(txt), 11); while (w > W - 60 && txt.length > 10) { txt = txt.slice(0, -2); w = F.widthOfTextAtSize(wa(txt) + '...', 11); } cp.drawText(wa(txt === it.label ? txt : txt + '...'), { x: M, y: y, size: 11, font: F, color: PL.rgb(0.1, 0.1, 0.1) }); var pg = it.from === it.to ? 'p. ' + it.from : 'pp. ' + it.from + '-' + it.to; cp.drawText(pg, { x: M + W - F.widthOfTextAtSize(pg, 11), y: y, size: 11, font: F, color: PL.rgb(0.35, 0.35, 0.35) }); y -= 17; });
       if (!toc.length) line('Nothing to include yet. Get your Form 771s signed and add your documents.', 11, F);
       y -= 14; if (skipped.length) { line('Could not include: ' + skipped.join(', ') + '. Upload these separately.', 10, F, 16); }
       ['Upload each document in myAMSA at my.amsa.gov.au. Proof of identity is handled there with your myID.', 'AMSA assesses your sea service and documents when you apply. Check the requirements for your certificate before you lodge.'].forEach(function (x) { cp.drawText(wa(x), { x: M, y: Math.max(y, 70), size: 9.5, font: F, color: PL.rgb(0.4, 0.4, 0.4) }); y = Math.max(y, 70) - 13; });
-      return out.save().then(function (bytes) { return { bytes: bytes, summary: 'Built: ' + n771 + ' Form 771' + (n771 === 1 ? '' : 's') + ', ' + letters.filter(function (L) { return L.supSig; }).length + ' letter(s), ' + docs.filter(function (d) { return ['medical', 'course', 'firstaid'].indexOf(d.kind) > -1; }).length + ' document(s), ' + out.getPageCount() + ' pages.' + (skipped.length ? ' Some files could not be included.' : '') }; });
+      return out.save().then(function (bytes) { return { bytes: bytes, summary: 'Built: ' + n771 + ' Form 771' + (n771 === 1 ? '' : 's') + ', ' + letters.filter(function (L) { return L.supSig && !packEx[L.id]; }).length + ' letter(s), ' + docs.filter(function (d) { return ['medical', 'course', 'firstaid'].indexOf(d.kind) > -1; }).length + ' document(s), ' + out.getPageCount() + ' pages.' + (skipped.length ? ' Some files could not be included.' : '') }; });
     });
   }
   $('applyBtn').addEventListener('click', function () { openPack(ticketState.ticketId); });
