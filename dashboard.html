@@ -103,6 +103,19 @@
     textarea.note { border: 1px solid #ccc; background: #fff; color: #111; }
     .notebox:has(textarea.note:placeholder-shown) { display: none; }
   }
+  /* company code block */
+  .co { padding: 14px 0 4px; border-top: 1px solid var(--line); }
+  .co-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .co-label { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+  .co-code { display: flex; align-items: center; justify-content: space-between; width: 100%; border: none; cursor: pointer; background: var(--card-2); color: var(--ink); border-radius: 14px; padding: 14px 16px; box-shadow: inset 0 0 0 1px var(--line); transition: transform .2s var(--spring); }
+  .co-code:active { transform: scale(0.98); }
+  .co-code span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 24px; font-weight: 700; letter-spacing: .16em; }
+  .co-code em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--ink-2); background: var(--card); padding: 5px 10px; border-radius: 999px; }
+  .co-hint { margin: 8px 0 14px; font-size: 13px; color: var(--ink-2); }
+  .co-invite { width: 100%; padding: 13px 16px; }
+  .lnk { border: none; background: none; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; padding: 10px 0 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
+  .co-foot { display: flex; gap: 20px; margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .co-foot .lnk { text-decoration: none; }
 </style>
 </head>
 <body>
@@ -353,8 +366,16 @@
     var a = admins(), h = '<h2>Live crew</h2><p class="small" style="margin:0 0 12px;">Signed in as ' + esc(u.email) + (busy ? ' · loading…' : '') + '</p>' + err;
     if (!a.length && cos.some(function (c) { return c.role === 'crew'; })) h += '<p class="small" style="margin:0 0 10px;">You are signed in as a crew member, and this page is for company managers, so there is no crew to show. You can still create a company of your own below.</p>';
     if (!a.length) h += '<p class="small" style="margin:0 0 10px;">Create your company to get a code your crew can enter in their app.</p><div class="tools" style="margin:0;"><input type="text" id="coIn" placeholder="Company name" autocomplete="organization"><button class="btn" id="coMake">Create company</button></div>';
-    else a.forEach(function (c) { h += planBar(c); h += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:10px 0;border-top:1px solid var(--line);"><div><b>' + esc(c.name) + '</b><div class="small">Crew enter this code in the app (Settings, Your company)</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="pill blue" style="font-size:18px;letter-spacing:.12em;user-select:all;">' + esc(c.join_code || '') + '</span><button class="btn ghost sm" data-code="' + esc(c.join_code || '') + '">Copy code</button><button class="btn ghost sm" data-invite="' + esc(c.join_code || '') + '" data-co="' + esc(c.name) + '">Copy message</button><button class="btn ghost sm" data-newcode="' + esc(c.id) + '" title="Replace the code, for example if it was shared too widely">New code</button></div></div>'; });
-    h += '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn ghost sm" id="aRef">Refresh</button><button class="btn ghost sm" id="aOut">Sign out</button></div>';
+    else a.forEach(function (c) {
+      h += planBar(c) +
+        '<div class="co"><div class="co-name">' + esc(c.name) + '</div>' +
+        '<div class="co-label">Company code</div>' +
+        '<button type="button" class="co-code" data-code="' + esc(c.join_code || '') + '" title="Tap to copy"><span>' + esc(c.join_code || '') + '</span><em>Copy</em></button>' +
+        '<p class="co-hint">Crew enter this code in the app under Settings, then Your company.</p>' +
+        '<button type="button" class="btn co-invite" data-invite="' + esc(c.join_code || '') + '" data-co="' + esc(c.name) + '">Copy invite message</button>' +
+        '<button type="button" class="lnk" data-newcode="' + esc(c.id) + '" title="Replace the code, for example if it was shared too widely">Generate a new code</button></div>';
+    });
+    h += '<div class="co-foot"><button type="button" class="lnk" id="aRef">Refresh</button><button type="button" class="lnk" id="aOut">Sign out</button></div>';
     box.innerHTML = h;
   }
   $('acctBox').addEventListener('click', function (ev) {
