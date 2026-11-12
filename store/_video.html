@@ -1,40 +1,40 @@
 <!doctype html><meta charset="utf-8">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#06070A;font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-#c{position:relative;width:100vw;height:100vh;overflow:hidden;color:#fff;background:#06070A}
+html,body{width:100%;height:100%;overflow:hidden;background:#050506;font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#c{position:relative;width:100vw;height:100vh;overflow:hidden;color:#fff;background:#050506}
 #bg{position:absolute;inset:0}
 .logo{position:absolute;left:9vw;top:7.4vw;display:flex;align-items:center;gap:1.6vw;font-weight:800;font-size:3.1vw;letter-spacing:.2em;color:rgba(255,255,255,.55)}
 .logo svg{width:4.2vw;height:4.2vw}
 .cap{position:absolute;left:9vw;right:9vw;top:15.5vw}
 .cap h1{font-size:9.6vw;line-height:1.04;font-weight:800;letter-spacing:-.045em}
-.cap h1 em{font-style:normal;background:linear-gradient(90deg,#6FB6FF,#7DE8C0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cap h1 em{font-style:normal;background:linear-gradient(90deg,#FFFFFF,#8E8E98);-webkit-background-clip:text;background-clip:text;color:transparent}
 .cap p{margin-top:3.6vw;font-size:3.9vw;line-height:1.35;color:rgba(255,255,255,.62);max-width:78vw;font-weight:500}
 .layer{position:absolute;inset:0;opacity:0}
 .cap.layer{inset:auto;left:9vw;right:9vw;top:15.5vw}
-.phone{position:absolute;left:50%;top:60vw;width:78vw;margin-left:-39vw;border-radius:11.2vw;padding:1.1vw;background:linear-gradient(145deg,#3a3c45,#15161b 40%,#2a2c34);box-shadow:0 0 0 .25vw rgba(255,255,255,.14),0 6vw 14vw rgba(0,0,0,.65),0 0 22vw rgba(61,155,255,.18)}
+.phone{position:absolute;left:50%;top:60vw;width:78vw;margin-left:-39vw;border-radius:11.2vw;padding:1.1vw;background:linear-gradient(145deg,#3a3c45,#15161b 40%,#2a2c34);box-shadow:0 0 0 .25vw rgba(255,255,255,.14),0 6vw 14vw rgba(0,0,0,.65),0 0 22vw rgba(255,255,255,.05)}
 .phone .scr{position:relative;border-radius:10.1vw;overflow:hidden;background:#000;aspect-ratio:1320/2868}
 .phone .scr img{position:absolute;left:0;top:0;width:100%}
 .phone .isl{position:absolute;top:2.1vw;left:50%;transform:translateX(-50%);width:21vw;height:6.2vw;border-radius:4vw;background:#000}
-.card{position:absolute;left:50%;top:66vw;width:78vw;margin-left:-39vw;border-radius:6vw;overflow:hidden;box-shadow:0 0 0 .25vw rgba(255,255,255,.12),0 8vw 18vw rgba(0,0,0,.7),0 0 20vw rgba(61,155,255,.25)}
+.card{position:absolute;left:50%;top:66vw;width:78vw;margin-left:-39vw;border-radius:6vw;overflow:hidden;box-shadow:0 0 0 .25vw rgba(255,255,255,.12),0 8vw 18vw rgba(0,0,0,.7),0 0 20vw rgba(255,255,255,.05)}
 .card img{display:block;width:100%}
-.doc{position:absolute;left:50%;top:70vw;width:82vw;margin-left:-41vw;border-radius:2.4vw;overflow:hidden;background:#fff;box-shadow:0 8vw 18vw rgba(0,0,0,.65),0 0 20vw rgba(52,210,160,.18)}
+.doc{position:absolute;left:50%;top:70vw;width:82vw;margin-left:-41vw;border-radius:2.4vw;overflow:hidden;background:#fff;box-shadow:0 8vw 18vw rgba(0,0,0,.65),0 0 20vw rgba(255,255,255,.05)}
 .doc img{display:block;width:100%}
-.chip{position:absolute;display:flex;align-items:center;gap:1.8vw;padding:2.4vw 3.6vw;border-radius:6vw;background:rgba(20,22,28,.86);box-shadow:0 0 0 .22vw rgba(255,255,255,.14),0 3vw 8vw rgba(0,0,0,.5);font-weight:800;font-size:3.6vw;color:#fff;white-space:nowrap}
-.chip i{display:grid;place-items:center;width:5.4vw;height:5.4vw;border-radius:50%;background:#34D27B;color:#06280f;font-style:normal;font-size:3.3vw}
-.browser{position:absolute;left:50%;top:64vw;width:88vw;margin-left:-44vw;border-radius:3vw;overflow:hidden;background:#1b1b1e;box-shadow:0 0 0 .25vw rgba(255,255,255,.12),0 8vw 18vw rgba(0,0,0,.65),0 0 22vw rgba(61,155,255,.2)}
+.chip{position:absolute;display:flex;align-items:center;gap:1.8vw;padding:2.4vw 3.6vw;border-radius:6vw;background:rgba(24,25,29,.88);box-shadow:0 0 0 .22vw rgba(255,255,255,.14),0 3vw 8vw rgba(0,0,0,.5);font-weight:800;font-size:3.6vw;color:#fff;white-space:nowrap}
+.chip i{display:grid;place-items:center;width:5.4vw;height:5.4vw;border-radius:50%;background:#fff;color:#0B0B0E;font-style:normal;font-size:3.3vw}
+.browser{position:absolute;left:50%;top:64vw;width:88vw;margin-left:-44vw;border-radius:3vw;overflow:hidden;background:#1b1b1e;box-shadow:0 0 0 .25vw rgba(255,255,255,.12),0 8vw 18vw rgba(0,0,0,.65),0 0 22vw rgba(255,255,255,.05)}
 .browser .bar{display:flex;gap:1.3vw;padding:2.2vw 2.6vw;background:#26262a}.browser .bar i{width:1.9vw;height:1.9vw;border-radius:50%;background:#4a4a52}
 .browser img{display:block;width:100%}
 .end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-.end .mark{width:22vw;height:22vw;border-radius:6vw;background:linear-gradient(160deg,#2f3138,#141416);box-shadow:0 0 0 .3vw rgba(255,255,255,.12),0 6vw 16vw rgba(0,0,0,.6),0 0 24vw rgba(61,155,255,.3);display:grid;place-items:center}
+.end .mark{width:22vw;height:22vw;border-radius:6vw;background:linear-gradient(160deg,#2f3138,#141416);box-shadow:0 0 0 .3vw rgba(255,255,255,.12),0 6vw 16vw rgba(0,0,0,.6),0 0 24vw rgba(255,255,255,.07);display:grid;place-items:center}
 .end .mark svg{width:12vw;height:12vw}
 .end h2{margin-top:8vw;font-size:11vw;line-height:1.02;font-weight:800;letter-spacing:-.045em}
-.end h2 em{font-style:normal;background:linear-gradient(90deg,#6FB6FF,#7DE8C0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.end h2 em{font-style:normal;background:linear-gradient(90deg,#FFFFFF,#8E8E98);-webkit-background-clip:text;background-clip:text;color:transparent}
 .end p{margin-top:5vw;font-size:4.2vw;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.02em}
 </style>
 <div id="c">
  <div id="bg"></div>
- <div class="logo" id="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="4.2" stroke-linecap="round"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg>ASKEL</div>
+ <div class="logo" id="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg>ASKEL</div>
  <!-- captions -->
  <div class="cap layer" id="cap1"><h1>Log sea time<br><em>in seconds.</em></h1><p>Every day counted the AMSA way.</p></div>
  <div class="cap layer" id="cap2"><h1>See exactly<br><em>how close you are.</em></h1><p>Progress toward every near coastal ticket.</p></div>
@@ -49,7 +49,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06070A;font-family:
  <div class="layer" id="v4"><div class="doc"><img src="raw/form771-crop.png"></div><div class="chip" id="chip4" style="left:9vw;top:152vw"><i>&#10003;</i>Ready to send to AMSA</div></div>
  <div class="layer" id="v5"><div class="card"><img src="raw/passport.png"></div><div class="chip" id="chip5" style="left:9vw;top:188vw"><i>&#10003;</i>Master &lt;24m: 32 days to go</div></div>
  <div class="layer" id="v6"><div class="browser"><div class="bar"><i></i><i></i><i></i></div><img src="raw/dashboard.png"></div></div>
- <div class="layer end" id="end"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="4.2" stroke-linecap="round"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg></div><h2>Sea service,<br><em>signed.</em></h2><p>askel.com.au</p></div>
+ <div class="layer end" id="end"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg></div><h2>Sea service,<br><em>signed.</em></h2><p>askel.com.au</p></div>
 </div>
 <script>
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), eo=t=>1-Math.pow(1-t,3), eio=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2, vw=n=>n*innerWidth/100;
@@ -61,7 +61,7 @@ function place(el,o,dy=0,sc=1){el.style.opacity=o;el.style.transform=`translateY
 function render(t){
  // aurora background drifts slowly
  const a=Math.sin(t*.35)*6, b=Math.cos(t*.3)*6;
- $('bg').style.background=`radial-gradient(75vw 55vw at ${88+a}% ${6+b}%,rgba(61,155,255,.42),transparent 62%),radial-gradient(65vw 55vw at ${2-a}% ${96-b}%,rgba(52,210,160,.24),transparent 62%),linear-gradient(180deg,#0A0C12,#06070A)`;
+ $('bg').style.background=`radial-gradient(80vw 60vw at ${85+a}% ${0+b}%,rgba(255,255,255,.10),transparent 62%),radial-gradient(70vw 55vw at ${0-a}% ${100-b}%,rgba(255,255,255,.045),transparent 62%),linear-gradient(180deg,#121316,#050506)`;
  // logo: visible on scenes 1-6
  const lo=clamp((t-2.6)/.6)*(1-clamp((t-28)/.5)); $('logo').style.opacity=lo;
  // scenes with caption + visual

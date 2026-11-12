@@ -4,6 +4,6 @@
 - `play/`: Google Play phone screenshots (1080x2160) and `feature-graphic-1024x500.png`.
 - `video/askel-preview-886x1920.mp4`: App Store app preview (29.5 seconds, portrait, silent). `askel-preview-1080x1920.mp4` is the same video for social posts.
 - `raw/`: the captured app screens the images are built from.
-- `screenshots-overview.png`: all eight screenshots at a glance.
+- `screenshots-overview-dark.png` and `-light.png`: all eight screenshots at a glance. Folders ending in `-light` are the white-background versions.
 
 Regenerate by re-running the capture and compose scripts after the app changes (screens are real captures of the app with example data).
