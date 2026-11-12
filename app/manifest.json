@@ -28,5 +28,6 @@
       "purpose": "maskable"
     }
   ],
-  "id": "/app/"
+  "id": "/app/",
+  "shortcuts": [{ "name": "Log a day", "short_name": "Log a day", "url": "./?quick=1" }]
 }

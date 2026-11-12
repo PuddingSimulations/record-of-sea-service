@@ -568,6 +568,11 @@
   /* logo watermark behind the total */
   .hero::after { content: ""; position: absolute; right: 20px; top: 24px; bottom: auto; width: 210px; height: 210px; border: 0; border-radius: 0; box-shadow: none; opacity: 0.09;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M4 18.5H20' opacity='.45'/%3E%3Cpath d='M8 12H20' opacity='.75'/%3E%3Cpath d='M12 5.5H20'/%3E%3C/svg%3E") center/contain no-repeat; pointer-events: none; }
+  /* quick add */
+  .qk-step { display: flex; align-items: center; gap: 10px; }
+  .qk-step button { width: 52px; height: 52px; border: none; border-radius: 16px; background: var(--card-2); color: var(--ink); font-size: 26px; font-weight: 600; transition: transform .2s var(--spring); }
+  .qk-step button:active { transform: scale(0.92); }
+  .qk-step input { flex: 1; min-width: 0; height: 52px; text-align: center; font-size: 26px; font-weight: 800; border: none; border-radius: 16px; background: var(--card-2); color: var(--ink); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -885,6 +890,21 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAction" type="button"></button></div>
 
+
+<div class="overlay" id="quickOverlay">
+  <div class="sheet" id="quickSheet" role="dialog" aria-modal="true" aria-label="Log a day">
+    <div class="sheet-head" id="quickHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2>Log a day</h2>
+        <button class="close-btn" id="closeQuickBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="sheet-body" id="quickBody"></div>
+    <div class="sheet-foot"><button class="save-btn" id="quickSave">Add 1 day</button><button class="link-btn" id="quickFull" type="button">Full entry with dates and supervisor</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="modalOverlay">
   <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Add sea service">
     <div class="sheet-head" id="sheetHead">
@@ -992,6 +1012,11 @@
         <div class="field">
           <label class="field-label" for="dutyCategory">Duty category</label>
           <div class="select-wrap" style="margin:0;"><select id="dutyCategory"></select></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="dutyCategory2">Dual ticket: also counts as</label>
+          <div class="select-wrap" style="margin:0;"><select id="dutyCategory2"></select></div>
+          <p class="field-hint" style="margin:6px 0 0;">For days where you worked two roles at once, like master and engineer on a small charter or fishing boat. The days count toward both tickets and are only added to your total once.</p>
         </div>
       </div>
 
@@ -1468,6 +1493,7 @@
   fillSelect(operationTypeSelect, OPERATION_TYPES);
   fillSelect(modeOfOperationSelect, MODE_OF_OPERATION);
   fillSelect(dutyCategorySelect, DUTY_CATEGORIES);
+  var dutyCategory2Select = $('dutyCategory2'); fillSelect(dutyCategory2Select, DUTY_CATEGORIES); dutyCategory2Select.insertBefore(new Option('None', ''), dutyCategory2Select.firstChild); dutyCategory2Select.value = '';
 
   ['General', 'Deck', 'Engineering', 'Other'].forEach(function (g) {
     var og = document.createElement('optgroup'); og.label = g;
@@ -1506,10 +1532,11 @@
 
   // ---- Ticket progress ----
   // Days that count toward a ticket: right duty category AND the vessel meets the ticket's rules.
+  function hasCat(cats, e) { return cats.indexOf(e.category) !== -1 || (!!e.cat2 && cats.indexOf(e.cat2) !== -1); }
   function qualifying(ticket, categories, opts) {
     var res = { days: 0, catDays: 0, unverified: 0, notUnderway: 0, capped: 0, cap: 0 };
     entries.forEach(function (e) {
-      if (categories && categories.indexOf(e.category) === -1) return;
+      if (categories && !hasCat(categories, e)) return;
       if (opts && opts.verifiedOnly && !e.supSig) return;   // only days a supervisor has signed
       var d = Number(e.days) || 0; res.catDays += d;
       var len = e.vesselLength === '' || e.vesselLength == null ? null : Number(e.vesselLength);
@@ -1727,7 +1754,7 @@
     renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); var gr = $('greet'); if (gr) gr.textContent = greeting();
 
     var totalsMap = {};
-    entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
+    entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); if (e.cat2) totalsMap[e.cat2] = (totalsMap[e.cat2] || 0) + Number(e.days); });
     var totals = DUTY_CATEGORIES
       .map(function (c) { return { code: c.code, name: c.name, group: c.group, total: totalsMap[c.code] || 0 }; })
       .filter(function (c) { return c.total > 0; });
@@ -1784,7 +1811,7 @@
         '<div class="entry-card"><div class="entry-top" data-open="' + escapeHtml(e.id) + '">' +
           '<div class="entry-main">' +
             '<div class="entry-title-row"><span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
-            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span></div>' +
+            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span>' + (e.cat2 ? '<span class="entry-code" style="background:rgba(48,209,88,0.16);color:#30D158">+ ' + escapeHtml(e.cat2) + '</span>' : '') + '</div>' +
             '<div class="entry-dates">' + dateLine + '</div>' +
             (detailParts.length ? '<div class="entry-details">' + escapeHtml(detailParts.join(' · ')) + '</div>' : '') +
             (e.notes ? '<div class="entry-notes">' + escapeHtml(e.notes) + '</div>' : '') +
@@ -1920,6 +1947,8 @@
     var total = entries.reduce(function (n, e) { return n + Number(e.days); }, 0);
     var vessels = Object.keys(entries.reduce(function (m, e) { m[String(e.vessel || '').trim().toLowerCase()] = 1; return m; }, {})).length;
     var longest = entries.reduce(function (m, e) { return Math.max(m, Number(e.days)); }, 0);
+    var deckDays = 0, engDays = 0;
+    entries.forEach(function (e) { var gs = {}; [e.category, e.cat2].forEach(function (c) { var d = DUTY_CATEGORIES.filter(function (k) { return k.code === c; })[0]; if (!d) return; if (d.group !== 'Engineering') gs.deck = 1; if (d.group !== 'Deck') gs.eng = 1; }); if (gs.deck) deckDays += Number(e.days) || 0; if (gs.eng) engDays += Number(e.days) || 0; });
     var starts = entries.map(function (e) { return e.start; }).filter(Boolean).sort();
     var ends = entries.map(function (e) { return e.end || e.start; }).filter(Boolean).sort();
     var period = '';
@@ -1985,7 +2014,7 @@
 
     // Stat tiles
     var gap = 24, tw = (W - PAD * 2 - gap * 2) / 3, ty = 706, th = 170;
-    [[entries.length, entries.length === 1 ? 'VOYAGE' : 'VOYAGES'], [vessels, vessels === 1 ? 'VESSEL' : 'VESSELS'], [longest, 'LONGEST (DAYS)']].forEach(function (t, i) {
+    [[deckDays, 'DECK DAYS'], [engDays, 'ENGINE DAYS'], [vessels, vessels === 1 ? 'VESSEL' : 'VESSELS']].forEach(function (t, i) {
       var tx = PAD + i * (tw + gap);
       rr(tx, ty, tw, th, 28); x.fillStyle = T.tileFill; x.fill();
       x.strokeStyle = T.tileStroke; x.lineWidth = 1.5; x.stroke();
@@ -2532,7 +2561,7 @@
     vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = ''; vesselEnginesInput.value = ''; vesselOwnerInput.value = '';
     [supNameInput, supPositionInput, supCertInput, supPhoneInput, supEmailInput].forEach(function (el) { el.value = ''; });
     propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU'; $('yachtBox').checked = false;
-    positionInput.value = ''; dutyCategorySelect.value = 'D'; notesInput.value = ''; daysInput.value = 1;
+    positionInput.value = ''; dutyCategorySelect.value = 'D'; dutyCategory2Select.value = ''; notesInput.value = ''; daysInput.value = 1;
     autoCalcBtn.classList.add('active'); autoCalcBtn.textContent = 'Auto (from dates)';
     sheetBody.scrollTop = 0;
     renderCalendar();
@@ -2579,7 +2608,7 @@
     vesselNameInput.value = e.vessel || ''; vesselIdInput.value = e.vesselId || ''; vesselLengthInput.value = e.vesselLength || ''; vesselPowerInput.value = e.vesselPower || '';
     vesselEnginesInput.value = e.numEngines || ''; vesselOwnerInput.value = e.owner || '';
     propulsionSelect.value = e.propulsion || 'I'; operationTypeSelect.value = e.operationType || 'C'; $('yachtBox').checked = !!e.yacht; modeOfOperationSelect.value = e.modeOfOperation || 'VU';
-    positionInput.value = e.position || ''; dutyCategorySelect.value = e.category || 'D'; notesInput.value = e.notes || '';
+    positionInput.value = e.position || ''; dutyCategorySelect.value = e.category || 'D'; dutyCategory2Select.value = e.cat2 || ''; notesInput.value = e.notes || '';
     supNameInput.value = e.supName || ''; supPositionInput.value = e.supPosition || ''; supCertInput.value = e.supCert || ''; supPhoneInput.value = e.supPhone || ''; supEmailInput.value = e.supEmail || '';
     form.start = e.start || ''; form.end = e.end || ''; form.days = e.days;
     autoCalc = !!(e.start && e.end) && daysBetween(e.start, e.end) === Number(e.days);
@@ -2647,13 +2676,13 @@
 
   function saveEdit(vessel) {
     var e = entries.filter(function (x) { return x.id === editingId; })[0]; if (!e) { closeModal(); return; }
-    var before = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.position || ''].join('|');
+    var before = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.cat2 || '', e.position || ''].join('|');
     e.vessel = vessel; e.vesselId = vesselIdInput.value.trim(); e.position = positionInput.value.trim(); e.vesselLength = vesselLengthInput.value; e.vesselPower = vesselPowerInput.value;
     e.propulsion = propulsionSelect.value; e.numEngines = vesselEnginesInput.value; e.owner = vesselOwnerInput.value.trim();
     e.supName = supNameInput.value.trim(); e.supPosition = supPositionInput.value.trim(); e.supCert = supCertInput.value.trim(); e.supPhone = supPhoneInput.value.trim(); e.supEmail = supEmailInput.value.trim();
-    e.operationType = operationTypeSelect.value; e.modeOfOperation = modeOfOperationSelect.value; e.category = dutyCategorySelect.value;
+    e.operationType = operationTypeSelect.value; e.modeOfOperation = modeOfOperationSelect.value; e.category = dutyCategorySelect.value; e.cat2 = dutyCategory2Select.value === dutyCategorySelect.value ? '' : dutyCategory2Select.value;
     e.start = form.start; e.end = form.end; e.days = Number(daysInput.value); e.notes = notesInput.value.trim();
-    var after = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.position || ''].join('|');
+    var after = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.cat2 || '', e.position || ''].join('|');
     var cleared = !!e.supSig && before !== after;
     if (cleared) { e.supSig = ''; e.supDate = ''; e.sentAt = ''; }
     saveEntries(); closeModal(true);
@@ -2669,13 +2698,103 @@
       id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
       vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, numEngines: vesselEnginesInput.value, owner: vesselOwnerInput.value.trim(),
       supName: supNameInput.value.trim(), supPosition: supPositionInput.value.trim(), supCert: supCertInput.value.trim(), supPhone: supPhoneInput.value.trim(), supEmail: supEmailInput.value.trim(),
-      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, yacht: $('yachtBox').checked, category: dutyCategorySelect.value,
+      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, yacht: $('yachtBox').checked, category: dutyCategorySelect.value, cat2: dutyCategory2Select.value === dutyCategorySelect.value ? '' : dutyCategory2Select.value,
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
     entries.push(entry); lastAddedId = entry.id; saveEntries();
     closeModal(true);
     setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 34); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
   });
+
+  // ---- Quick add: "+1 day" after a trip, or a lump of past service ----
+  var QUICK_KEY = 'askel-quick';
+  var QUICK_DUTIES = [['D', 'Deck work'], ['INW', 'Watch in charge'], ['C', 'Coxswain / master'], ['GPH', 'General purpose hand'], ['E/ED', 'Engineer / driver'], ['EIC', 'Engineer in charge'], ['AE/ED', 'Assistant engineer'], ['EW', 'Engine watch']];
+  var quickOverlay = $('quickOverlay'), quickSheet = $('quickSheet'), quickBody = $('quickBody');
+  var qk = { vessel: '', duties: ['D'], when: 'today', date: '', days: 1, nu: false, tally: true };
+  function isoDay(d) { var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); }
+  function quickVessels() {
+    var m = {};
+    entries.slice().sort(function (a, b) { return (a.end || a.start || '').localeCompare(b.end || b.start || ''); }).forEach(function (e) { if (e.vessel) m[e.vessel] = e; });
+    return Object.keys(m).map(function (k) { return m[k]; }).reverse().slice(0, 6);
+  }
+  function quickDateISO() { return qk.when === 'today' ? isoDay(new Date()) : qk.when === 'yesterday' ? isoDay(new Date(Date.now() - 86400000)) : qk.when === 'pick' ? qk.date : ''; }
+  function quickMatch() {
+    var d = quickDateISO(), c1 = qk.duties[0], c2 = qk.duties[1] || '', mode = qk.nu ? 'NUD' : 'VU';
+    return entries.filter(function (e) { return e.tally && !e.supSig && e.vessel === qk.vessel && e.category === c1 && (e.cat2 || '') === c2 && (e.modeOfOperation || 'VU') === mode && (d ? !!e.start : !e.start); })[0];
+  }
+  function drawQuick() {
+    var vs = quickVessels(), h = '';
+    h += '<div class="form-card"><p class="section-title">Vessel</p>';
+    if (vs.length) { h += '<div class="role-chips">' + vs.map(function (e) { return '<button type="button" data-qv="' + escapeHtml(e.vessel) + '"' + (qk.vessel === e.vessel ? ' class="on"' : '') + '>' + escapeHtml(e.vessel) + '</button>'; }).join('') + '<button type="button" data-qv="__new"' + (qk.vessel && !vs.some(function (e) { return e.vessel === qk.vessel; }) ? ' class="on"' : '') + '>New vessel</button></div>'; }
+    if (!vs.length || (qk.vessel === '' && qk.newv) || (qk.vessel && !vs.some(function (e) { return e.vessel === qk.vessel; })) || qk.newv) h += '<div class="field" style="margin-top:10px;"><input type="text" id="qkVessel" placeholder="Vessel name" autocomplete="off" autocapitalize="words" value="' + escapeHtml(qk.vessel) + '" /></div>';
+    h += '</div>';
+    h += '<div class="form-card"><p class="section-title">What did you do?</p><div class="role-chips">' + QUICK_DUTIES.map(function (d) { return '<button type="button" data-qd="' + d[0] + '"' + (qk.duties.indexOf(d[0]) !== -1 ? ' class="on"' : '') + '>' + d[1] + '</button>'; }).join('') + '</div>' +
+      '<p class="field-hint" style="margin:10px 0 0;">' + (qk.duties.length === 2 ? 'Dual ticket day: this counts toward both. It is only added to your total once.' : 'Tap a second one for a dual-ticket day, like master and engineer on the same boat.') + '</p></div>';
+    h += '<div class="form-card"><p class="section-title">When</p><div class="role-chips">' + [['today', 'Today'], ['yesterday', 'Yesterday'], ['pick', 'Pick a date'], ['none', 'No exact date']].map(function (w) { return '<button type="button" data-qw="' + w[0] + '"' + (qk.when === w[0] ? ' class="on"' : '') + '>' + w[1] + '</button>'; }).join('') + '</div>' +
+      (qk.when === 'pick' ? '<div class="field" style="margin-top:10px;"><input type="date" id="qkDate" value="' + escapeHtml(qk.date) + '" max="' + isoDay(new Date()) + '" /></div>' : '') +
+      (qk.when === 'none' ? '<p class="field-hint" style="margin:10px 0 0;">For older service where you only know roughly how many days. You can add dates later.</p>' : '') +
+      '<p class="section-title" style="margin-top:16px;">Days</p><div class="qk-step"><button type="button" id="qkMinus" aria-label="One less">−</button><input type="number" inputmode="numeric" id="qkDays" min="1" value="' + qk.days + '" /><button type="button" id="qkPlus" aria-label="One more">+</button></div>' +
+      '<label class="set-row" style="margin-top:12px;"><span class="n">Not underway<small>Alongside, refit or maintenance. AMSA caps how many of these count.</small></span><input type="checkbox" class="switch" id="qkNu"' + (qk.nu ? ' checked' : '') + ' /></label>';
+    var m = quickMatch();
+    if (m) h += '<label class="set-row"><span class="n">Add to your running tally<small>' + escapeHtml(m.vessel) + ' · ' + m.category + (m.cat2 ? ' + ' + m.cat2 : '') + ' · ' + Number(m.days) + ' days so far</small></span><input type="checkbox" class="switch" id="qkTally"' + (qk.tally ? ' checked' : '') + ' /></label>';
+    h += '</div>';
+    quickBody.innerHTML = h;
+    var n = Math.max(1, Number(qk.days) || 1); $('quickSave').textContent = 'Add ' + n + ' day' + (n === 1 ? '' : 's'); $('quickSave').disabled = !qk.vessel.trim() || (qk.when === 'pick' && !qk.date);
+  }
+  function openQuick() {
+    try { var sv = JSON.parse(localStorage.getItem(QUICK_KEY) || 'null'); if (sv) { qk.vessel = sv.vessel || ''; qk.duties = sv.duties && sv.duties.length ? sv.duties : ['D']; qk.nu = false; } } catch (e) {}
+    var vs = quickVessels(); if (!vs.length) qk.vessel = qk.vessel || ''; else if (!vs.some(function (e) { return e.vessel === qk.vessel; })) qk.vessel = vs[0].vessel;
+    qk.when = 'today'; qk.days = 1; qk.date = ''; qk.newv = false; qk.tally = true;
+    drawQuick(); document.body.style.overflow = 'hidden'; quickOverlay.classList.add('open'); fx('open');
+  }
+  function closeQuick() { quickOverlay.classList.remove('open'); quickSheet.style.transform = ''; document.body.style.overflow = ''; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+  quickBody.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-qv')) { var v = b.getAttribute('data-qv'); if (v === '__new') { qk.vessel = ''; qk.newv = true; } else { qk.vessel = v; qk.newv = false; } drawQuick(); fx('tick'); }
+    else if (b.hasAttribute('data-qd')) { var c = b.getAttribute('data-qd'), i = qk.duties.indexOf(c); if (i !== -1) { if (qk.duties.length > 1) qk.duties.splice(i, 1); } else if (qk.duties.length < 2) qk.duties.push(c); else qk.duties = [qk.duties[1], c]; drawQuick(); fx('tick'); }
+    else if (b.hasAttribute('data-qw')) { qk.when = b.getAttribute('data-qw'); drawQuick(); fx('tick'); }
+    else if (b.id === 'qkMinus') { qk.days = Math.max(1, (Number(qk.days) || 1) - 1); drawQuick(); fx('tick'); }
+    else if (b.id === 'qkPlus') { qk.days = Math.min(3650, (Number(qk.days) || 1) + 1); drawQuick(); fx('tick'); }
+  });
+  quickBody.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (t.id === 'qkVessel') { qk.vessel = t.value; $('quickSave').disabled = !qk.vessel.trim() || (qk.when === 'pick' && !qk.date); }
+    else if (t.id === 'qkDays') { qk.days = t.value === '' ? '' : Math.min(3650, Math.max(0, Math.floor(Number(t.value) || 0))); var n = Number(qk.days) || 0; $('quickSave').textContent = 'Add ' + (n || 1) + ' day' + (n === 1 ? '' : 's'); }
+    else if (t.id === 'qkDate') { qk.date = t.value; $('quickSave').disabled = !qk.vessel.trim() || !qk.date; }
+  });
+  quickBody.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (t.id === 'qkNu') { qk.nu = t.checked; drawQuick(); } else if (t.id === 'qkTally') qk.tally = t.checked;
+  });
+  $('quickSave').addEventListener('click', function () {
+    var n = Math.max(1, Number(qk.days) || 1), vessel = qk.vessel.trim(); if (!vessel) return;
+    var d = quickDateISO(), c1 = qk.duties[0], c2 = qk.duties[1] || '', mode = qk.nu ? 'NUD' : 'VU';
+    var m = qk.tally ? quickMatch() : null, undo, msg;
+    if (m) {
+      var snap = { days: m.days, start: m.start, end: m.end };
+      m.days = Number(m.days) + n; if (d) { if (!m.start || d < m.start) m.start = d; if (!m.end || d > m.end) m.end = d; }
+      undo = function () { m.days = snap.days; m.start = snap.start; m.end = snap.end; };
+      msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + '. ' + vessel + ' is now ' + m.days + '.'; lastAddedId = m.id;
+    } else {
+      var base = entries.filter(function (e) { return e.vessel === vessel; }).sort(function (a, b) { return (b.end || b.start || '').localeCompare(a.end || a.start || ''); })[0] || {};
+      var ne = { id: uuid(), tally: true, vessel: vessel, vesselId: base.vesselId || '', position: base.position || '', vesselLength: base.vesselLength || '', vesselPower: base.vesselPower || '', propulsion: base.propulsion || 'I', numEngines: base.numEngines || '', owner: base.owner || '',
+        supName: base.supName || '', supPosition: base.supPosition || '', supCert: base.supCert || '', supPhone: base.supPhone || '', supEmail: base.supEmail || '',
+        operationType: base.operationType || 'C', modeOfOperation: mode, yacht: !!base.yacht, category: c1, cat2: c2, start: d, end: d, days: n, notes: d ? '' : 'Earlier service, exact dates not recorded.' };
+      entries.push(ne); lastAddedId = ne.id;
+      undo = function () { entries = entries.filter(function (e) { return e.id !== ne.id; }); };
+      msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + ' on ' + vessel + (base.vessel ? '' : '. Add its length and power under the entry so it can count.');
+    }
+    try { localStorage.setItem(QUICK_KEY, JSON.stringify({ vessel: vessel, duties: qk.duties })); } catch (e) {}
+    saveEntries(); closeQuick();
+    setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 26);
+      showToast(msg, 'Undo', function () { undo(); saveEntries(); renderMain(); fx('undo'); }); }, 250);
+  });
+  $('quickFull').addEventListener('click', function () { closeQuick(); setTimeout(openModal, 280); });
+  $('closeQuickBtn').addEventListener('click', closeQuick);
+  quickOverlay.addEventListener('click', function (e) { if (e.target === quickOverlay) closeQuick(); });
+  makeDraggable($('quickHead'), quickSheet, closeQuick);
+  $('openModalBtn').removeEventListener('click', openModal); $('openModalBtn').addEventListener('click', openQuick);
+  if (/[?&]quick=1/.test(location.search)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} setTimeout(openQuick, 450); }
 
   // ---- Settings sheet ----
   var settingsOverlay = $('settingsOverlay'), settingsSheet = $('settingsSheet'), settingsBody = $('settingsBody');
@@ -3239,7 +3358,7 @@
   function closePack() { packOverlay.classList.remove('open'); packSheet.style.transform = ''; document.body.style.overflow = ''; }
   $('closePackBtn').addEventListener('click', closePack); packOverlay.addEventListener('click', function (e) { if (e.target === packOverlay) closePack(); }); makeDraggable($('packHead'), packSheet, closePack);
   function entryCountsFor(e, t, mode) {
-    if (t.categories && t.categories.indexOf(e.category) === -1) return false;
+    if (t.categories && !hasCat(t.categories, e)) return false;
     var len = e.vesselLength === '' || e.vesselLength == null ? null : Number(e.vesselLength), pow = e.vesselPower === '' || e.vesselPower == null ? null : Number(e.vesselPower);
     if (t.minLength && len !== null && len < t.minLength) return false; if (t.minPower && pow !== null && pow < t.minPower) return false; if (t.inboard && e.propulsion && e.propulsion !== 'I') return false;
     if ((t.commercial === 'always' || (t.commercial === 'with' && mode === 'with')) && e.operationType && e.operationType !== 'C') return false;
