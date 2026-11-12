@@ -3026,7 +3026,7 @@
   try { goalTB = JSON.parse(localStorage.getItem(GOALTB_KEY) || '{}') || {}; } catch (e) { goalTB = {}; }
   function saveGoalTB() { try { localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB)); } catch (e) {} settingsChanged(); }
   function goalMode(t) { return goalTB[t.id] || ticketState.taskBook; }
-  function goalLabel(t) { return t.withTaskBook === t.withoutTaskBook ? t.withTaskBook + ' days of sea service' : t.withTaskBook + ' days with a task book, ' + t.withoutTaskBook + ' without'; }
+  function goalLabel(t) { return t.withTaskBook === t.withoutTaskBook ? (t.withTaskBook === 1 ? '1 day of sea service' : t.withTaskBook + ' days of sea service') : t.withTaskBook + ' days with a task book, ' + t.withoutTaskBook + ' without'; }
   function goalReq(t) { return goalMode(t) === 'with' ? t.withTaskBook : t.withoutTaskBook; }
   function goalAvailable(t) { return !t.custom && !t.qualOnly && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }
   function activeGoals() { return goalIds.map(function (id) { return TICKETS.filter(function (t) { return t.id === id; })[0]; }).filter(function (t) { return t && goalAvailable(t); }); }
@@ -3474,7 +3474,7 @@
       h += '<div class="grp">' + g + '</div>';
       list.forEach(function (t) {
         var on = kind === 'held' ? heldIds.indexOf(t.id) !== -1 : goalIds.indexOf(t.id) !== -1;
-        h += '<label class="opt"><span><b>' + escapeHtml(t.name) + '</b>' + (kind === 'goal' ? '<small>' + goalReq(t) + ' days of sea service</small>' : (coveredBy(t.id) && !on ? '<small>Covered by ' + escapeHtml(coveredBy(t.id).name) + '</small>' : '')) + '</span><input type="checkbox" class="switch" data-onb="' + kind + '" data-id="' + t.id + '" ' + (on ? 'checked' : '') + ' /></label>';
+        h += '<label class="opt"><span><b>' + escapeHtml(t.name) + '</b>' + (kind === 'goal' ? '<small>' + goalLabel(t) + '</small>' : (coveredBy(t.id) && !on ? '<small>Covered by ' + escapeHtml(coveredBy(t.id).name) + '</small>' : '')) + '</span><input type="checkbox" class="switch" data-onb="' + kind + '" data-id="' + t.id + '" ' + (on ? 'checked' : '') + ' /></label>';
       });
     });
     return h || '<p class="sub">Nothing to pick here.</p>';
