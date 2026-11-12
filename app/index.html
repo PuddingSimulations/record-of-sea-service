@@ -586,7 +586,7 @@
   </header>
 
   <section class="hero rise d1">
-    <button class="hero-share" id="exportBtn" aria-label="Share sea passport" title="Share your sea passport">
+    <button class="hero-share" id="exportBtn" aria-label="Share your service card" title="Share your service card">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
     </button>
     <div class="hero-label">Total qualifying days</div>
@@ -680,18 +680,18 @@
 </button>
 
 <div class="overlay" id="shareOverlay">
-  <div class="sheet" id="shareSheet" role="dialog" aria-modal="true" aria-label="Share sea passport">
+  <div class="sheet" id="shareSheet" role="dialog" aria-modal="true" aria-label="Share your service card">
     <div class="sheet-head" id="shareHead">
       <div class="grabber"></div>
       <div class="sheet-title-row">
-        <h2>Sea Passport</h2>
+        <h2>Service Card</h2>
         <button class="close-btn" id="closeShareBtn" aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </div>
     <div class="sheet-body">
-      <div class="passport-wrap"><img id="passportImg" alt="Sea passport card summarising your sea service" /></div>
+      <div class="passport-wrap"><img id="passportImg" alt="Service card summarising your sea service" /></div>
       <div class="style-row" id="styleRow" role="radiogroup" aria-label="Card style"></div>
       <p class="field-hint" style="text-align:center;margin:14px 0 14px;">Touch and hold the card to save it to Photos.</p>
       <div class="form-card">
@@ -1969,7 +1969,7 @@
     x.restore();
     x.textBaseline = 'alphabetic';
     x.fillStyle = T.ink; x.font = '700 30px ' + F; spaced('ASKEL', PAD + 104, 112, 6);
-    x.fillStyle = T.muted; x.font = '500 24px ' + F; x.fillText('Sea Passport · Near Coastal', PAD + 104, 148);
+    x.fillStyle = T.muted; x.font = '500 24px ' + F; x.fillText('Service Card · Near Coastal', PAD + 104, 148);
     if (period) { x.fillStyle = T.muted; x.font = '600 22px ' + F; spaced(period, W - PAD, 118, 3, 'right'); }
 
     // Holder
@@ -2080,8 +2080,8 @@
   $('shareBtn').addEventListener('click', function () {
     if (!passportBlob) return;
     var file = null;
-    try { file = new File([passportBlob], 'sea-passport.png', { type: 'image/png' }); } catch (err) {}
-    if (NATIVE && nativePlugin('Share')) { nativeShareFile(passportBlob, 'askel-passport.png', 'My sea service').catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) copyImageFallback(); }); return; }
+    try { file = new File([passportBlob], 'askel-service-card.png', { type: 'image/png' }); } catch (err) {}
+    if (NATIVE && nativePlugin('Share')) { nativeShareFile(passportBlob, 'askel-service-card.png', 'My sea service').catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) copyImageFallback(); }); return; }
     if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file], title: 'My sea service' }).catch(function (err) { if (err && err.name !== 'AbortError') copyImageFallback(); });
     } else { copyImageFallback(); }
