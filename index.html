@@ -103,6 +103,24 @@
   .plan li::before { content: "\2713"; color: var(--green); font-weight: 800; margin-right: 10px; }
   .plan .btn { width: 100%; }
   .price-note { text-align: center; color: var(--ink-3); font-size: 13px; margin-top: 22px; }
+
+  /* old way vs new way */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 40px; }
+  @media (max-width: 760px) { .vs { grid-template-columns: 1fr; } }
+  .vs .col { border-radius: 24px; padding: 28px; }
+  .vs .old { background: rgba(255,90,82,0.06); box-shadow: inset 0 0 0 1px rgba(255,90,82,0.22); }
+  .vs .new { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+  .vs h3 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 16px; }
+  .vs .old h3 { color: #FF8A84; } .vs .new h3 { color: var(--green); }
+  .vs ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .vs li { display: flex; gap: 12px; font-size: 15px; color: var(--ink-2); line-height: 1.45; }
+  .vs li b { color: var(--ink); }
+  .vs .old li::before { content: "\00D7"; flex: 0 0 20px; height: 20px; border-radius: 50%; background: rgba(255,90,82,0.16); color: #FF8A84; font-weight: 800; display: grid; place-items: center; line-height: 1; margin-top: 2px; }
+  .vs .new li::before { content: "\2713"; flex: 0 0 20px; height: 20px; border-radius: 50%; background: var(--green-soft); color: var(--green); font-weight: 800; font-size: 12px; display: grid; place-items: center; margin-top: 2px; }
+  .sup { margin-top: 18px; background: linear-gradient(135deg, rgba(42,147,255,0.12), rgba(48,209,88,0.06)); border-radius: 24px; padding: 28px; box-shadow: inset 0 0 0 1px rgba(42,147,255,0.25); display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: center; }
+  @media (max-width: 760px) { .sup { grid-template-columns: 1fr; } }
+  .sup h3 { font-size: 22px; letter-spacing: -0.02em; margin: 0 0 8px; } .sup p { color: var(--ink-2); font-size: 15px; }
+  .sup .big { font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; } .sup .big small { display: block; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-2); margin-top: 8px; line-height: 1.4; }
   /* cta band */
   .band { background: linear-gradient(135deg, #232831, #1a1d24); border-radius: 28px; padding: 54px 34px; text-align: center; box-shadow: inset 0 0 0 1px var(--line); }
   .band .lead { margin-left: auto; margin-right: auto; }
@@ -130,6 +148,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="4.2" stroke-linecap="round" aria-hidden="true"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg>Askel
     </a>
     <div class="links">
+      <a class="hide-s" href="#paperwork">The problem</a>
       <a class="hide-s" href="#how">How it works</a>
       <a class="hide-s" href="#demo">Live demo</a>
       <a class="hide-s" href="#operators">For operators</a>
@@ -191,6 +210,37 @@
         </div>
         <p class="hint">Example crew. Sort, filter and open any row.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="paperwork">
+  <div class="wrap">
+    <p class="eyebrow">The paperwork problem</p>
+    <h2>Sea service paperwork eats supervisors alive.</h2>
+    <p class="lead">Every ticket needs proof of sea time, and every bit of proof needs a supervisor's signature. For skippers, masters and operators that means a steady stream of forms to print, sign, scan and post, usually while they have a vessel to run.</p>
+    <div class="vs">
+      <div class="col old reveal"><h3>The old way</h3><ul>
+        <li><span><b>Print the Form 771</b> for each vessel, each duty and each mode of operation. One form per combination.</span></li>
+        <li><span><b>Chase the signature.</b> The master is at sea, the owner is on leave, and the crew member is on a different roster.</span></li>
+        <li><span><b>Scan, email or post it back.</b> Then wait, and hope nothing gets lost or crossed out and unsigned.</span></li>
+        <li><span><b>Write sea service letters</b> on company letterhead, one crew member at a time, and mail them.</span></li>
+        <li><span><b>Can&rsquo;t reach anyone?</b> Crew resort to a statutory declaration and a justice of the peace.</span></li>
+        <li><span><b>Repeat for every crew member,</b> every ticket, every year.</span></li>
+      </ul></div>
+      <div class="col new reveal"><h3>With Askel</h3><ul>
+        <li><span><b>The crew member logs it.</b> The form is filled in for them, so the supervisor never touches a template.</span></li>
+        <li><span><b>The supervisor gets a link.</b> They check the days and draw their signature on their phone, from the helm or the wharf.</span></li>
+        <li><span><b>Nothing to print, scan or post.</b> The signature goes straight onto AMSA&rsquo;s own form.</span></li>
+        <li><span><b>Letters generated in one tap,</b> on AMSA&rsquo;s template, with the signing handled the same way.</span></li>
+        <li><span><b>Every signature is on record,</b> with a date and time, so nothing goes missing.</span></li>
+        <li><span><b>Operators see it all</b> on one dashboard instead of in a pile of emails.</span></li>
+        <li><span><b>Applying is one step.</b> Signed forms, letters and certificates are gathered into one pack, ready to upload to myAMSA.</span></li>
+      </ul></div>
+    </div>
+    <div class="sup reveal">
+      <div><h3>For the people who sign.</h3><p>Skippers, masters, chief engineers and owners are asked to sign again and again. Askel makes that a 30-second job on a phone, with no account, no app to install and nothing to print. Their crew get what they need faster, and they get their weekend back.</p></div>
+      <div class="big">About 30 seconds<small>to check the days, sign and send. No account needed.</small></div>
     </div>
   </div>
 </section>

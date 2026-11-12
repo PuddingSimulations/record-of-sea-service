@@ -529,6 +529,15 @@
   [data-theme="light"] .overlay { background: rgba(10,12,20,0.38); }
   .set-seg { display: flex; gap: 6px; } .set-seg button { flex: 1; border: none; border-radius: 12px; padding: 12px 6px; font-size: 14px; font-weight: 700; background: var(--card-2); color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, transform .2s var(--spring); }
   .set-seg button.on { background: var(--accent-soft); color: var(--tab-blue); box-shadow: inset 0 0 0 1px var(--accent); } .set-seg button:active { transform: scale(0.96); }
+  .pk-row { display: flex; gap: 12px; padding: 13px 0; } .pk-row + .pk-row { border-top: 1px solid var(--line); }
+  .pk-dot { flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .pk-dot.ok { background: rgba(52,210,123,0.18); color: var(--good); } .pk-dot.warn { background: rgba(255,214,10,0.18); color: #E6B800; } .pk-dot.todo { background: var(--fill-soft); color: var(--ink-3); } .pk-dot.info { background: var(--accent-soft); color: var(--tab-blue); }
+  .pk-row b { display: block; font-size: 15px; } .pk-row small { display: block; margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--ink-3); font-weight: 500; }
+  .pk-row .pk-act { margin-top: 8px; border: none; border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 700; background: var(--card-2); color: var(--ink); cursor: pointer; }
+  .doc-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; } .doc-item + .doc-item { border-top: 1px solid var(--line); }
+  .doc-item b { display: block; font-size: 15px; } .doc-item small { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .doc-item .doc-btns { display: flex; gap: 6px; } .doc-item button { border: none; border-radius: 10px; padding: 8px 11px; font-size: 13px; font-weight: 700; background: var(--card-2); color: var(--ink); cursor: pointer; } .doc-item button.del { color: var(--red); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; } .chip-row button { border: none; border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 700; background: var(--card-2); color: var(--ink-2); cursor: pointer; } .chip-row button.on { background: var(--accent-soft); color: var(--tab-blue); box-shadow: inset 0 0 0 1px var(--accent); }
   /* First-run setup */
   .onb { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: none; flex-direction: column; padding: calc(var(--sat) + 14px) 0 calc(var(--sab) + 14px); }
   .onb.open { display: flex; animation: onbIn .5s var(--ease); } @keyframes onbIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: none; } }
@@ -641,6 +650,7 @@
     <p class="ticket-note" id="ticketFilterNote" style="display:none;color:var(--yellow);"></p>
     <p class="ticket-note" id="ticketNote"></p>
     <button type="button" class="hold-btn goal-btn" id="goalBtn">Work towards this ticket</button>
+    <button type="button" class="hold-btn" id="applyBtn">Prepare application pack</button>
     <button type="button" class="hold-btn" id="holdBtn">Mark as held</button>
   </section>
 
@@ -710,6 +720,19 @@
   <div class="onb-top"><div class="onb-dots" id="onbDots"></div><button class="onb-skip" id="onbSkip" type="button">Skip</button></div>
   <div class="onb-body" id="onbBody"></div>
   <div class="onb-foot"><button class="onb-back" id="onbBack" type="button">Back</button><button class="onb-next" id="onbNext" type="button">Continue</button></div>
+</div>
+
+<div class="overlay" id="packOverlay">
+  <div class="sheet" id="packSheet" role="dialog" aria-modal="true" aria-label="Application pack">
+    <div class="sheet-head" id="packHead">
+      <div class="grabber"></div>
+      <div class="sheet-title-row">
+        <h2 id="packTitle">Application pack</h2>
+        <button class="close-btn" id="closePackBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="sheet-body" id="packBody"></div>
+  </div>
 </div>
 
 <div class="overlay" id="letterOverlay">
@@ -1532,6 +1555,7 @@
       ticketSubProgress.style.display = 'none';
     }
     ticketNote.textContent = ticket.note || '';
+    var ab = $('applyBtn'); if (ab) ab.style.display = (isCustom || ticket.custom) ? 'none' : '';
     var gb = $('goalBtn');
     if (isCustom || !goalAvailable(ticket)) { gb.style.display = 'none'; } else { var isGoal = goalIds.indexOf(ticket.id) !== -1; gb.style.display = ''; gb.classList.toggle('on', isGoal); gb.textContent = isGoal ? '\u2713 Working towards this (tap to remove)' : 'Work towards this ticket'; }
     var hb = $('holdBtn');
@@ -2828,10 +2852,11 @@
     var box = $('moreEvidence'); if (!box) return;
     if (!entries.length) { box.innerHTML = ''; return; }
     box.innerHTML = '<div class="more-card"><p class="more-title">Other ways to prove sea service</p>' +
+      '<button type="button" class="more-row" data-more="pack"><span><b>Application pack</b><small>Gather everything for your myAMSA application in one place</small></span><i>\u203A</i></button>' +
       '<button type="button" class="more-row" data-more="letter"><span><b>Sea service letter</b><small>A signed letter from a supervisor, owner or master that AMSA accepts instead of a Form 771</small></span><i>›</i></button>' +
       '<button type="button" class="more-row" data-more="statdec"><span><b>Can’t get a signature?</b><small>Help writing the statutory declaration AMSA accepts</small></span><i>›</i></button></div>';
   }
-  $('moreEvidence').addEventListener('click', function (ev) { var b = ev.target.closest('[data-more]'); if (!b) return; openLetters(b.getAttribute('data-more') === 'statdec' ? 'statdec' : 'list'); });
+  $('moreEvidence').addEventListener('click', function (ev) { var b = ev.target.closest('[data-more]'); if (!b) return; if (b.getAttribute('data-more') === 'pack') { openPack(); return; } openLetters(b.getAttribute('data-more') === 'statdec' ? 'statdec' : 'list'); });
   function letterRow(e) { return { id: e.id, vessel: e.vessel, vid: e.vesselId || '', len: e.vesselLength || '', pow: e.vesselPower || '', prop: e.propulsion || '', mode: e.modeOfOperation || '', duty: e.category || '', s: e.start, e: e.end || e.start, d: Number(e.days) || 0, pos: e.position || '' }; }
   function letterTotal(L) { return L.rows.reduce(function (n, r) { return n + (Number(r.d) || 0); }, 0); }
   function openLetters(view, id) {
@@ -3150,6 +3175,159 @@
     if (!done && !existing && !/access_token=|#signed=|#r=/.test(location.hash)) setTimeout(function () { openOnb(0); }, 350);
     else if (!done) { try { localStorage.setItem(ONB_KEY, '1'); } catch (e) {} }
   })();
+
+  // ---- Documents vault (this phone only) and the application pack for myAMSA ----
+  var MYAMSA_URL = 'https://my.amsa.gov.au/';
+  var DOC_KINDS = [['medical', 'Medical (AMSA 1850)'], ['course', 'Course certificate'], ['firstaid', 'First aid'], ['photo', 'Photo'], ['other', 'Other']];
+  var dbp = null;
+  function docDb() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res, rej) {
+      if (!window.indexedDB) return rej(new Error('Storing documents is not available here.'));
+      var r = indexedDB.open('askel-docs', 1); r.onupgradeneeded = function () { r.result.createObjectStore('docs', { keyPath: 'id' }); };
+      r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error || new Error('Could not open the document store.')); };
+    });
+    return dbp;
+  }
+  function docTx(mode, fn) { return docDb().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('docs', mode), st = tx.objectStore('docs'), rq = fn(st); tx.oncomplete = function () { res(rq && rq.result); }; tx.onerror = function () { rej(tx.error); }; }); }); }
+  function docAll() { return docTx('readonly', function (st) { return st.getAll(); }).then(function (r) { return r || []; }); }
+  function docPut(d) { return docTx('readwrite', function (st) { return st.put(d); }); }
+  function docDel(id) { return docTx('readwrite', function (st) { return st.delete(id); }); }
+  function daysUntil(iso) { return iso ? Math.ceil((new Date(iso + 'T00:00:00') - new Date(isoDate(new Date()) + 'T00:00:00')) / 86400000) : null; }
+  function expiryState(d) {
+    if (!d.expires) return { cls: 'todo', text: d.kind === 'medical' || d.kind === 'firstaid' ? 'No expiry date' : '' };
+    var n = daysUntil(d.expires);
+    if (n < 0) return { cls: 'bad', text: 'Expired ' + formatDate(d.expires) };
+    if (n <= 90) return { cls: 'warn', text: 'Expires in ' + n + ' day' + (n === 1 ? '' : 's') + ' (AMSA may ask for a new one)' };
+    return { cls: 'ok', text: 'Valid until ' + formatDate(d.expires) };
+  }
+  var packOverlay = $('packOverlay'), packSheet = $('packSheet'), packBody = $('packBody'), packView = 'pack', packTicket = null, packDocs = [], packKind = 'medical', packMsg = '';
+  function openPack(ticketId) {
+    var avail = TICKETS.filter(function (t) { return !t.custom && goalAvailable(t); });
+    packTicket = ticketId || packTicket || (activeGoals()[0] || avail[0] || {}).id; packView = 'pack';
+    document.body.style.overflow = 'hidden'; packOverlay.classList.add('open'); fx('open'); renderPack();
+  }
+  function closePack() { packOverlay.classList.remove('open'); packSheet.style.transform = ''; document.body.style.overflow = ''; }
+  $('closePackBtn').addEventListener('click', closePack); packOverlay.addEventListener('click', function (e) { if (e.target === packOverlay) closePack(); }); makeDraggable($('packHead'), packSheet, closePack);
+  function entryCountsFor(e, t, mode) {
+    if (t.categories && t.categories.indexOf(e.category) === -1) return false;
+    var len = e.vesselLength === '' || e.vesselLength == null ? null : Number(e.vesselLength), pow = e.vesselPower === '' || e.vesselPower == null ? null : Number(e.vesselPower);
+    if (t.minLength && len !== null && len < t.minLength) return false; if (t.minPower && pow !== null && pow < t.minPower) return false; if (t.inboard && e.propulsion && e.propulsion !== 'I') return false;
+    if ((t.commercial === 'always' || (t.commercial === 'with' && mode === 'with')) && e.operationType && e.operationType !== 'C') return false;
+    return true;
+  }
+  function packRows(t, docs) {
+    var mode = goalMode(t), req = goalReq(t), r = REQS[t.id] || {}, rows = [];
+    var signed = qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days, all = qualifying(t, t.categories, { taskBook: mode }).days;
+    var letterDays = letters.filter(function (L) { return L.supSig; }).reduce(function (n, L) { return n + letterTotal(L); }, 0);
+    var seaOk = signed >= req || letterDays >= req;
+    rows.push({ st: seaOk ? 'ok' : (all >= req ? 'warn' : 'todo'), t: 'Sea service evidence', d: signed + ' signed days of ' + req + ' needed' + (letterDays ? ', plus ' + letterDays + ' days on signed letters' : '') + (!seaOk && all > signed ? '. ' + (all - signed) + ' more days are logged but not signed yet.' : '.') + ' AMSA accepts Form 771s, a signed sea service letter, or an approved task book.', act: !seaOk && all > signed ? ['Send for signing', 'home'] : null });
+    var get = function (k) { return docs.filter(function (d) { return d.kind === k; }); };
+    var med = get('medical').sort(function (a, b) { return (b.expires || '') < (a.expires || '') ? -1 : 1; })[0];
+    if (!med) rows.push({ st: 'todo', t: 'Medical certificate (AMSA 1850)', d: 'A current Certificate of medical fitness for domestic seafarers. It must still be current when your certificate is issued. Add a copy.', act: ['Add it', 'docs:medical'] });
+    else { var es = expiryState(med); rows.push({ st: es.cls === 'ok' ? 'ok' : es.cls === 'bad' ? 'todo' : 'warn', t: 'Medical certificate (AMSA 1850)', d: es.text || 'Added.', act: es.cls === 'ok' ? null : ['Replace it', 'docs:medical'] }); }
+    var cs = get('course');
+    rows.push({ st: cs.length ? 'ok' : 'todo', t: 'Course completion certificate', d: (cs.length ? cs.length + ' added. ' : '') + (r.course || 'The course for this ticket.') + ' AMSA only accepts course completion certificates, not transcripts, attendance records or statements of attainment.', act: cs.length ? null : ['Add it', 'docs:course'] });
+    var fa = get('firstaid')[0];
+    rows.push({ st: !fa ? 'todo' : (expiryState(fa).cls === 'ok' ? 'ok' : 'warn'), t: 'First aid', d: fa ? (expiryState(fa).text || 'Added.') : FIRSTAID_TXT, act: !fa || expiryState(fa).cls !== 'ok' ? [fa ? 'Replace it' : 'Add it', 'docs:firstaid'] : null });
+    if (r.ampa) rows.push({ st: 'info', t: 'Practical assessment', d: r.ampa });
+    if (r.radio) rows.push({ st: 'info', t: 'Marine radio', d: r.radio });
+    if (r.oral) rows.push({ st: 'info', t: 'Oral exam', d: r.oral });
+    var ph = get('photo')[0];
+    rows.push({ st: ph ? 'ok' : 'info', t: 'Photo', d: ph ? 'Added.' : 'A recent colour photo that meets the Australian passport photo guidelines. myAMSA can take it with your phone camera when you apply, so you may not need to add one here.', act: ph ? null : ['Add one', 'docs:photo'] });
+    rows.push({ st: 'info', t: 'Proof of identity', d: 'Handled in myAMSA with your myID (standard level or higher). You do not need to upload ID copies.' });
+    return rows;
+  }
+  function renderPack() {
+    docAll().then(function (docs) { packDocs = docs; drawPack(); }, function (e) { packDocs = []; packMsg = e.message; drawPack(); });
+  }
+  function drawPack() {
+    var h = '', docs = packDocs;
+    if (packView === 'pack') {
+      $('packTitle').textContent = 'Application pack';
+      var avail = TICKETS.filter(function (t) { return !t.custom && (goalAvailable(t) || t.id === packTicket); }), t = avail.filter(function (x) { return x.id === packTicket; })[0] || avail[0];
+      if (!t) { packBody.innerHTML = '<p class="field-hint">Nothing to apply for yet.</p>'; return; } packTicket = t.id;
+      h += '<p class="field-hint" style="margin:0 0 12px;">Askel gathers everything AMSA asks for in one place, so you can upload it in myAMSA in a few minutes. It can’t log in or lodge for you, because myAMSA verifies you with myID on your own phone.</p>' +
+        '<div class="select-wrap"><select id="packTicketSel" aria-label="Ticket">' + avail.map(function (x) { return '<option value="' + x.id + '"' + (x.id === t.id ? ' selected' : '') + '>' + escapeHtml(x.name) + '</option>'; }).join('') + '</select></div>';
+      var rows = packRows(t, docs), okN = rows.filter(function (x) { return x.st === 'ok'; }).length;
+      h += '<div class="form-card" style="margin-top:6px;"><p class="section-title">Checklist <span style="float:right;text-transform:none;letter-spacing:0;color:var(--ink-3);">' + okN + ' ready</span></p>';
+      rows.forEach(function (x) { h += '<div class="pk-row"><div class="pk-dot ' + x.st + '">' + (x.st === 'ok' ? '✓' : x.st === 'warn' ? '!' : x.st === 'info' ? 'i' : '•') + '</div><div><b>' + escapeHtml(x.t) + '</b><small>' + escapeHtml(x.d) + '</small>' + (x.act ? '<button type="button" class="pk-act" data-pk="' + x.act[1] + '">' + x.act[0] + '</button>' : '') + '</div></div>'; });
+      h += '</div>';
+      h += '<button type="button" class="save-btn" data-pkact="build">Build my application pack (PDF)</button><p class="field-hint" id="packStatus" style="margin:8px 0 0;">One PDF with your signed Form 771s, any sea service letters, and the documents you’ve added, with a contents page.</p>' +
+        '<a class="save-btn" href="' + MYAMSA_URL + '" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:transparent;border:1px solid var(--line);color:inherit;">Open myAMSA</a>' +
+        '<button type="button" class="link" data-pk="docs" style="display:block;margin:14px auto 0;">My documents (' + docs.length + ')</button>';
+    } else {
+      $('packTitle').textContent = 'My documents';
+      h += '<p class="field-hint" style="margin:0 0 12px;">Keep your medical, course certificates and first aid here. They’re stored only on this phone, not in the cloud, and we’ll warn you before they expire.</p>';
+      if (docs.length) { h += '<div class="form-card">'; docs.sort(function (a, b) { return a.kind < b.kind ? -1 : 1; }).forEach(function (d) { var es = expiryState(d); h += '<div class="doc-item"><div><b>' + escapeHtml(d.title) + '</b><small>' + (DOC_KINDS.filter(function (k) { return k[0] === d.kind; })[0] || ['', 'Document'])[1] + (es.text ? ' · ' + escapeHtml(es.text) : '') + '</small></div><div class="doc-btns"><button type="button" data-doc-open="' + d.id + '">Open</button><button type="button" class="del" data-doc-del="' + d.id + '">Delete</button></div></div>'; }); h += '</div>'; }
+      h += '<div class="form-card"><p class="section-title">Add a document</p><div class="chip-row">' + DOC_KINDS.map(function (k) { return '<button type="button" data-kind="' + k[0] + '" class="' + (packKind === k[0] ? 'on' : '') + '">' + k[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="field"><label class="field-label" for="docTitle">Name</label><input type="text" id="docTitle" placeholder="' + ({ medical: 'AMSA 1850 medical', course: 'e.g. Cert III Master <24m', firstaid: 'HLTAID011 first aid', photo: 'Passport-style photo', other: 'What is it?' })[packKind] + '" autocapitalize="sentences" /></div>' +
+        (packKind === 'medical' || packKind === 'firstaid' ? '<div class="field"><label class="field-label" for="docExp">Expiry date</label><input type="date" id="docExp" /></div>' : '') +
+        '<input type="file" id="docFile" accept="image/*,application/pdf" style="display:none;" />' + (packMsg ? '<p class="field-hint" style="color:var(--red);margin:0 0 10px;">' + escapeHtml(packMsg) + '</p>' : '') +
+        '<button type="button" class="save-btn" data-pkact="choose">Choose a file or take a photo</button></div>' +
+        '<button type="button" class="link" data-pk="pack" style="display:block;margin:6px auto 0;">Back to checklist</button>';
+    }
+    packBody.innerHTML = h;
+  }
+  packBody.addEventListener('change', function (ev) {
+    if (ev.target.id === 'packTicketSel') { packTicket = ev.target.value; fx('toggle'); drawPack(); return; }
+    if (ev.target.id === 'docFile' && ev.target.files && ev.target.files[0]) {
+      var f = ev.target.files[0], title = ($('docTitle').value || '').trim() || f.name.replace(/\.[^.]+$/, ''), exp = $('docExp') ? $('docExp').value : '';
+      if ((packKind === 'medical' || packKind === 'firstaid') && !exp) { packMsg = 'Add the expiry date first.'; ev.target.value = ''; drawPack(); return; }
+      if (f.size > 25 * 1024 * 1024) { packMsg = 'That file is over 25 MB.'; ev.target.value = ''; drawPack(); return; }
+      packMsg = ''; docPut({ id: uuid(), kind: packKind, title: title, expires: exp, added: new Date().toISOString(), mime: f.type || 'application/octet-stream', name: f.name, blob: f })
+        .then(function () { fx('success'); showToast('Added'); renderPack(); }, function (e) { packMsg = e.message || 'Could not save that file.'; drawPack(); });
+    }
+  });
+  packBody.addEventListener('click', function (ev) {
+    var kb = ev.target.closest('[data-kind]'); if (kb) { packKind = kb.getAttribute('data-kind'); packMsg = ''; fx('tick'); drawPack(); return; }
+    var pk = ev.target.closest('[data-pk]');
+    if (pk) { var v = pk.getAttribute('data-pk'); fx('tick'); if (v === 'home') { closePack(); setTab('service'); return; } if (v.indexOf('docs') === 0) { packView = 'docs'; if (v.indexOf(':') > -1) packKind = v.split(':')[1]; packMsg = ''; drawPack(); } else { packView = 'pack'; drawPack(); } return; }
+    var op = ev.target.closest('[data-doc-open]'); if (op) { var d = packDocs.filter(function (x) { return x.id === op.getAttribute('data-doc-open'); })[0]; if (d) { var url = URL.createObjectURL(d.blob); window.open(url, '_blank'); } return; }
+    var dl = ev.target.closest('[data-doc-del]'); if (dl) { if (dl.getAttribute('data-sure') !== '1') { dl.setAttribute('data-sure', '1'); dl.textContent = 'Sure?'; setTimeout(function () { dl.removeAttribute('data-sure'); dl.textContent = 'Delete'; }, 3000); return; } docDel(dl.getAttribute('data-doc-del')).then(function () { fx('undo'); renderPack(); }); return; }
+    var a = ev.target.closest('[data-pkact]'); if (!a) return;
+    if (a.getAttribute('data-pkact') === 'choose') { $('docFile').click(); }
+    else if (a.getAttribute('data-pkact') === 'build') {
+      var t = TICKETS.filter(function (x) { return x.id === packTicket; })[0]; if (!t) return; var st = $('packStatus'); st.textContent = 'Building…'; a.disabled = true;
+      buildPack(t, packDocs).then(function (res) { a.disabled = false; st.textContent = res.summary; deliverPdf(res.bytes, 'Askel-application-pack-' + t.id + '-' + isoDate(new Date()) + '.pdf', 'Application pack'); }, function (e) { a.disabled = false; st.textContent = 'Could not build the pack: ' + (e && e.message || 'unknown error'); });
+    }
+  });
+  function blobToJpeg(blob) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(blob), im = new Image();
+      im.onload = function () { var k = Math.min(1, 1800 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url); c.toBlob(function (b) { b ? b.arrayBuffer().then(res, rej) : rej(new Error('image')); }, 'image/jpeg', 0.9); };
+      im.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Could not read an image')); }; im.src = url;
+    });
+  }
+  function buildPack(t, docs) {
+    var PL = window.PDFLib; if (!PL) return Promise.reject(new Error('The PDF tool did not load.'));
+    var mode = goalMode(t), toc = [], skipped = [], out, F, B;
+    function addPdf(bytes, label) { return PL.PDFDocument.load(bytes).then(function (src) { return out.copyPages(src, src.getPageIndices()).then(function (pages) { var from = out.getPageCount() + 1; pages.forEach(function (p) { out.addPage(p); }); toc.push({ label: label, from: from, to: out.getPageCount() }); }); }); }
+    function addImage(blob, label) { return blobToJpeg(blob).then(function (bytes) { return out.embedJpg(bytes); }).then(function (img) { var pg = out.addPage([595.28, 841.89]), k = Math.min(539 / img.width, 785 / img.height); pg.drawImage(img, { x: (595.28 - img.width * k) / 2, y: (841.89 - img.height * k) / 2, width: img.width * k, height: img.height * k }); toc.push({ label: label, from: out.getPageCount(), to: out.getPageCount() }); }); }
+    var wa = function (x) { return String(x == null ? '' : x).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '?'); };
+    return PL.PDFDocument.create().then(function (d) { out = d; return Promise.all([out.embedFont(PL.StandardFonts.Helvetica), out.embedFont(PL.StandardFonts.HelveticaBold)]); }).then(function (f) {
+      F = f[0]; B = f[1]; out.addPage([595.28, 841.89]);   // contents page, filled in last
+      var es = entries.filter(function (e) { return e.supSig && entryCountsFor(e, t, mode); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+      var chain = Promise.resolve();
+      es.forEach(function (e) { chain = chain.then(function () { return build771(e).then(function (bytes) { return addPdf(bytes, 'Form 771: ' + e.vessel + ', ' + auDate(e.start) + (e.end && e.end !== e.start ? ' to ' + auDate(e.end) : '') + ' (' + e.days + ' days)'); }); }); });
+      letters.filter(function (L) { return L.supSig; }).forEach(function (L) { chain = chain.then(function () { return buildLetterPdf(L).then(function (bytes) { return addPdf(bytes, 'Sea service letter: ' + L.company); }); }); });
+      ['medical', 'course', 'firstaid'].forEach(function (k) { docs.filter(function (d) { return d.kind === k; }).forEach(function (d) { chain = chain.then(function () { var label = (DOC_KINDS.filter(function (x) { return x[0] === k; })[0][1]) + ': ' + d.title; var p = /pdf/i.test(d.mime) ? d.blob.arrayBuffer().then(function (b) { return addPdf(b, label); }) : addImage(d.blob, label); return p.catch(function () { skipped.push(d.title); }); }); }); });
+      return chain.then(function () { return es.length; });
+    }).then(function (n771) {
+      var cp = out.getPage(0), y = 790, M = 56, W = 595.28 - M * 2;
+      function line(txt, size, font, gap) { cp.drawText(wa(txt), { x: M, y: y, size: size, font: font || F, color: PL.rgb(0.08, 0.08, 0.08) }); y -= (gap || size * 1.5); }
+      line('Application pack', 24, B, 34); line(wa((profile.name || '').trim() || 'Applicant'), 14, B, 20); line(t.name, 13, F, 18); line('Prepared ' + new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) + ' with Askel', 11, F, 30);
+      var signed = qualifying(t, t.categories, { verifiedOnly: true, taskBook: mode }).days;
+      line('Sea service: ' + signed + ' signed days counted (' + goalReq(t) + ' needed ' + (mode === 'with' ? 'with' : 'without') + ' a task book)', 11, F, 28);
+      line('Contents', 14, B, 22);
+      toc.forEach(function (it) { var txt = it.label, w = F.widthOfTextAtSize(wa(txt), 11); while (w > W - 60 && txt.length > 10) { txt = txt.slice(0, -2); w = F.widthOfTextAtSize(wa(txt) + '...', 11); } cp.drawText(wa(txt === it.label ? txt : txt + '...'), { x: M, y: y, size: 11, font: F, color: PL.rgb(0.1, 0.1, 0.1) }); var pg = it.from === it.to ? 'p. ' + it.from : 'pp. ' + it.from + '-' + it.to; cp.drawText(pg, { x: M + W - F.widthOfTextAtSize(pg, 11), y: y, size: 11, font: F, color: PL.rgb(0.35, 0.35, 0.35) }); y -= 17; });
+      if (!toc.length) line('Nothing to include yet. Get your Form 771s signed and add your documents.', 11, F);
+      y -= 14; if (skipped.length) { line('Could not include: ' + skipped.join(', ') + '. Upload these separately.', 10, F, 16); }
+      ['Upload each document in myAMSA at my.amsa.gov.au. Proof of identity is handled there with your myID.', 'AMSA assesses your sea service and documents when you apply. Check the requirements for your certificate before you lodge.'].forEach(function (x) { cp.drawText(wa(x), { x: M, y: Math.max(y, 70), size: 9.5, font: F, color: PL.rgb(0.4, 0.4, 0.4) }); y = Math.max(y, 70) - 13; });
+      return out.save().then(function (bytes) { return { bytes: bytes, summary: 'Built: ' + n771 + ' Form 771' + (n771 === 1 ? '' : 's') + ', ' + letters.filter(function (L) { return L.supSig; }).length + ' letter(s), ' + docs.filter(function (d) { return ['medical', 'course', 'firstaid'].indexOf(d.kind) > -1; }).length + ' document(s), ' + out.getPageCount() + ' pages.' + (skipped.length ? ' Some files could not be included.' : '') }; });
+    });
+  }
+  $('applyBtn').addEventListener('click', function () { openPack(ticketState.ticketId); });
 
   // ---- Collapsing nav bar ----
   var navbar = $('navbar'), navShown = false;
