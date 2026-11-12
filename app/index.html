@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Askel" />
 <meta name="format-detection" content="telephone=no" />
 <meta name="color-scheme" content="dark" />
-<meta name="theme-color" content="#141416" />
+<meta name="theme-color" content="#0B0C0F" />
+<script>try{var __t=localStorage.getItem("askel-theme")||"dark";if(__t==="auto")__t=(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";document.documentElement.setAttribute("data-theme",__t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}</script>
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="../icon-180.png" />
 <link rel="icon" href="../icon-192.png" />
@@ -475,6 +476,81 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-delay: 0s !important; }
   }
+
+  /* ===== v2 skin: deeper black, hairlines, glass, big type. Light theme below. ===== */
+  :root { --bg: #0B0C0F; --card: #15161A; --card-2: #202127; --ink: #F5F5F7; --ink-2: #9C9CA6; --ink-3: #6B6B76; --line: rgba(255,255,255,0.07);
+    --glass: rgba(11,12,15,0.72); --blue: #3D9BFF; --accent: #3D9BFF; --accent-soft: rgba(61,155,255,0.2); --green: #34D27B; --good: #34D27B;
+    --hero-1: #1B2740; --hero-2: #0E1016; --primary: #F5F5F7; --on-primary: #0B0C0F; --icon: #E4E4E8;
+    --shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 12px 32px rgba(0,0,0,0.38);
+    --fill-soft: rgba(255,255,255,0.08); --tab-blue: #7CC0FF; --tab-green: #5BE07F; --dash: rgba(255,255,255,0.16); --font: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif; }
+  [data-theme="light"] { color-scheme: light; --bg: #F3F3F6; --card: #FFFFFF; --card-2: #EDEDF1; --ink: #131316; --ink-2: #5A5A64; --ink-3: #8C8C96; --line: rgba(0,0,0,0.08);
+    --glass: rgba(243,243,246,0.78); --blue: #0A74F0; --accent: #0A74F0; --accent-soft: rgba(10,116,240,0.14); --green: #16A34A; --good: #16A34A; --red: #E5362F; --danger: #E5362F; --yellow: #B98A00;
+    --primary: #131316; --on-primary: #FFFFFF; --icon: #3A3A42; --shadow: 0 0 0 1px rgba(0,0,0,0.05), 0 10px 28px rgba(20,20,40,0.07);
+    --fill-soft: rgba(0,0,0,0.06); --tab-blue: #0A66D6; --tab-green: #12803B; --dash: rgba(0,0,0,0.2); }
+  body { letter-spacing: -0.01em; }
+  .wrap { padding: calc(var(--sat) + 14px) 18px calc(var(--sab) + 160px); }
+  header { padding: 6px 2px 20px; align-items: center; }
+  .brandline { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+  h1 { font-size: 31px; font-weight: 800; letter-spacing: -0.04em; }
+  .icon-btn { width: 44px; height: 44px; background: var(--card); box-shadow: var(--shadow); }
+  .card, .goal-card, .more-card { border-radius: 26px; box-shadow: var(--shadow); }
+  .card { padding: 20px; }
+  .hero { border-radius: 32px; padding: 26px 24px 22px; box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 60px rgba(0,0,0,0.45);
+    background: radial-gradient(110% 120% at 92% -10%, rgba(61,155,255,0.55), transparent 55%), radial-gradient(90% 90% at -5% 115%, rgba(52,210,160,0.26), transparent 60%), linear-gradient(165deg, var(--hero-1), var(--hero-2) 75%); }
+  [data-theme="light"] .hero { box-shadow: 0 0 0 1px rgba(10,40,90,0.08), 0 20px 50px rgba(20,60,140,0.22); }
+  .hero-label { letter-spacing: .16em; font-size: 11px; }
+  .hero-value { font-size: 84px; font-weight: 800; letter-spacing: -0.05em; margin: 10px 0 16px; }
+  .hero-value small { font-size: 19px; font-weight: 600; }
+  .pill { background: rgba(255,255,255,0.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .hero-next { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.12); position: relative; z-index: 1; }
+  .hero-next .hn-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+  .hero-next .hn-top b { letter-spacing: 0; text-transform: none; font-size: 13px; color: #fff; }
+  .hero-next .hn-name { font-size: 17px; font-weight: 700; margin: 6px 0 10px; color: #fff; }
+  .hero-next .hn-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.16); overflow: hidden; }
+  .hero-next .hn-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #5DB1FF, #7DE8C0); transition: width .9s var(--ease); }
+  .hero-next.ok .hn-top b { color: #7DE8C0; }
+  /* Floating dock: tabs live at the bottom, where the thumb is */
+  .segmented.main-tabs { position: fixed; left: 50%; bottom: calc(var(--sab) + 14px); transform: translateX(-50%); width: min(calc(100% - 36px), 360px); margin: 0; padding: 5px; z-index: 40;
+    background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(1.7); backdrop-filter: blur(24px) saturate(1.7); border-radius: 24px; box-shadow: 0 0 0 1px var(--line), 0 16px 44px rgba(0,0,0,0.42); }
+  .segmented.main-tabs .thumb { top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); border-radius: 19px; }
+  .main-tabs button { padding: 13px 6px; }
+  .main-tabs button[data-tab="service"] { color: var(--tab-blue); opacity: .75; } .main-tabs button[data-tab="service"].active { color: var(--tab-blue); opacity: 1; }
+  .main-tabs button[data-tab="tickets"] { color: var(--tab-green); opacity: .75; } .main-tabs button[data-tab="tickets"].active { color: var(--tab-green); opacity: 1; }
+  .fab { color: var(--on-primary); background: var(--primary); bottom: calc(var(--sab) + 86px); height: 52px; padding: 0 20px 0 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+  .goal-card { padding: 14px 16px 8px; } .goal-head span { letter-spacing: .14em; }
+  .goal-empty { border-color: var(--dash); border-radius: 20px; }
+  .goal-opt.on, .goal-tb-seg button.active { color: var(--tab-blue); }
+  .segmented .thumb { background: var(--card-2); }
+  [data-theme="light"] .segmented .thumb { background: #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+  [data-theme="light"] .boss-card { background: linear-gradient(135deg, rgba(10,116,240,0.10), rgba(22,163,74,0.06)); }
+  [data-theme="light"] .boss-card .boss-x { background: rgba(0,0,0,0.06); }
+  [data-theme="light"] .tab-badge { color: #fff; }
+  [data-theme="light"] .sheet, [data-theme="light"] .form-card { background: var(--card); }
+  [data-theme="light"] .overlay { background: rgba(10,12,20,0.38); }
+  .set-seg { display: flex; gap: 6px; } .set-seg button { flex: 1; border: none; border-radius: 12px; padding: 12px 6px; font-size: 14px; font-weight: 700; background: var(--card-2); color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, transform .2s var(--spring); }
+  .set-seg button.on { background: var(--accent-soft); color: var(--tab-blue); box-shadow: inset 0 0 0 1px var(--accent); } .set-seg button:active { transform: scale(0.96); }
+  /* First-run setup */
+  .onb { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: none; flex-direction: column; padding: calc(var(--sat) + 14px) 0 calc(var(--sab) + 14px); }
+  .onb.open { display: flex; animation: onbIn .5s var(--ease); } @keyframes onbIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: none; } }
+  .onb::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 360px; background: radial-gradient(80% 100% at 85% 0%, rgba(61,155,255,0.28), transparent 60%), radial-gradient(70% 90% at 0% 10%, rgba(52,210,160,0.14), transparent 60%); pointer-events: none; }
+  .onb-top { display: flex; align-items: center; justify-content: space-between; padding: 6px 22px 0; position: relative; }
+  .onb-dots { display: flex; gap: 6px; } .onb-dots i { width: 22px; height: 4px; border-radius: 2px; background: var(--line); transition: background .3s, width .3s var(--spring); } .onb-dots i.on { background: var(--accent); width: 34px; } .onb-dots i.done { background: var(--ink-3); }
+  .onb-skip { border: none; background: transparent; color: var(--ink-3); font-size: 14px; font-weight: 700; padding: 8px 0; cursor: pointer; }
+  .onb-body { flex: 1; overflow-y: auto; padding: 26px 22px 20px; position: relative; -webkit-overflow-scrolling: touch; }
+  .onb-step { max-width: 520px; margin: 0 auto; animation: onbStep .5s var(--ease); } @keyframes onbStep { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+  .onb-mark { width: 62px; height: 62px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); display: grid; place-items: center; margin-bottom: 26px; }
+  .onb h2 { font-size: 34px; line-height: 1.08; letter-spacing: -0.04em; margin: 0 0 12px; font-weight: 800; }
+  .onb .sub { font-size: 16px; line-height: 1.5; color: var(--ink-2); margin: 0 0 24px; }
+  .onb .opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); margin-bottom: 8px; cursor: pointer; }
+  .onb .opt b { display: block; font-size: 15px; } .onb .opt small { display: block; color: var(--ink-3); font-size: 12.5px; margin-top: 2px; font-weight: 500; }
+  .onb .grp { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin: 22px 4px 10px; }
+  .onb .tips { display: grid; gap: 10px; margin-top: 8px; } .onb .tip { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); font-size: 14.5px; color: var(--ink-2); line-height: 1.45; } .onb .tip b { color: var(--ink); display: block; font-size: 15px; margin-bottom: 2px; }
+  .onb .tip em { font-style: normal; flex: 0 0 30px; height: 30px; border-radius: 10px; background: var(--accent-soft); color: var(--tab-blue); display: grid; place-items: center; font-weight: 800; }
+  .onb-foot { display: flex; gap: 10px; padding: 8px 22px 0; max-width: 564px; width: 100%; margin: 0 auto; position: relative; }
+  .onb-back { flex: 0 0 auto; border: none; border-radius: 16px; padding: 16px 20px; font-size: 16px; font-weight: 700; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; }
+  .onb-next { flex: 1; border: none; border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 800; background: var(--primary); color: var(--on-primary); cursor: pointer; transition: transform .25s var(--spring); } .onb-next:active, .onb-back:active { transform: scale(0.97); }
+  .onb .alt { display: block; width: 100%; border: none; background: transparent; color: var(--ink-3); font-size: 14px; font-weight: 700; padding: 14px; cursor: pointer; }
+  .onb input[type=text], .onb input[type=email], .onb input[type=password] { margin-bottom: 10px; padding: 16px; border-radius: 16px; background: var(--card); box-shadow: var(--shadow); }
 </style>
 </head>
 <body>
@@ -484,11 +560,11 @@
 
   <header class="rise">
     <div>
-      <h1>Askel</h1>
-      <p class="subtitle">AMSA Form 771 · Near Coastal</p>
+      <div class="brandline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="4.2" stroke-linecap="round" aria-hidden="true"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg>Askel</div>
+      <h1 id="greet">Welcome aboard</h1>
     </div>
     <button class="icon-btn" id="settingsBtn" aria-label="Settings">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </header>
 
@@ -503,6 +579,7 @@
       <span class="pill" id="statVessels">0 vessels</span>
       <span class="pill" id="statTickets" style="display:none;"></span>
     </div>
+    <div class="hero-next" id="heroNext" style="display:none;"></div>
   </section>
 
   <div id="goalStrip"></div>
@@ -580,7 +657,7 @@
 </div>
 
 <button class="fab" id="openModalBtn" aria-label="Add sea service entry">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#19191C" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   Add
 </button>
 
@@ -627,6 +704,12 @@
     <div class="sheet-body" id="settingsBody"></div>
     <div class="sheet-foot"><button class="save-btn" id="settingsDoneBtn" type="button">Done</button></div>
   </div>
+</div>
+
+<div class="onb" id="onb" role="dialog" aria-modal="true" aria-label="Welcome to Askel">
+  <div class="onb-top"><div class="onb-dots" id="onbDots"></div><button class="onb-skip" id="onbSkip" type="button">Skip</button></div>
+  <div class="onb-body" id="onbBody"></div>
+  <div class="onb-foot"><button class="onb-back" id="onbBack" type="button">Back</button><button class="onb-next" id="onbNext" type="button">Continue</button></div>
 </div>
 
 <div class="overlay" id="letterOverlay">
@@ -1247,7 +1330,7 @@
   function settingsChanged() { try { localStorage.setItem(SDIRTY, '1'); } catch (e) {} cloudSoon(); }
   function settingsBlob() {
     var p = Object.assign({}, profile); delete p.uid;   // uid is per-device identity for the link-based flow
-    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, letters: letters, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn };
+    return { v: 1, held: heldIds, goals: goalIds, goalTB: goalTB, ticket: { ticketId: ticketState.ticketId, taskBook: ticketState.taskBook, customDays: ticketState.customDays }, checklist: checklist, letters: letters, theme: themePref, profile: p, holder: holderInput.value || '', style: passportStyle, sound: soundOn };
   }
   function applySettings(d) {
     if (!d || d.v !== 1) return;
@@ -1258,6 +1341,7 @@
     if (typeof d.holder === 'string') holderInput.value = d.holder;
     if (d.style && PASSPORT_STYLES[d.style]) passportStyle = d.style;
     if (typeof d.sound === 'boolean') soundOn = d.sound;
+    if (d.theme) { themePref = d.theme; try { localStorage.setItem(THEME_KEY, themePref); } catch (e) {} applyTheme(); }
     try {
       localStorage.setItem(HELD_KEY, JSON.stringify(heldIds)); localStorage.setItem(GOAL_KEY, JSON.stringify(goalIds)); localStorage.setItem(GOALTB_KEY, JSON.stringify(goalTB));
       localStorage.setItem(CHECK_KEY, JSON.stringify(checklist)); localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticketState)); localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -1592,7 +1676,7 @@
     var heldN = heldList().length, stT = $('statTickets');
     stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
-    renderWorking(); renderGoals(); renderMore(); renderBoss();
+    renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); var gr = $('greet'); if (gr) gr.textContent = greeting();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
@@ -2573,6 +2657,7 @@
     var html = '<div class="form-card"><p class="section-title">Feedback</p>' +
       '<label class="set-row"><span class="n">Sounds<small>Taps, calendar notes and confirmations. Your silent switch still mutes them.</small></span>' +
       '<input type="checkbox" class="switch" id="soundSwitch" ' + (soundOn ? 'checked' : '') + ' /></label></div>';
+    html += '<div class="form-card"><p class="section-title">Appearance</p>' + themeChips() + '</div>';
     html += accountCard();
     html += '<div class="form-card"><p class="section-title">Employer</p><p class="field-hint" style="margin:-6px 0 12px;">Send your employer a summary of your progress. They see your name, the tickets you are working on, and how many days are signed. They do not see your date of birth, phone, email, vessels or medical details.</p>' +
       '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
@@ -2581,6 +2666,7 @@
     html += '<details class="form-card adv"><summary class="section-title" style="cursor:pointer;margin:0;">Advanced</summary><p class="field-hint" style="margin:10px 0 12px;">You do not need these. They only matter if you send sign-off links while signed out, or host your own copy of the app.</p>' +
       '<div class="field"><label class="field-label" for="baseInput">Web address of this app</label><input type="text" id="baseInput" placeholder="Leave blank" autocapitalize="none" autocomplete="off" value="' + escapeHtml(appBaseOverride) + '" /></div>' +
       '<div class="field"><label class="field-label" for="pasteReply">Paste a signed reply</label><div class="paste-row" style="margin:0;"><input type="text" id="pasteReply" placeholder="A reply link a supervisor sent you" autocomplete="off" autocapitalize="none" /><button type="button" id="pasteReplyBtn">Add</button></div></div></details>';
+    html += '<div class="form-card"><p class="section-title">Your data</p><p class="field-hint" style="margin:-6px 0 12px;">Save a copy of everything to a file, or bring a saved copy back. Restoring adds entries that are not already here.</p><button type="button" class="save-btn" id="exportBackupBtn">Save a backup file</button><button type="button" class="save-btn" id="importBackupBtn" style="margin-top:8px;background:transparent;border:1px solid var(--line,#3a3d44);color:inherit;">Restore from a backup</button><input type="file" id="importBackupFile" accept=".json,application/json" style="display:none;" /><button type="button" class="link" id="replayOnb" style="display:block;margin:14px auto 0;">Replay the welcome setup</button></div>';
     html += '<div class="form-card"><p class="section-title">Tickets I hold</p><p class="field-hint" style="margin:-6px 0 10px;">Tick tickets you already have. They leave Working towards and appear on your passport card.</p>';
     ['General', 'Deck', 'Engineering'].forEach(function (g) {
       html += '<div class="group-label">' + g + '</div>';
@@ -2613,6 +2699,10 @@
       (ev.target.id === 'acctUp' ? function (a, b) { return Cloud.signUp(a, b, location.origin + '/app/'); } : Cloud.signIn)(em, pw).then(function () { cloudStatus = ''; return cloudSync(true); }, function (e) { cloudMsg = e.message; renderSettings(); });
     }
     else if (ev.target.id === 'bossBtn') tellBoss();
+    else if (ev.target.getAttribute && ev.target.getAttribute('data-theme-set')) { setTheme(ev.target.getAttribute('data-theme-set')); renderSettings(); fx('toggle'); }
+    else if (ev.target.id === 'exportBackupBtn') exportBackup();
+    else if (ev.target.id === 'importBackupBtn') $('importBackupFile').click();
+    else if (ev.target.id === 'replayOnb') { closeSettings(); setTimeout(function () { openOnb(0); }, 350); }
     else if (ev.target.id === 'acctForgot') {
       var fe = $('acctEmail').value.trim(); if (!fe) { cloudMsg = 'Type your email above first.'; renderSettings(); return; }
       Cloud.recover(fe, location.origin + '/app/').then(function () { cloudMsg = ''; showToast('If that email has an account, a reset link is on its way.'); }, function (e) { cloudMsg = e.message; renderSettings(); });
@@ -2642,6 +2732,7 @@
     appBaseOverride = ev.target.value.trim(); try { localStorage.setItem(BASE_KEY, appBaseOverride); } catch (e) {}
   });
   settingsBody.addEventListener('change', function (ev) {
+    if (ev.target.id === 'importBackupFile') { if (ev.target.files && ev.target.files[0]) importBackup(ev.target.files[0]); ev.target.value = ''; return; }
     var el = ev.target;
     if (el.id === 'soundSwitch') {
       soundOn = el.checked;
@@ -2929,6 +3020,137 @@
     if (ev.target.id === 'bossGo') { fx('tick'); tellBoss(); }
     else if (ev.target.id === 'bossX') { try { localStorage.setItem(BOSS_KEY, '1'); } catch (e) {} fx('close'); renderBoss(); }
   });
+  // ---- Appearance: dark by default, light or automatic on request ----
+  var THEME_KEY = 'askel-theme', themePref = 'dark';
+  try { themePref = localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) {}
+  function resolvedTheme() { return themePref === 'auto' ? ((window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark') : themePref; }
+  function applyTheme() { var t = resolvedTheme(); document.documentElement.setAttribute('data-theme', t); var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t === 'light' ? '#F3F3F6' : '#0B0C0F'); }
+  function setTheme(p) { themePref = p; try { localStorage.setItem(THEME_KEY, p); } catch (e) {} applyTheme(); settingsChanged(); }
+  try { if (window.matchMedia) matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () { if (themePref === 'auto') applyTheme(); }); } catch (e) {}
+  function themeChips(extraClass) {
+    return '<div class="set-seg ' + (extraClass || '') + '">' + [['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(function (o) { return '<button type="button" data-theme-set="' + o[0] + '" class="' + (themePref === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  }
+
+  // ---- Greeting and the "next up" line in the hero ----
+  function greeting() {
+    var h = new Date().getHours(), g = h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening', n = ((profile && profile.name) || '').trim().split(' ')[0];
+    return n ? g + ', ' + n : 'Welcome aboard';
+  }
+  function nextMilestone() {
+    var gs = activeGoals().map(function (t) { var mode = goalMode(t); return { t: t, req: goalReq(t), lg: qualifying(t, t.categories, { taskBook: mode }).days }; });
+    var open = gs.filter(function (x) { return x.lg < x.req; });
+    if (!open.length && gs.length) return { allDone: true };
+    if (!open.length) { open = TICKETS.filter(goalAvailable).map(function (t) { return { t: t, req: goalReq(t), lg: qualifying(t, t.categories).days }; }).filter(function (x) { return x.lg > 0 && x.lg < x.req; }); }
+    if (!open.length) return null;
+    open.sort(function (a, b) { return b.lg / b.req - a.lg / a.req; }); return open[0];
+  }
+  function renderNext() {
+    var el = $('heroNext'); if (!el) return; var m = nextMilestone();
+    if (!m) { el.style.display = 'none'; return; }
+    el.style.display = ''; el.classList.toggle('ok', !!m.allDone);
+    if (m.allDone) { el.innerHTML = '<div class="hn-top"><span>Next up</span><b>✓ Ready</b></div><div class="hn-name">Your goal tickets are ready to apply for</div>'; return; }
+    var left = m.req - m.lg, pct = Math.min(100, Math.round(m.lg / m.req * 100));
+    el.innerHTML = '<div class="hn-top"><span>Next up</span><b>' + left + ' day' + (left === 1 ? '' : 's') + ' to go</b></div><div class="hn-name">' + escapeHtml(m.t.name) + '</div><div class="hn-bar"><i style="width:' + pct + '%"></i></div>';
+  }
+
+  // ---- Backup to a file and restore from one ----
+  function deliverFile(text, name, title, mime) {
+    var blob = new Blob([text], { type: mime }), file = null; try { file = new File([text], name, { type: mime }); } catch (e) {}
+    function openIt() { try { var url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); showToast('Backup ready'); } catch (e) { showToast('Saving a file is not available in this view.'); } }
+    if (NATIVE && nativePlugin('Share')) { nativeShareFile(blob, name, title).catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) openIt(); }); return; }
+    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: title }).catch(function (err) { if (err && err.name !== 'AbortError') openIt(); }); } else openIt();
+  }
+  function exportBackup() {
+    var data = { app: 'askel', v: 1, exported: new Date().toISOString(), entries: entries, settings: settingsBlob() };
+    deliverFile(JSON.stringify(data), 'askel-backup-' + isoDate(new Date()) + '.json', 'Askel backup', 'application/json');
+  }
+  function importBackup(file) {
+    var fr = new FileReader();
+    fr.onload = function () {
+      var d; try { d = JSON.parse(fr.result); } catch (e) { d = null; }
+      if (!d || d.app !== 'askel' || !Array.isArray(d.entries)) { showToast('That is not an Askel backup file'); return; }
+      var have = {}, added = 0; entries.forEach(function (e) { have[e.id] = 1; });
+      d.entries.forEach(function (e) { if (e && e.id && !have[e.id]) { entries.push(e); added++; } });
+      if (d.settings) applySettings(d.settings);
+      saveEntries(); renderMain(); if (settingsOverlay.classList.contains('open')) renderSettings();
+      fx('success'); showToast('Restored. Added ' + added + ' entr' + (added === 1 ? 'y' : 'ies') + ' from the backup.');
+    };
+    fr.readAsText(file);
+  }
+
+  // ---- First-run setup: one window, a few questions ----
+  var ONB_KEY = 'askel-onboarded', onbStep = 0, ONB_STEPS = 5, onbMsg = '';
+  var onbEl = $('onb'), onbBody = $('onbBody');
+  function onbGroupList(kind) {
+    var h = '';
+    ['General', 'Deck', 'Engineering'].forEach(function (g) {
+      var list = TICKETS.filter(function (t) { return t.group === g && !t.custom && (kind === 'held' || goalAvailable(t)); }); if (!list.length) return;
+      h += '<div class="grp">' + g + '</div>';
+      list.forEach(function (t) {
+        var on = kind === 'held' ? heldIds.indexOf(t.id) !== -1 : goalIds.indexOf(t.id) !== -1;
+        h += '<label class="opt"><span><b>' + escapeHtml(t.name) + '</b>' + (kind === 'goal' ? '<small>' + goalReq(t) + ' days of sea service</small>' : (coveredBy(t.id) && !on ? '<small>Covered by ' + escapeHtml(coveredBy(t.id).name) + '</small>' : '')) + '</span><input type="checkbox" class="switch" data-onb="' + kind + '" data-id="' + t.id + '" ' + (on ? 'checked' : '') + ' /></label>';
+      });
+    });
+    return h || '<p class="sub">Nothing to pick here.</p>';
+  }
+  function renderOnb() {
+    $('onbDots').innerHTML = Array.apply(null, Array(ONB_STEPS)).map(function (_, i) { return '<i class="' + (i === onbStep ? 'on' : i < onbStep ? 'done' : '') + '"></i>'; }).join('');
+    var h = '';
+    if (onbStep === 0) {
+      h = '<div class="onb-step"><div class="onb-mark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5DB1FF" stroke-width="4.2" stroke-linecap="round" aria-hidden="true"><path d="M4 18.5H20" opacity=".45"/><path d="M8 12H20" opacity=".75"/><path d="M12 5.5H20"/></svg></div>' +
+        '<h2>Welcome to Askel</h2><p class="sub">Log your sea time, get it signed by your supervisor from their phone, and see how close you are to your next ticket. Let’s set you up. It takes under a minute.</p>' +
+        '<div class="grp" style="margin-top:6px;">What should we call you?</div><input type="text" id="onbName" autocomplete="name" autocapitalize="words" placeholder="Your name" value="' + escapeHtml(profile.name || '') + '" />' +
+        '<div class="grp">Appearance</div>' + themeChips('onb-theme') + '</div>';
+    } else if (onbStep === 1) {
+      h = '<div class="onb-step"><h2>Which tickets do you already hold?</h2><p class="sub">Switch on anything you have. We’ll leave the tickets they cover out of your list. Hold nothing yet? Just continue.</p>' + onbGroupList('held') + '</div>';
+    } else if (onbStep === 2) {
+      h = '<div class="onb-step"><h2>What are you working towards?</h2><p class="sub">Pick the tickets you want. They’ll sit under your total days with live progress. You can change this any time.</p>' + onbGroupList('goal') + '</div>';
+    } else if (onbStep === 3) {
+      var signed = cloudOn();
+      h = '<div class="onb-step"><h2>' + (signed ? 'You’re signed in' : 'Keep it safe and sync it') + '</h2><p class="sub">' + (signed ? 'Your records will back up and follow you to any phone.' : 'Add your email to back up your sea time, use it on more than one phone, send sign-off links to supervisors, and join your employer. Optional. Askel works without it.') + '</p>' +
+        (signed ? '' : '<input type="email" id="onbEmail" autocomplete="email" autocapitalize="none" placeholder="Email" /><input type="password" id="onbPw" autocomplete="new-password" placeholder="Password (8+ characters)" />' + (onbMsg ? '<p class="sub" style="color:var(--red);margin:0 0 12px;">' + escapeHtml(onbMsg) + '</p>' : '') + '<button type="button" class="alt" id="onbMake" style="color:var(--tab-blue);font-size:16px;">Create account</button>') + '</div>';
+    } else {
+      h = '<div class="onb-step"><div class="onb-mark" style="background:var(--accent-soft);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--tab-blue)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><h2>You’re all set</h2><p class="sub">Here’s how it works.</p>' +
+        '<div class="tips"><div class="tip"><em>1</em><span><b>Add your sea time</b>Tap Add and enter the vessel and days.</span></div><div class="tip"><em>2</em><span><b>Get it signed</b>Send it to your supervisor. They sign on their phone in 30 seconds.</span></div><div class="tip"><em>3</em><span><b>Watch your tickets</b>The Tickets tab shows what’s ready and what’s next.</span></div></div></div>';
+    }
+    onbBody.innerHTML = h; onbBody.scrollTop = 0;
+    $('onbBack').style.visibility = onbStep === 0 ? 'hidden' : '';
+    $('onbNext').textContent = onbStep === ONB_STEPS - 1 ? 'Start' : (onbStep === 3 && !cloudOn() ? 'Not now' : 'Continue');
+    $('onbSkip').style.visibility = onbStep === ONB_STEPS - 1 ? 'hidden' : '';
+  }
+  function openOnb(step) { onbStep = step || 0; onbMsg = ''; renderOnb(); document.body.style.overflow = 'hidden'; onbEl.classList.add('open'); fx('open'); }
+  function closeOnb() { try { localStorage.setItem(ONB_KEY, '1'); } catch (e) {} onbEl.classList.remove('open'); document.body.style.overflow = ''; renderMain(); fx('success'); }
+  function onbSaveName() { var n = $('onbName'); if (n && n.value.trim() !== profile.name) { profile.name = n.value.trim(); saveProfile(); renderMain(); } }
+  $('onbNext').addEventListener('click', function () {
+    if (onbStep === 0) onbSaveName();
+    if (onbStep === ONB_STEPS - 1) { closeOnb(); return; }
+    fx('tick'); onbStep++; renderOnb();
+  });
+  $('onbBack').addEventListener('click', function () { if (onbStep > 0) { fx('tick'); if (onbStep === 1) onbSaveName(); onbStep--; renderOnb(); } });
+  $('onbSkip').addEventListener('click', function () { onbSaveName(); closeOnb(); });
+  onbBody.addEventListener('change', function (ev) {
+    var kind = ev.target.getAttribute && ev.target.getAttribute('data-onb'); if (!kind) return;
+    var id = ev.target.getAttribute('data-id'), list = kind === 'held' ? heldIds : goalIds, i = list.indexOf(id);
+    if (ev.target.checked && i === -1) list.push(id); else if (!ev.target.checked && i !== -1) list.splice(i, 1);
+    if (kind === 'held') { saveHeld(); goalIds = goalIds.filter(function (g) { var t = TICKETS.filter(function (x) { return x.id === g; })[0]; return t && goalAvailable(t); }); saveGoals(); } else saveGoals();
+    fx('toggle');
+  });
+  onbBody.addEventListener('click', function (ev) {
+    var tb = ev.target.closest && ev.target.closest('[data-theme-set]'); if (tb) { setTheme(tb.getAttribute('data-theme-set')); Array.prototype.forEach.call(onbBody.querySelectorAll('[data-theme-set]'), function (b) { b.classList.toggle('on', b === tb); }); fx('toggle'); return; }
+    if (ev.target.id === 'onbMake') {
+      var em = $('onbEmail').value.trim(), pw = $('onbPw').value;
+      if (!em || pw.length < 8) { onbMsg = 'Enter your email and a password of at least 8 characters.'; renderOnb(); return; }
+      onbMsg = ''; ev.target.disabled = true; ev.target.textContent = 'Creating…';
+      Cloud.signUp(em, pw, location.origin + '/app/').then(function () { cloudStatus = ''; cloudSync(); onbStep++; renderOnb(); }, function (e) { onbMsg = e.message; renderOnb(); });
+    }
+  });
+  (function () {
+    var done = false; try { done = localStorage.getItem(ONB_KEY) === '1'; } catch (e) {}
+    var existing = entries.length || heldIds.length || (profile.name && profile.name.trim());
+    if (!done && !existing && !/access_token=|#signed=|#r=/.test(location.hash)) setTimeout(function () { openOnb(0); }, 350);
+    else if (!done) { try { localStorage.setItem(ONB_KEY, '1'); } catch (e) {} }
+  })();
+
   // ---- Collapsing nav bar ----
   var navbar = $('navbar'), navShown = false;
   window.addEventListener('scroll', function () {
