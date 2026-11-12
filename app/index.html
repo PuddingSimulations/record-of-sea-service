@@ -1014,9 +1014,9 @@
           <div class="select-wrap" style="margin:0;"><select id="dutyCategory"></select></div>
         </div>
         <div class="field">
-          <label class="field-label" for="dutyCategory2">Dual ticket: also counts as</label>
+          <label class="field-label" for="dutyCategory2">Dual ticket: also log these days as</label>
           <div class="select-wrap" style="margin:0;"><select id="dutyCategory2"></select></div>
-          <p class="field-hint" style="margin:6px 0 0;">For days where you worked two roles at once, like master and engineer on a small charter or fishing boat. The days count toward both tickets and are only added to your total once.</p>
+          <p class="field-hint" style="margin:6px 0 0;">For days where you worked two roles at once, like deck and engineer on a small charter or fishing boat. This saves a second entry with the other duty, so each role gets its own Form 771 and signature. The days are only added to your total once.</p>
         </div>
       </div>
 
@@ -1113,8 +1113,8 @@
       note: 'Deck, or deck and engineering duties, on vessels at least 7.5m long. Without a task book at least half must be on commercial vessels.' },
     { id: 'master45', group: 'Deck', name: 'Master <45m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 12, commercial: 'always',
       subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
-      verify: 'AMSA says the service must be in charge of the navigational watch, and the 180 / 360 total includes 120 / 240 watch days. It does not say whether the remaining days must also be watch days. This app counts watch (INW) and master/coxswain (C) days toward the total. Confirm with AMSA.',
-      note: 'On commercial vessels at least 12m long, while holding Master <24m or Mate <80m (Mate <80m was phased out on 1 January 2023). Plain deck work (D) is not counted here.' },
+      verify: 'AMSA\'s Master <45m sheet says: at least 180 days qualifying sea service on commercial vessels 12m or longer, including 120 days as person in charge of a navigational watch, with an AMSA task book; or 360 days including 240 days in charge of a navigational watch without one. It does not say what duty the other 60 (or 120) days must be. This app counts days logged as in charge of navigation watch (INW) and coxswain (C) toward the total, and shows the watch days separately. Confirm with AMSA if your remaining days are plain deck work.',
+      note: 'On commercial vessels at least 12m long, while holding Master <24m NC or Mate <80m NC (Mate <80m was phased out on 1 January 2023). Plain deck work (D) is not counted here. Gives command of vessels under 45m in the EEZ, and under 100m and 3000GT in inshore waters. To renew: 120 days in the 5 years before applying, or a final assessment, 60 days in the last 6 months, other approved industry experience, or a task book completed since issue.' },
     { id: 'master100', group: 'Deck', name: 'Master <100m NC', categories: ['INW', 'C'], withTaskBook: 180, withoutTaskBook: 360, minLength: 24, commercial: 'always',
       subCategories: ['INW'], subWithTaskBook: 120, subWithoutTaskBook: 240, subLabel: 'In charge of navigational watch',
       note: 'On commercial vessels at least 24m long. While holding Master <45m (or the phased-out Master <35m): 180 / 360 days including 120 / 240 in charge of the navigational watch, as shown here. While holding Mate <80m or another non-command certificate: 360 / 720 days including 120 / 240 on watch.' },
@@ -1168,7 +1168,7 @@
     cox1: { course: 'Certificate II in Maritime Operations (Coxswain Grade 1 NC) from a registered training organisation.', ampa: AMPA_TXT, radio: RADIO_S, eyes: 'deck' },
     inland: { course: 'Certificate III in Maritime Operations (Master Inland Waters NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'deck' },
     master24: { course: 'Certificate III in Maritime Operations (Master <24m NC) from a registered training organisation.', ampa: AMPA_TXT, radio: RADIO_L, eyes: 'deck' },
-    master45: { course: 'Certificate IV in Maritime Operations (Master up to 45 metres NC) from a registered training organisation.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
+    master45: { course: 'Certificate IV in Maritime Operations (Master up to 45 metres NC) from a registered training organisation. AMSA\'s Master <45m sheet words this as "Certificate IV \u2013 Master <35m NC"; it is the same course, so check your RTO\'s certificate title.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
     master100: { course: 'Diploma of Maritime Operations from a registered training organisation.', radio: RADIO_L, oral: ORAL_TXT, eyes: 'deck' },
     med3: { course: 'Certificate II in Maritime Operations (Marine Engine Driver Grade 3 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'eng' },
     med2: { course: 'Certificate III in Maritime Operations (Marine Engine Driver Grade 2 NC) from a registered training organisation.', ampa: AMPA_TXT, eyes: 'eng' },
@@ -1368,6 +1368,28 @@
   var entries = [];
   try { var raw = localStorage.getItem(STORAGE_KEY); if (raw) entries = JSON.parse(raw) || []; } catch (e) { entries = []; }
 
+  // A dual-ticket day is stored as one entry per role (each with its own duty, form and signature), linked by dualId.
+  // Totals count a linked day once.
+  function totalDays(onlySigned) {
+    var solo = 0, groups = {};
+    entries.forEach(function (e) {
+      var d = Number(e.days) || 0; if (onlySigned && !e.supSig) return;
+      if (e.dualId) groups[e.dualId] = Math.max(groups[e.dualId] || 0, d); else solo += d;
+    });
+    return Object.keys(groups).reduce(function (n, k) { return n + groups[k]; }, solo);
+  }
+  function splitLegacyDual() {
+    var add = [];
+    entries.forEach(function (e) {
+      if (!e.cat2) return;
+      var id = 'd' + e.id; e.dualId = id;
+      var c = JSON.parse(JSON.stringify(e)); c.id = 'c' + e.id; c.category = e.cat2; c.supSig = ''; c.supDate = ''; c.sentAt = ''; c.cat2 = ''; add.push(c);
+      e.cat2 = '';
+    });
+    entries = entries.concat(add);
+    if (add.length) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} }
+  }
+  splitLegacyDual();
   var form, autoCalc = true, calendarMonth = new Date(), lastAddedId = null, firstRender = true;
   function defaultForm() {
     return { start: '', end: '', days: 1 };
@@ -1739,7 +1761,7 @@
   var TRASH_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
   function renderMain() {
-    var grandTotal = entries.reduce(function (sum, e) { return sum + Number(e.days); }, 0);
+    var grandTotal = totalDays();
     var stagger = firstRender; firstRender = false;
     if (Number(grandTotalEl.getAttribute('data-v') || 0) !== grandTotal && !stagger) {
       var hv = grandTotalEl.parentNode; hv.classList.remove('bump'); void hv.offsetWidth; hv.classList.add('bump');
@@ -1754,7 +1776,7 @@
     renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); var gr = $('greet'); if (gr) gr.textContent = greeting();
 
     var totalsMap = {};
-    entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); if (e.cat2) totalsMap[e.cat2] = (totalsMap[e.cat2] || 0) + Number(e.days); });
+    entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
     var totals = DUTY_CATEGORIES
       .map(function (c) { return { code: c.code, name: c.name, group: c.group, total: totalsMap[c.code] || 0 }; })
       .filter(function (c) { return c.total > 0; });
@@ -1811,7 +1833,7 @@
         '<div class="entry-card"><div class="entry-top" data-open="' + escapeHtml(e.id) + '">' +
           '<div class="entry-main">' +
             '<div class="entry-title-row"><span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
-            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span>' + (e.cat2 ? '<span class="entry-code" style="background:rgba(48,209,88,0.16);color:#30D158">+ ' + escapeHtml(e.cat2) + '</span>' : '') + '</div>' +
+            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span>' + (e.dualId ? '<span class="entry-code" style="background:rgba(48,209,88,0.16);color:#30D158">DUAL</span>' : '') + '</div>' +
             '<div class="entry-dates">' + dateLine + '</div>' +
             (detailParts.length ? '<div class="entry-details">' + escapeHtml(detailParts.join(' · ')) + '</div>' : '') +
             (e.notes ? '<div class="entry-notes">' + escapeHtml(e.notes) + '</div>' : '') +
@@ -1944,7 +1966,7 @@
     }
 
     // Stats
-    var total = entries.reduce(function (n, e) { return n + Number(e.days); }, 0);
+    var total = totalDays();
     var vessels = Object.keys(entries.reduce(function (m, e) { m[String(e.vessel || '').trim().toLowerCase()] = 1; return m; }, {})).length;
     var longest = entries.reduce(function (m, e) { return Math.max(m, Number(e.days)); }, 0);
     var deckDays = 0, engDays = 0;
@@ -2318,7 +2340,7 @@
   // ---- Share progress with an employer: a small summary in a link, opened on the employer's dashboard ----
   function buildSnapshot() {
     if (!profile.uid) { profile.uid = 'u' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); saveProfile(); }
-    var total = entries.reduce(function (n, e) { return n + (Number(e.days) || 0); }, 0), verified = entries.reduce(function (n, e) { return n + (e.supSig ? (Number(e.days) || 0) : 0); }, 0);
+    var total = totalDays(), verified = totalDays(true);
     var tk = TICKETS.filter(function (t) { return !t.custom && !t.qualOnly && heldIds.indexOf(t.id) === -1 && !coveredBy(t.id); }).map(function (t) {
       var all = qualifying(t, t.categories).days, ver = qualifying(t, t.categories, { verifiedOnly: true }).days;
       return { i: t.id, l: all, v: ver, r: ticketState.taskBook === 'with' ? t.withTaskBook : t.withoutTaskBook };
@@ -2561,7 +2583,7 @@
     vesselNameInput.value = ''; vesselIdInput.value = ''; vesselLengthInput.value = ''; vesselPowerInput.value = ''; vesselEnginesInput.value = ''; vesselOwnerInput.value = '';
     [supNameInput, supPositionInput, supCertInput, supPhoneInput, supEmailInput].forEach(function (el) { el.value = ''; });
     propulsionSelect.value = 'I'; operationTypeSelect.value = 'C'; modeOfOperationSelect.value = 'VU'; $('yachtBox').checked = false;
-    positionInput.value = ''; dutyCategorySelect.value = 'D'; dutyCategory2Select.value = ''; notesInput.value = ''; daysInput.value = 1;
+    positionInput.value = ''; dutyCategorySelect.value = 'D'; dutyCategory2Select.value = ''; $('dutyCategory2').parentNode.parentNode.style.display = ''; notesInput.value = ''; daysInput.value = 1;
     autoCalcBtn.classList.add('active'); autoCalcBtn.textContent = 'Auto (from dates)';
     sheetBody.scrollTop = 0;
     renderCalendar();
@@ -2608,7 +2630,7 @@
     vesselNameInput.value = e.vessel || ''; vesselIdInput.value = e.vesselId || ''; vesselLengthInput.value = e.vesselLength || ''; vesselPowerInput.value = e.vesselPower || '';
     vesselEnginesInput.value = e.numEngines || ''; vesselOwnerInput.value = e.owner || '';
     propulsionSelect.value = e.propulsion || 'I'; operationTypeSelect.value = e.operationType || 'C'; $('yachtBox').checked = !!e.yacht; modeOfOperationSelect.value = e.modeOfOperation || 'VU';
-    positionInput.value = e.position || ''; dutyCategorySelect.value = e.category || 'D'; dutyCategory2Select.value = e.cat2 || ''; notesInput.value = e.notes || '';
+    positionInput.value = e.position || ''; dutyCategorySelect.value = e.category || 'D'; $('dutyCategory2').parentNode.parentNode.style.display = 'none'; notesInput.value = e.notes || '';
     supNameInput.value = e.supName || ''; supPositionInput.value = e.supPosition || ''; supCertInput.value = e.supCert || ''; supPhoneInput.value = e.supPhone || ''; supEmailInput.value = e.supEmail || '';
     form.start = e.start || ''; form.end = e.end || ''; form.days = e.days;
     autoCalc = !!(e.start && e.end) && daysBetween(e.start, e.end) === Number(e.days);
@@ -2676,13 +2698,13 @@
 
   function saveEdit(vessel) {
     var e = entries.filter(function (x) { return x.id === editingId; })[0]; if (!e) { closeModal(); return; }
-    var before = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.cat2 || '', e.position || ''].join('|');
+    var before = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.position || ''].join('|');
     e.vessel = vessel; e.vesselId = vesselIdInput.value.trim(); e.position = positionInput.value.trim(); e.vesselLength = vesselLengthInput.value; e.vesselPower = vesselPowerInput.value;
     e.propulsion = propulsionSelect.value; e.numEngines = vesselEnginesInput.value; e.owner = vesselOwnerInput.value.trim();
     e.supName = supNameInput.value.trim(); e.supPosition = supPositionInput.value.trim(); e.supCert = supCertInput.value.trim(); e.supPhone = supPhoneInput.value.trim(); e.supEmail = supEmailInput.value.trim();
-    e.operationType = operationTypeSelect.value; e.modeOfOperation = modeOfOperationSelect.value; e.category = dutyCategorySelect.value; e.cat2 = dutyCategory2Select.value === dutyCategorySelect.value ? '' : dutyCategory2Select.value;
+    e.operationType = operationTypeSelect.value; e.modeOfOperation = modeOfOperationSelect.value; e.category = dutyCategorySelect.value;
     e.start = form.start; e.end = form.end; e.days = Number(daysInput.value); e.notes = notesInput.value.trim();
-    var after = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.cat2 || '', e.position || ''].join('|');
+    var after = [e.vessel, e.vesselId, e.start, e.end, Number(e.days), e.category, e.position || ''].join('|');
     var cleared = !!e.supSig && before !== after;
     if (cleared) { e.supSig = ''; e.supDate = ''; e.sentAt = ''; }
     saveEntries(); closeModal(true);
@@ -2698,9 +2720,10 @@
       id: uuid(), vessel: vessel, vesselId: vesselIdInput.value.trim(), position: positionInput.value.trim(),
       vesselLength: vesselLengthInput.value, vesselPower: vesselPowerInput.value, propulsion: propulsionSelect.value, numEngines: vesselEnginesInput.value, owner: vesselOwnerInput.value.trim(),
       supName: supNameInput.value.trim(), supPosition: supPositionInput.value.trim(), supCert: supCertInput.value.trim(), supPhone: supPhoneInput.value.trim(), supEmail: supEmailInput.value.trim(),
-      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, yacht: $('yachtBox').checked, category: dutyCategorySelect.value, cat2: dutyCategory2Select.value === dutyCategorySelect.value ? '' : dutyCategory2Select.value,
+      operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, yacht: $('yachtBox').checked, category: dutyCategorySelect.value,
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
+    var c2 = dutyCategory2Select.value; if (c2 && c2 !== entry.category) { var pair = JSON.parse(JSON.stringify(entry)); pair.id = uuid(); pair.category = c2; entry.dualId = pair.dualId = uuid(); entries.push(pair); }
     entries.push(entry); lastAddedId = entry.id; saveEntries();
     closeModal(true);
     setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 34); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
@@ -2708,7 +2731,8 @@
 
   // ---- Quick add: "+1 day" after a trip, or a lump of past service ----
   var QUICK_KEY = 'askel-quick';
-  var QUICK_DUTIES = [['D', 'Deck work'], ['INW', 'Watch in charge'], ['C', 'Coxswain / master'], ['GPH', 'General purpose hand'], ['E/ED', 'Engineer / driver'], ['EIC', 'Engineer in charge'], ['AE/ED', 'Assistant engineer'], ['EW', 'Engine watch']];
+  var QUICK_DUTIES = ['D', 'GPH', 'INW', 'C', 'EIC', 'EW', 'E/ED', 'AE/ED', 'AEIC'];
+  function dutyName(c) { var d = DUTY_CATEGORIES.filter(function (k) { return k.code === c; })[0]; return d ? d.name : c; }
   var quickOverlay = $('quickOverlay'), quickSheet = $('quickSheet'), quickBody = $('quickBody');
   var qk = { vessel: '', duties: ['D'], when: 'today', date: '', days: 1, nu: false, tally: true };
   function isoDay(d) { var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); }
@@ -2718,25 +2742,27 @@
     return Object.keys(m).map(function (k) { return m[k]; }).reverse().slice(0, 6);
   }
   function quickDateISO() { return qk.when === 'today' ? isoDay(new Date()) : qk.when === 'yesterday' ? isoDay(new Date(Date.now() - 86400000)) : qk.when === 'pick' ? qk.date : ''; }
-  function quickMatch() {
-    var d = quickDateISO(), c1 = qk.duties[0], c2 = qk.duties[1] || '', mode = qk.nu ? 'NUD' : 'VU';
-    return entries.filter(function (e) { return e.tally && !e.supSig && e.vessel === qk.vessel && e.category === c1 && (e.cat2 || '') === c2 && (e.modeOfOperation || 'VU') === mode && (d ? !!e.start : !e.start); })[0];
+  function quickMode(c) { return qk.nu ? (DUTY_CATEGORIES.filter(function (k) { return k.code === c; })[0] || {}).group === 'Engineering' ? 'NUE' : 'NUD' : 'VU'; }
+  function quickMatchFor(c) {
+    var d = quickDateISO(), dual = qk.duties.length === 2, mode = quickMode(c);
+    return entries.filter(function (e) { return e.tally && !e.supSig && e.vessel === qk.vessel && e.category === c && !!e.dualId === dual && (e.modeOfOperation || 'VU') === mode && (d ? !!e.start : !e.start); })[0];
   }
+  function quickMatch() { return quickMatchFor(qk.duties[0]); }
   function drawQuick() {
     var vs = quickVessels(), h = '';
     h += '<div class="form-card"><p class="section-title">Vessel</p>';
     if (vs.length) { h += '<div class="role-chips">' + vs.map(function (e) { return '<button type="button" data-qv="' + escapeHtml(e.vessel) + '"' + (qk.vessel === e.vessel ? ' class="on"' : '') + '>' + escapeHtml(e.vessel) + '</button>'; }).join('') + '<button type="button" data-qv="__new"' + (qk.vessel && !vs.some(function (e) { return e.vessel === qk.vessel; }) ? ' class="on"' : '') + '>New vessel</button></div>'; }
     if (!vs.length || (qk.vessel === '' && qk.newv) || (qk.vessel && !vs.some(function (e) { return e.vessel === qk.vessel; })) || qk.newv) h += '<div class="field" style="margin-top:10px;"><input type="text" id="qkVessel" placeholder="Vessel name" autocomplete="off" autocapitalize="words" value="' + escapeHtml(qk.vessel) + '" /></div>';
     h += '</div>';
-    h += '<div class="form-card"><p class="section-title">What did you do?</p><div class="role-chips">' + QUICK_DUTIES.map(function (d) { return '<button type="button" data-qd="' + d[0] + '"' + (qk.duties.indexOf(d[0]) !== -1 ? ' class="on"' : '') + '>' + d[1] + '</button>'; }).join('') + '</div>' +
-      '<p class="field-hint" style="margin:10px 0 0;">' + (qk.duties.length === 2 ? 'Dual ticket day: this counts toward both. It is only added to your total once.' : 'Tap a second one for a dual-ticket day, like master and engineer on the same boat.') + '</p></div>';
+    h += '<div class="form-card"><p class="section-title">What did you do?</p><div class="role-chips">' + QUICK_DUTIES.map(function (d) { return '<button type="button" data-qd="' + d + '"' + (qk.duties.indexOf(d) !== -1 ? ' class="on"' : '') + '>' + escapeHtml(dutyName(d)) + '</button>'; }).join('') + '</div>' +
+      '<p class="field-hint" style="margin:10px 0 0;">' + (qk.duties.length === 2 ? 'Dual ticket day: saved as two entries, one for each duty, so each gets its own Form 771. It is only added to your total once.' : 'Tap a second duty for a dual-ticket day, like deck and engineer on the same boat.') + '</p></div>';
     h += '<div class="form-card"><p class="section-title">When</p><div class="role-chips">' + [['today', 'Today'], ['yesterday', 'Yesterday'], ['pick', 'Pick a date'], ['none', 'No exact date']].map(function (w) { return '<button type="button" data-qw="' + w[0] + '"' + (qk.when === w[0] ? ' class="on"' : '') + '>' + w[1] + '</button>'; }).join('') + '</div>' +
       (qk.when === 'pick' ? '<div class="field" style="margin-top:10px;"><input type="date" id="qkDate" value="' + escapeHtml(qk.date) + '" max="' + isoDay(new Date()) + '" /></div>' : '') +
       (qk.when === 'none' ? '<p class="field-hint" style="margin:10px 0 0;">For older service where you only know roughly how many days. You can add dates later.</p>' : '') +
       '<p class="section-title" style="margin-top:16px;">Days</p><div class="qk-step"><button type="button" id="qkMinus" aria-label="One less">−</button><input type="number" inputmode="numeric" id="qkDays" min="1" value="' + qk.days + '" /><button type="button" id="qkPlus" aria-label="One more">+</button></div>' +
       '<label class="set-row" style="margin-top:12px;"><span class="n">Not underway<small>Alongside, refit or maintenance. AMSA caps how many of these count.</small></span><input type="checkbox" class="switch" id="qkNu"' + (qk.nu ? ' checked' : '') + ' /></label>';
     var m = quickMatch();
-    if (m) h += '<label class="set-row"><span class="n">Add to your running tally<small>' + escapeHtml(m.vessel) + ' · ' + m.category + (m.cat2 ? ' + ' + m.cat2 : '') + ' · ' + Number(m.days) + ' days so far</small></span><input type="checkbox" class="switch" id="qkTally"' + (qk.tally ? ' checked' : '') + ' /></label>';
+    if (m) h += '<label class="set-row"><span class="n">Add to your running tally<small>' + escapeHtml(m.vessel) + ' · ' + qk.duties.map(dutyName).join(' + ') + ' · ' + Number(m.days) + ' days so far</small></span><input type="checkbox" class="switch" id="qkTally"' + (qk.tally ? ' checked' : '') + ' /></label>';
     h += '</div>';
     quickBody.innerHTML = h;
     var n = Math.max(1, Number(qk.days) || 1); $('quickSave').textContent = 'Add ' + n + ' day' + (n === 1 ? '' : 's'); $('quickSave').disabled = !qk.vessel.trim() || (qk.when === 'pick' && !qk.date);
@@ -2768,26 +2794,31 @@
   });
   $('quickSave').addEventListener('click', function () {
     var n = Math.max(1, Number(qk.days) || 1), vessel = qk.vessel.trim(); if (!vessel) return;
-    var d = quickDateISO(), c1 = qk.duties[0], c2 = qk.duties[1] || '', mode = qk.nu ? 'NUD' : 'VU';
-    var m = qk.tally ? quickMatch() : null, undo, msg;
-    if (m) {
-      var snap = { days: m.days, start: m.start, end: m.end };
-      m.days = Number(m.days) + n; if (d) { if (!m.start || d < m.start) m.start = d; if (!m.end || d > m.end) m.end = d; }
-      undo = function () { m.days = snap.days; m.start = snap.start; m.end = snap.end; };
-      msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + '. ' + vessel + ' is now ' + m.days + '.'; lastAddedId = m.id;
-    } else {
-      var base = entries.filter(function (e) { return e.vessel === vessel; }).sort(function (a, b) { return (b.end || b.start || '').localeCompare(a.end || a.start || ''); })[0] || {};
-      var ne = { id: uuid(), tally: true, vessel: vessel, vesselId: base.vesselId || '', position: base.position || '', vesselLength: base.vesselLength || '', vesselPower: base.vesselPower || '', propulsion: base.propulsion || 'I', numEngines: base.numEngines || '', owner: base.owner || '',
-        supName: base.supName || '', supPosition: base.supPosition || '', supCert: base.supCert || '', supPhone: base.supPhone || '', supEmail: base.supEmail || '',
-        operationType: base.operationType || 'C', modeOfOperation: mode, yacht: !!base.yacht, category: c1, cat2: c2, start: d, end: d, days: n, notes: d ? '' : 'Earlier service, exact dates not recorded.' };
-      entries.push(ne); lastAddedId = ne.id;
-      undo = function () { entries = entries.filter(function (e) { return e.id !== ne.id; }); };
-      msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + ' on ' + vessel + (base.vessel ? '' : '. Add its length and power under the entry so it can count.');
-    }
-    try { localStorage.setItem(QUICK_KEY, JSON.stringify({ vessel: vessel, duties: qk.duties })); } catch (e) {}
+    var d = quickDateISO(), duties = qk.duties.slice(), dual = duties.length === 2, undos = [], first = null, did = null;
+    var base = entries.filter(function (e) { return e.vessel === vessel; }).sort(function (a, b) { return (b.end || b.start || '').localeCompare(a.end || a.start || ''); })[0] || {};
+    var found = duties.map(function (c) { return qk.tally ? quickMatchFor(c) : null; });
+    if (dual) did = (found[0] && found[0].dualId) || (found[1] && found[1].dualId) || uuid();
+    var report = '';
+    duties.forEach(function (c, i) {
+      var m = found[i];
+      if (m) {
+        var snap = { days: m.days, start: m.start, end: m.end };
+        m.days = Number(m.days) + n; if (d) { if (!m.start || d < m.start) m.start = d; if (!m.end || d > m.end) m.end = d; }
+        undos.push(function () { m.days = snap.days; m.start = snap.start; m.end = snap.end; }); first = first || m; report = m.days;
+      } else {
+        var ne = { id: uuid(), tally: true, vessel: vessel, vesselId: base.vesselId || '', position: base.position || '', vesselLength: base.vesselLength || '', vesselPower: base.vesselPower || '', propulsion: base.propulsion || 'I', numEngines: base.numEngines || '', owner: base.owner || '',
+          supName: base.supName || '', supPosition: base.supPosition || '', supCert: base.supCert || '', supPhone: base.supPhone || '', supEmail: base.supEmail || '',
+          operationType: base.operationType || 'C', modeOfOperation: quickMode(c), yacht: !!base.yacht, category: c, start: d, end: d, days: n, notes: d ? '' : 'Earlier service, exact dates not recorded.' };
+        if (did) ne.dualId = did;
+        entries.push(ne); first = first || ne; report = n; undos.push(function () { entries = entries.filter(function (e) { return e.id !== ne.id; }); });
+      }
+    });
+    lastAddedId = first && first.id;
+    var msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + (dual ? ' as a dual day' : '') + ' on ' + vessel + (base.vessel ? '' : '. Add its length and power under the entry so it can count.');
+    try { localStorage.setItem(QUICK_KEY, JSON.stringify({ vessel: vessel, duties: duties })); } catch (e) {}
     saveEntries(); closeQuick();
     setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 26);
-      showToast(msg, 'Undo', function () { undo(); saveEntries(); renderMain(); fx('undo'); }); }, 250);
+      showToast(msg, 'Undo', function () { undos.forEach(function (u) { u(); }); saveEntries(); renderMain(); fx('undo'); }); }, 250);
   });
   $('quickFull').addEventListener('click', function () { closeQuick(); setTimeout(openModal, 280); });
   $('closeQuickBtn').addEventListener('click', closeQuick);
