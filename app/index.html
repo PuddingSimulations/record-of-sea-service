@@ -870,7 +870,7 @@
         <div class="field"><label class="field-label" for="pfEngines">Number of propulsion engines</label><input type="number" inputmode="numeric" min="0" id="pfEngines" /></div>
         <div class="field"><span class="field-label">Supervisor role</span>
           <div class="role-chips" id="roleChips">
-            <button type="button" data-role="master">Master in charge</button><button type="button" data-role="engineer">Engineer in charge</button><button type="button" data-role="owner">Owner</button><button type="button" data-role="other">Other</button>
+            <button type="button" data-role="master">Master</button><button type="button" data-role="engineer">Engineer</button><button type="button" data-role="owner">Owner</button><button type="button" data-role="other">Other</button>
           </div>
         </div>
         <div class="field" id="roleOtherField" style="display:none;"><label class="field-label" for="pfRoleOther">Other role</label><input type="text" id="pfRoleOther" autocomplete="off" /></div>
@@ -2744,8 +2744,9 @@
   function quickDateISO() { return qk.when === 'today' ? isoDay(new Date()) : qk.when === 'yesterday' ? isoDay(new Date(Date.now() - 86400000)) : qk.when === 'pick' ? qk.date : ''; }
   function quickMode(c) { return qk.nu ? (DUTY_CATEGORIES.filter(function (k) { return k.code === c; })[0] || {}).group === 'Engineering' ? 'NUE' : 'NUD' : 'VU'; }
   function quickMatchFor(c) {
-    var d = quickDateISO(), dual = qk.duties.length === 2, mode = quickMode(c);
-    return entries.filter(function (e) { return e.tally && !e.supSig && e.vessel === qk.vessel && e.category === c && !!e.dualId === dual && (e.modeOfOperation || 'VU') === mode && (d ? !!e.start : !e.start); })[0];
+    var dual = qk.duties.length === 2, mode = quickMode(c);
+    return entries.filter(function (e) { return !e.supSig && e.vessel === qk.vessel && e.category === c && !!e.dualId === dual && (e.modeOfOperation || 'VU') === mode; })
+      .sort(function (a, b) { return (b.end || b.start || '').localeCompare(a.end || a.start || ''); })[0];
   }
   function quickMatch() { return quickMatchFor(qk.duties[0]); }
   function drawQuick() {
@@ -2762,7 +2763,7 @@
       '<p class="section-title" style="margin-top:16px;">Days</p><div class="qk-step"><button type="button" id="qkMinus" aria-label="One less">−</button><input type="number" inputmode="numeric" id="qkDays" min="1" value="' + qk.days + '" /><button type="button" id="qkPlus" aria-label="One more">+</button></div>' +
       '<label class="set-row" style="margin-top:12px;"><span class="n">Not underway<small>Alongside, refit or maintenance. AMSA caps how many of these count.</small></span><input type="checkbox" class="switch" id="qkNu"' + (qk.nu ? ' checked' : '') + ' /></label>';
     var m = quickMatch();
-    if (m) h += '<label class="set-row"><span class="n">Add to your running tally<small>' + escapeHtml(m.vessel) + ' · ' + qk.duties.map(dutyName).join(' + ') + ' · ' + Number(m.days) + ' days so far</small></span><input type="checkbox" class="switch" id="qkTally"' + (qk.tally ? ' checked' : '') + ' /></label>';
+    if (m) h += '<label class="set-row"><span class="n">Add to your existing entry<small>' + escapeHtml(m.vessel) + ' · ' + qk.duties.map(dutyName).join(' + ') + ' · ' + Number(m.days) + ' days so far</small></span><input type="checkbox" class="switch" id="qkTally"' + (qk.tally ? ' checked' : '') + ' /></label>';
     h += '</div>';
     quickBody.innerHTML = h;
     var n = Math.max(1, Number(qk.days) || 1); $('quickSave').textContent = 'Add ' + n + ' day' + (n === 1 ? '' : 's'); $('quickSave').disabled = !qk.vessel.trim() || (qk.when === 'pick' && !qk.date);

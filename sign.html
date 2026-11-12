@@ -118,7 +118,7 @@
       <input id="sem" type="email" inputmode="email" placeholder="Email" autocomplete="email" autocapitalize="none">
     </div>
     <div class="label">Your role</div>
-    <div class="chips" id="roles"><button data-r="master">Master in charge</button><button data-r="engineer">Engineer in charge</button><button data-r="owner">Owner</button><button data-r="other">Other</button></div>
+    <div class="chips" id="roles"><button data-r="master">Master</button><button data-r="engineer">Engineer</button><button data-r="owner">Owner</button><button data-r="other">Other</button></div>
     <div id="otherBox" style="display:none;margin-top:10px;"><input id="ro" placeholder="Describe your role"></div>
 
     <p class="decl">I supervised this person on this vessel, and the details above are true and correct.</p>
@@ -136,7 +136,7 @@
     <div class="sendgrid" id="sendGrid"></div>
     <button class="link" id="copyLink" style="margin-top:18px;">Copy the reply link instead</button>
     <div class="copybox" id="copybox" style="display:none;"></div>
-    <a class="opcta" href="./?from=signer#operators" target="_blank" rel="noopener"><b>Run a vessel or crew?</b><span>See every crew member\u2019s sign-offs and ticket progress in one dashboard. Askel for operators \u2192</span></a>
+    <a class="opcta" href="./?from=signer#operators" target="_blank" rel="noopener"><b>Run a vessel or crew?</b><span>See every crew member&#8217;s sign-offs and ticket progress in one dashboard. Askel for operators &rarr;</span></a>
   </section>
 </main>
 
@@ -148,7 +148,7 @@ window.__boot = function () {
   function enc(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function dec(s) { try { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
   function au(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
-  var DUTY = { D: 'Deck work', DE: 'Deck and engineering', GPH: 'General purpose hand', INW: 'In charge of navigation watch', C: 'Coxswain', AEIC: 'Assistant to engineer in charge', 'AE/ED': 'Assistant to engineer or engine driver', 'E/ED': 'Engineer or engine driver', EW: 'Engineer watchkeeper', EIC: 'Engineer in charge' };
+  var DUTY = { D: 'Deck work', DE: 'Deck and engineering', GPH: 'General purpose hand', INW: 'In charge of navigation watch', C: 'Coxswain grade 1 or 2 or 3', AEIC: 'Assistant to engineer in charge', 'AE/ED': 'Assistant to engineer or engine driver', 'E/ED': 'Engineer or engine driver', EW: 'Engineer watchkeeper', EIC: 'Engineer in charge' };
 
   // ---- the request lives in the link ----
   var m = location.hash.match(/^#r=(.+)$/), raw = window.__REQ || (m && m[1]), R = window.__SR || (raw && dec(raw)), demo = false, TOKEN = window.__TOKEN || '';
