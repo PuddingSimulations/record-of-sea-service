@@ -1,0 +1,15 @@
+name: Supabase keep-alive
+# Pings the database every 3 days so a free Supabase project is not paused for inactivity.
+# GitHub only runs scheduled workflows from the repository's default branch (main), so this starts working once it is merged there.
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the database
+        run: |
+          curl -fsS "https://afgjfqaocpgmihlybtkh.supabase.co/rest/v1/progress_snapshots?select=user_id&limit=1" \
+            -H "apikey: sb_publishable_IODM4Vb8kyvg5hozCJxsZw_KYXSzxOM"
