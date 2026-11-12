@@ -1367,28 +1367,30 @@
   var entries = [];
   try { var raw = localStorage.getItem(STORAGE_KEY); if (raw) entries = JSON.parse(raw) || []; } catch (e) { entries = []; }
 
-  // A dual-ticket day is stored as one entry per role (each with its own duty, form and signature), linked by dualId.
-  // Totals count a linked day once.
+  // Entries are one per vessel and duty. A dual-ticket day is a day worked in two duties at once: it is added to both
+  // duties' entries, and e.dual records how many of an entry's days were also counted under the other duty.
+  // The total counts each dual day once (the overlap is shared by exactly two entries).
   function totalDays(onlySigned) {
-    var solo = 0, groups = {};
+    var sum = 0, overlap = 0;
     entries.forEach(function (e) {
-      var d = Number(e.days) || 0; if (onlySigned && !e.supSig) return;
-      if (e.dualId) groups[e.dualId] = Math.max(groups[e.dualId] || 0, d); else solo += d;
+      if (onlySigned && !e.supSig) return;
+      var d = Number(e.days) || 0; sum += d; overlap += Math.min(Number(e.dual) || 0, d);
     });
-    return Object.keys(groups).reduce(function (n, k) { return n + groups[k]; }, solo);
+    return Math.max(0, sum - Math.floor(overlap / 2));
   }
   function splitLegacyDual() {
     var add = [];
     entries.forEach(function (e) {
       if (!e.cat2) return;
-      var id = 'd' + e.id; e.dualId = id;
-      var c = JSON.parse(JSON.stringify(e)); c.id = 'c' + e.id; c.category = e.cat2; c.supSig = ''; c.supDate = ''; c.sentAt = ''; c.cat2 = ''; add.push(c);
+      e.dual = Number(e.days) || 0;
+      var c = JSON.parse(JSON.stringify(e)); c.id = 'c' + e.id; c.category = e.cat2; c.supSig = ''; c.supDate = ''; c.sentAt = ''; c.cat2 = ''; c.dual = e.dual; add.push(c);
       e.cat2 = '';
     });
     entries = entries.concat(add);
     if (add.length) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {} }
   }
   splitLegacyDual();
+  (function () { var ch = false; entries.forEach(function (e) { if (e.dualId) { e.dual = Number(e.days) || 0; delete e.dualId; ch = true; } }); if (ch) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (x) {} } })();
   var form, autoCalc = true, calendarMonth = new Date(), lastAddedId = null, firstRender = true;
   function defaultForm() {
     return { start: '', end: '', days: 1 };
@@ -1832,7 +1834,7 @@
         '<div class="entry-card"><div class="entry-top" data-open="' + escapeHtml(e.id) + '">' +
           '<div class="entry-main">' +
             '<div class="entry-title-row"><span class="entry-vessel">' + escapeHtml(e.vessel) + '</span>' +
-            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span>' + (e.dualId ? '<span class="entry-code" style="background:rgba(48,209,88,0.16);color:#30D158">DUAL</span>' : '') + '</div>' +
+            '<span class="entry-code" style="background:' + color + '24;color:' + color + '">' + escapeHtml(e.category) + '</span>' + (Number(e.dual) > 0 ? '<span class="entry-code" style="background:rgba(48,209,88,0.16);color:#30D158">' + Math.min(Number(e.dual), Number(e.days)) + ' dual</span>' : '') + '</div>' +
             '<div class="entry-dates">' + dateLine + '</div>' +
             (detailParts.length ? '<div class="entry-details">' + escapeHtml(detailParts.join(' · ')) + '</div>' : '') +
             (e.notes ? '<div class="entry-notes">' + escapeHtml(e.notes) + '</div>' : '') +
@@ -2730,7 +2732,7 @@
       operationType: operationTypeSelect.value, modeOfOperation: modeOfOperationSelect.value, yacht: $('yachtBox').checked, category: dutyCategorySelect.value,
       start: form.start, end: form.end, days: Number(daysInput.value), notes: notesInput.value.trim()
     };
-    var c2 = dutyCategory2Select.value; if (c2 && c2 !== entry.category) { var pair = JSON.parse(JSON.stringify(entry)); pair.id = uuid(); pair.category = c2; entry.dualId = pair.dualId = uuid(); entries.push(pair); }
+    var c2 = dutyCategory2Select.value; if (c2 && c2 !== entry.category) { var pair = JSON.parse(JSON.stringify(entry)); pair.id = uuid(); pair.category = c2; entry.dual = pair.dual = Number(entry.days) || 0; entries.push(pair); }
     entries.push(entry); lastAddedId = entry.id; saveEntries();
     closeModal(true);
     setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 34); showToast('Added ' + entry.days + ' day' + (entry.days === 1 ? '' : 's') + ' · ' + entry.vessel); }, 250);
@@ -2751,8 +2753,8 @@
   function quickDateISO() { return qk.when === 'today' ? isoDay(new Date()) : qk.when === 'yesterday' ? isoDay(new Date(Date.now() - 86400000)) : qk.when === 'pick' ? qk.date : ''; }
   function quickMode(c) { return qk.nu ? (DUTY_CATEGORIES.filter(function (k) { return k.code === c; })[0] || {}).group === 'Engineering' ? 'NUE' : 'NUD' : 'VU'; }
   function quickMatchFor(c) {
-    var dual = qk.duties.length === 2, mode = quickMode(c);
-    return entries.filter(function (e) { return !e.supSig && e.vessel === qk.vessel && e.category === c && !!e.dualId === dual && (e.modeOfOperation || 'VU') === mode; })
+    var mode = quickMode(c);
+    return entries.filter(function (e) { return !e.supSig && e.vessel === qk.vessel && e.category === c && (e.modeOfOperation || 'VU') === mode; })
       .sort(function (a, b) { return (b.end || b.start || '').localeCompare(a.end || a.start || ''); })[0];
   }
   function quickMatch() { return quickMatchFor(qk.duties[0]); }
@@ -2770,7 +2772,7 @@
         '<div class="field"><label class="field-label" for="qkVid">Registration / call sign</label><input type="text" id="qkVid" autocomplete="off" autocapitalize="characters" placeholder="Optional" value="' + escapeHtml(qk.vid) + '" /></div></div>';
     }
     h += '<div class="form-card"><p class="section-title">What did you do?</p><div class="role-chips">' + QUICK_DUTIES.map(function (d) { return '<button type="button" data-qd="' + d + '"' + (qk.duties.indexOf(d) !== -1 ? ' class="on"' : '') + '>' + escapeHtml(dutyName(d)) + '</button>'; }).join('') + '</div>' +
-      '<p class="field-hint" style="margin:10px 0 0;">' + (qk.duties.length === 2 ? 'Dual ticket day: saved as two entries, one for each duty, so each gets its own Form 771. It is only added to your total once.' : 'Tap a second duty for a dual-ticket day, like deck and engineer on the same boat.') + '</p></div>';
+      '<p class="field-hint" style="margin:10px 0 0;">' + (qk.duties.length === 2 ? 'Dual ticket day: added to each duty\'s entry (so each gets its own Form 771) and only counted once in your total.' : 'Tap a second duty for a dual-ticket day, like deck and engineer on the same boat.') + '</p></div>';
     h += '<div class="form-card"><p class="section-title">When</p><div class="role-chips">' + [['today', 'Today'], ['yesterday', 'Yesterday'], ['pick', 'Pick a date'], ['none', 'No exact date']].map(function (w) { return '<button type="button" data-qw="' + w[0] + '"' + (qk.when === w[0] ? ' class="on"' : '') + '>' + w[1] + '</button>'; }).join('') + '</div>' +
       (qk.when === 'pick' ? '<div class="field" style="margin-top:10px;"><input type="date" id="qkDate" value="' + escapeHtml(qk.date) + '" max="' + isoDay(new Date()) + '" /></div>' : '') +
       (qk.when === 'none' ? '<p class="field-hint" style="margin:10px 0 0;">For older service where you only know roughly how many days. You can add dates later.</p>' : '') +
@@ -2811,22 +2813,21 @@
   });
   $('quickSave').addEventListener('click', function () {
     var n = Math.max(1, Number(qk.days) || 1), vessel = qk.vessel.trim(); if (!vessel) return;
-    var d = quickDateISO(), duties = qk.duties.slice(), dual = duties.length === 2, undos = [], first = null, did = null;
+    var d = quickDateISO(), duties = qk.duties.slice(), dual = duties.length === 2, undos = [], first = null;
     var base = entries.filter(function (e) { return e.vessel === vessel; }).sort(function (a, b) { return (b.end || b.start || '').localeCompare(a.end || a.start || ''); })[0] || {};
     var found = duties.map(function (c) { return qk.tally ? quickMatchFor(c) : null; });
-    if (dual) did = (found[0] && found[0].dualId) || (found[1] && found[1].dualId) || uuid();
     var report = '';
     duties.forEach(function (c, i) {
       var m = found[i];
       if (m) {
-        var snap = { days: m.days, start: m.start, end: m.end };
-        m.days = Number(m.days) + n; if (d) { if (!m.start || d < m.start) m.start = d; if (!m.end || d > m.end) m.end = d; }
-        undos.push(function () { m.days = snap.days; m.start = snap.start; m.end = snap.end; }); first = first || m; report = m.days;
+        var snap = { days: m.days, start: m.start, end: m.end, dual: m.dual };
+        m.days = Number(m.days) + n; if (dual) m.dual = (Number(m.dual) || 0) + n; if (d) { if (!m.start || d < m.start) m.start = d; if (!m.end || d > m.end) m.end = d; }
+        undos.push(function () { m.days = snap.days; m.start = snap.start; m.end = snap.end; m.dual = snap.dual; }); first = first || m; report = m.days;
       } else {
         var nv = !base.vessel; var ne = { id: uuid(), tally: true, vessel: vessel, vesselId: nv ? qk.vid.trim() : (base.vesselId || ''), position: base.position || '', vesselLength: nv ? qk.vl : (base.vesselLength || ''), vesselPower: nv ? qk.vp : (base.vesselPower || ''), propulsion: nv ? qk.vprop : (base.propulsion || 'I'), numEngines: base.numEngines || '', owner: base.owner || '',
           supName: base.supName || '', supPosition: base.supPosition || '', supCert: base.supCert || '', supPhone: base.supPhone || '', supEmail: base.supEmail || '',
           operationType: base.operationType || 'C', modeOfOperation: quickMode(c), yacht: !!base.yacht, category: c, start: d, end: d, days: n, notes: d ? '' : 'Earlier service, exact dates not recorded.' };
-        if (did) ne.dualId = did;
+        if (dual) ne.dual = n;
         entries.push(ne); first = first || ne; report = n; undos.push(function () { entries = entries.filter(function (e) { return e.id !== ne.id; }); });
       }
     });
