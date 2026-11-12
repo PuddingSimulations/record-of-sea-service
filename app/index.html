@@ -1850,7 +1850,7 @@
 
   // ---- Swipe to delete (with undo) ----
   // Swipe left to reveal Delete; the entry is only removed when you tap Delete (with Undo afterwards).
-  var openSwipe = null;
+  var openSwipe = null, lastSwipeEnd = 0;
   function closeSwipe(row) { if (!row) return; var c = row.querySelector('.entry-card'); c.classList.add('snap'); c.style.transform = ''; row.classList.remove('open'); setTimeout(function () { if (!row.classList.contains('open')) row.classList.remove('swiping'); }, 360); if (openSwipe === row) openSwipe = null; }
   document.addEventListener('touchstart', function (ev) { if (openSwipe && !openSwipe.contains(ev.target)) closeSwipe(openSwipe); }, { passive: true });
   function attachSwipe(row) {
@@ -1873,6 +1873,7 @@
     function end() {
       if (!tracking) return; tracking = false;
       if (!horizontal) return;
+      lastSwipeEnd = Date.now();
       var pos = Math.min(0, base + dx);
       card.classList.add('snap');
       if (pos < -REV * 0.45) {
@@ -1886,7 +1887,11 @@
     row.addEventListener('click', function (ev) {
       if (row.classList.contains('open') && !ev.target.closest('.swipe-action')) { ev.stopPropagation(); ev.preventDefault(); closeSwipe(row); }
     }, true);
-    row.querySelector('.swipe-action').addEventListener('click', function () { fx('delete'); openSwipe = null; removeEntry(row.getAttribute('data-id'), row); });
+    // Delete only fires from a deliberate tap on the fully revealed button, never from the end of the swipe itself.
+    row.querySelector('.swipe-action').addEventListener('click', function (ev) {
+      if (!row.classList.contains('open') || Date.now() - lastSwipeEnd < 500) { ev.stopPropagation(); return; }
+      fx('delete'); openSwipe = null; removeEntry(row.getAttribute('data-id'), row);
+    });
   }
 
   function removeEntry(id, row) {
