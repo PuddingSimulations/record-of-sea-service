@@ -592,6 +592,12 @@
   .exp-soon { color: #FFB020; } .exp-over { color: var(--red, #FF5A52); }
   .exp-home { background: var(--card); border-radius: 18px; padding: 14px 16px; margin: 0 0 14px; box-shadow: var(--shadow); cursor: pointer; }
   .exp-home b { display: block; font-size: 15px; margin-bottom: 6px; } .exp-home div { display: flex; justify-content: space-between; font-size: 13.5px; padding: 3px 0; color: var(--ink-2); }
+  /* crew dashboard inside the app */
+  #dashOverlay { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: none; flex-direction: column; padding-top: env(safe-area-inset-top); }
+  #dashOverlay.open { display: flex; }
+  #dashOverlay .dh { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--line); font-weight: 800; }
+  #dashOverlay .dh button { border: none; background: var(--card-2); color: var(--ink); font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 999px; }
+  #dashFrame { flex: 1; width: 100%; border: 0; background: var(--bg); }
 </style>
 </head>
 <body>
@@ -638,6 +644,7 @@
   </div>
 
   <div id="tabService">
+    <div id="dashChip"></div>
     <div id="expCard"></div>
     <div id="bossCard"></div>
     <div id="entriesSection"></div>
@@ -916,6 +923,8 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAction" type="button"></button></div>
 
+
+<div id="dashOverlay" role="dialog" aria-label="Crew dashboard"><div class="dh"><span>Crew dashboard</span><button type="button" id="dashClose">Done</button></div><iframe id="dashFrame" title="Crew dashboard"></iframe></div>
 
 <div class="overlay" id="quickOverlay">
   <div class="sheet" id="quickSheet" role="dialog" aria-modal="true" aria-label="Log a day">
@@ -1802,7 +1811,7 @@
     var heldN = heldList().length, stT = $('statTickets');
     stT.style.display = heldN ? '' : 'none'; stT.textContent = heldN + (heldN === 1 ? ' ticket' : ' tickets');
     renderTicketProgress();
-    renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); renderExpiry(); var gr = $('greet'); if (gr) gr.textContent = greeting();
+    renderWorking(); renderGoals(); renderMore(); renderBoss(); renderNext(); renderExpiry(); renderDashChip(); var gr = $('greet'); if (gr) gr.textContent = greeting();
 
     var totalsMap = {};
     entries.forEach(function (e) { totalsMap[e.category] = (totalsMap[e.category] || 0) + Number(e.days); });
@@ -2911,6 +2920,7 @@
     html += '<div class="form-card"><p class="section-title">Reminders</p>' + remindHTML() + '</div>';
     html += expCard();
     html += accountCard();
+    html += dashCard();
     html += '<div class="form-card"><p class="section-title">Employer</p><p class="field-hint" style="margin:-6px 0 12px;">Send your employer a summary of your progress. They see your name, the tickets you are working on, and how many days are signed. They do not see your date of birth, phone, email, vessels or medical details.</p>' +
       '<div class="field"><label class="field-label" for="empName">Your name</label><input type="text" id="empName" autocomplete="name" autocapitalize="words" value="' + escapeHtml(profile.name) + '" /></div>' +
       '<div class="field"><label class="field-label" for="empCompany">Company</label><input type="text" id="empCompany" autocomplete="organization" autocapitalize="words" placeholder="Who you work for" value="' + escapeHtml(profile.company || '') + '" /></div>' +
@@ -3430,6 +3440,28 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) schedSoon(); });
     schedSoon();
   })();
+
+
+  // ---- Crew dashboard inside the app (company managers only; the server enforces access) ----
+  function isManager() { return !!(window.Cloud && Cloud.user() && cloudCompanies.some(function (c) { return c.role !== 'crew'; })); }
+  function openDash() {
+    if (!(window.Cloud && Cloud.user())) { showToast('Sign in under Settings first.'); return; }
+    $('dashFrame').src = '../dashboard.html'; $('dashOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; fx('open');
+  }
+  function closeDash() { $('dashOverlay').classList.remove('open'); document.body.style.overflow = ''; $('dashFrame').src = 'about:blank'; try { cloudSoon(); } catch (e) {} fx('close'); }
+  $('dashClose').addEventListener('click', closeDash);
+  function dashCard() {
+    if (!(window.Cloud && Cloud.user())) return '';
+    return isManager()
+      ? '<div class="form-card"><p class="section-title">Crew dashboard</p><p class="field-hint" style="margin:-6px 0 12px;">See every crew member\u2019s progress toward their next ticket, who is ready to apply and who is waiting on a signature. Only company managers can open it.</p><button type="button" class="save-btn" id="dashOpen">Open crew dashboard</button></div>'
+      : '<div class="form-card"><p class="section-title">Run a crew?</p><p class="field-hint" style="margin:-6px 0 12px;">Set up a company to get a code your crew can enter in their app, then follow their progress here. Free for 90 days.</p><button type="button" class="save-btn" id="dashOpen">Set up a company</button></div>';
+  }
+  function renderDashChip() {
+    var box = $('dashChip'); if (!box) return;
+    box.innerHTML = isManager() ? '<div class="exp-home" id="dashHome"><b>Crew dashboard</b><div><span>See your crew\u2019s ticket progress</span><span>Open \u203a</span></div></div>' : '';
+  }
+  settingsBody.addEventListener('click', function (ev) { if (ev.target.id === 'dashOpen') { closeSettings(); setTimeout(openDash, 320); } });
+  document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#dashHome')) openDash(); });
 
   // ---- First-run setup: one window, a few questions ----
   var ONB_KEY = 'askel-onboarded', onbStep = 0, ONB_STEPS = 6, onbMsg = '';
