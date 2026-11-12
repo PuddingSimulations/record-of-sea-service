@@ -18,8 +18,8 @@ One flat monthly price for your whole company. Crew are always free.
 | Company size | Price (AUD, plus GST where applicable) |
 |---|---|
 | Up to 15 crew | $69 / month |
-| Up to 50 crew | $209 / month |
-| More than 50 crew | from $419 / month, agreed for your fleet |
+| Up to 50 crew | $199 / month |
+| More than 50 crew | from $399 / month, agreed for your fleet |
 
 Pay annually and get two months free. No per-seat fees, no charge for adding crew.
 
