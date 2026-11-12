@@ -575,9 +575,10 @@
   /* splash */
   #splash { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; align-items: center; justify-content: center; transition: opacity .45s ease, visibility .45s; }
   #splash.out { opacity: 0; visibility: hidden; }
-  #splash svg { width: 112px; height: 112px; overflow: visible; color: var(--ink); animation: splashLogo 1.9s cubic-bezier(.3,.7,.2,1) both; }
+  #splash svg { width: 112px; height: 112px; overflow: visible; color: #5DB1FF; animation: splashLogo 1.9s cubic-bezier(.3,.7,.2,1) both; }
   #splash path { opacity: 0; animation: splashBar .8s cubic-bezier(.2,.9,.2,1) forwards; }
   #splash .b1 { --x: -34px; --o: .45; animation-delay: .05s; } #splash .b2 { --x: 34px; --o: .75; animation-delay: .2s; } #splash .b3 { --x: -34px; --o: 1; animation-delay: .35s; }
+  [data-theme="light"] #splash svg { color: #2A8BF2; }
   @keyframes splashBar { from { opacity: 0; transform: translateX(var(--x)); } to { opacity: var(--o); transform: translateX(0); } }
   @keyframes splashLogo { 0%, 55% { transform: scale(1); } 100% { transform: scale(1.12); } }
   @media (prefers-reduced-motion: reduce) { #splash { display: none; } }
