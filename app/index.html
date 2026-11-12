@@ -147,7 +147,7 @@
   .boss-card b { display: block; font-size: 15px; margin-bottom: 3px; padding-right: 26px; }
   .boss-card p { margin: 0 0 12px; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
   .boss-card .boss-x { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--ink-2); font-size: 16px; line-height: 1; cursor: pointer; }
-  .boss-card .boss-go { border: none; border-radius: 12px; padding: 11px 16px; font-size: 14px; font-weight: 700; background: var(--ink); color: #141416; cursor: pointer; transition: transform .25s var(--spring); }
+  .boss-card .boss-go { border: none; border-radius: 12px; padding: 11px 16px; font-size: 14px; font-weight: 700; background: var(--ink); color: var(--bg); cursor: pointer; transition: transform .25s var(--spring); }
   .boss-card .boss-go:active { transform: scale(0.96); }
   /* Goal tickets under the days total */
   .goal-card { background: var(--card); border-radius: 18px; padding: 12px 14px 6px; margin: 0 0 14px; }
@@ -2734,7 +2734,7 @@
   var QUICK_DUTIES = ['D', 'GPH', 'INW', 'C', 'EIC', 'EW', 'E/ED', 'AE/ED', 'AEIC'];
   function dutyName(c) { var d = DUTY_CATEGORIES.filter(function (k) { return k.code === c; })[0]; return d ? d.name : c; }
   var quickOverlay = $('quickOverlay'), quickSheet = $('quickSheet'), quickBody = $('quickBody');
-  var qk = { vessel: '', duties: ['D'], when: 'today', date: '', days: 1, nu: false, tally: true };
+  var qk = { vessel: '', duties: ['D'], when: 'today', date: '', days: 1, nu: false, tally: true, vl: '', vp: '', vprop: 'I', vid: '' };
   function isoDay(d) { var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); }
   function quickVessels() {
     var m = {};
@@ -2755,6 +2755,13 @@
     if (vs.length) { h += '<div class="role-chips">' + vs.map(function (e) { return '<button type="button" data-qv="' + escapeHtml(e.vessel) + '"' + (qk.vessel === e.vessel ? ' class="on"' : '') + '>' + escapeHtml(e.vessel) + '</button>'; }).join('') + '<button type="button" data-qv="__new"' + (qk.vessel && !vs.some(function (e) { return e.vessel === qk.vessel; }) ? ' class="on"' : '') + '>New vessel</button></div>'; }
     if (!vs.length || (qk.vessel === '' && qk.newv) || (qk.vessel && !vs.some(function (e) { return e.vessel === qk.vessel; })) || qk.newv) h += '<div class="field" style="margin-top:10px;"><input type="text" id="qkVessel" placeholder="Vessel name" autocomplete="off" autocapitalize="words" value="' + escapeHtml(qk.vessel) + '" /></div>';
     h += '</div>';
+    if (!vs.length || qk.newv || !vs.some(function (e) { return e.vessel === qk.vessel; })) {
+      h += '<div class="form-card"><p class="section-title">Vessel details</p><p class="field-hint" style="margin:-6px 0 12px;">Saved with the vessel, so you only enter them once. AMSA checks length and power against each ticket.</p>' +
+        '<div class="field row-2"><div><label class="field-label" for="qkLen">Length (m)</label><input type="number" inputmode="decimal" min="0" id="qkLen" value="' + escapeHtml(qk.vl) + '" /></div>' +
+        '<div><label class="field-label" for="qkPow">Power (kW)</label><input type="number" inputmode="decimal" min="0" id="qkPow" value="' + escapeHtml(qk.vp) + '" /></div></div>' +
+        '<div class="field"><label class="field-label" for="qkProp">Propulsion</label><div class="select-wrap" style="margin:0;"><select id="qkProp">' + PROPULSION_TYPES.map(function (t) { return '<option value="' + t.code + '"' + (qk.vprop === t.code ? ' selected' : '') + '>' + t.name + '</option>'; }).join('') + '</select></div></div>' +
+        '<div class="field"><label class="field-label" for="qkVid">Registration / call sign</label><input type="text" id="qkVid" autocomplete="off" autocapitalize="characters" placeholder="Optional" value="' + escapeHtml(qk.vid) + '" /></div></div>';
+    }
     h += '<div class="form-card"><p class="section-title">What did you do?</p><div class="role-chips">' + QUICK_DUTIES.map(function (d) { return '<button type="button" data-qd="' + d + '"' + (qk.duties.indexOf(d) !== -1 ? ' class="on"' : '') + '>' + escapeHtml(dutyName(d)) + '</button>'; }).join('') + '</div>' +
       '<p class="field-hint" style="margin:10px 0 0;">' + (qk.duties.length === 2 ? 'Dual ticket day: saved as two entries, one for each duty, so each gets its own Form 771. It is only added to your total once.' : 'Tap a second duty for a dual-ticket day, like deck and engineer on the same boat.') + '</p></div>';
     h += '<div class="form-card"><p class="section-title">When</p><div class="role-chips">' + [['today', 'Today'], ['yesterday', 'Yesterday'], ['pick', 'Pick a date'], ['none', 'No exact date']].map(function (w) { return '<button type="button" data-qw="' + w[0] + '"' + (qk.when === w[0] ? ' class="on"' : '') + '>' + w[1] + '</button>'; }).join('') + '</div>' +
@@ -2771,7 +2778,7 @@
   function openQuick() {
     try { var sv = JSON.parse(localStorage.getItem(QUICK_KEY) || 'null'); if (sv) { qk.vessel = sv.vessel || ''; qk.duties = sv.duties && sv.duties.length ? sv.duties : ['D']; qk.nu = false; } } catch (e) {}
     var vs = quickVessels(); if (!vs.length) qk.vessel = qk.vessel || ''; else if (!vs.some(function (e) { return e.vessel === qk.vessel; })) qk.vessel = vs[0].vessel;
-    qk.when = 'today'; qk.days = 1; qk.date = ''; qk.newv = false; qk.tally = true;
+    qk.when = 'today'; qk.days = 1; qk.date = ''; qk.newv = false; qk.tally = true; qk.vl = ''; qk.vp = ''; qk.vprop = 'I'; qk.vid = '';
     drawQuick(); document.body.style.overflow = 'hidden'; quickOverlay.classList.add('open'); fx('open');
   }
   function closeQuick() { quickOverlay.classList.remove('open'); quickSheet.style.transform = ''; document.body.style.overflow = ''; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
@@ -2787,11 +2794,13 @@
     var t = ev.target;
     if (t.id === 'qkVessel') { qk.vessel = t.value; $('quickSave').disabled = !qk.vessel.trim() || (qk.when === 'pick' && !qk.date); }
     else if (t.id === 'qkDays') { qk.days = t.value === '' ? '' : Math.min(3650, Math.max(0, Math.floor(Number(t.value) || 0))); var n = Number(qk.days) || 0; $('quickSave').textContent = 'Add ' + (n || 1) + ' day' + (n === 1 ? '' : 's'); }
+    else if (t.id === 'qkLen') qk.vl = t.value; else if (t.id === 'qkPow') qk.vp = t.value; else if (t.id === 'qkVid') qk.vid = t.value;
     else if (t.id === 'qkDate') { qk.date = t.value; $('quickSave').disabled = !qk.vessel.trim() || !qk.date; }
   });
   quickBody.addEventListener('change', function (ev) {
     var t = ev.target;
-    if (t.id === 'qkNu') { qk.nu = t.checked; drawQuick(); } else if (t.id === 'qkTally') qk.tally = t.checked;
+    if (t.id === 'qkProp') qk.vprop = t.value;
+    else if (t.id === 'qkNu') { qk.nu = t.checked; drawQuick(); } else if (t.id === 'qkTally') qk.tally = t.checked;
   });
   $('quickSave').addEventListener('click', function () {
     var n = Math.max(1, Number(qk.days) || 1), vessel = qk.vessel.trim(); if (!vessel) return;
@@ -2807,7 +2816,7 @@
         m.days = Number(m.days) + n; if (d) { if (!m.start || d < m.start) m.start = d; if (!m.end || d > m.end) m.end = d; }
         undos.push(function () { m.days = snap.days; m.start = snap.start; m.end = snap.end; }); first = first || m; report = m.days;
       } else {
-        var ne = { id: uuid(), tally: true, vessel: vessel, vesselId: base.vesselId || '', position: base.position || '', vesselLength: base.vesselLength || '', vesselPower: base.vesselPower || '', propulsion: base.propulsion || 'I', numEngines: base.numEngines || '', owner: base.owner || '',
+        var nv = !base.vessel; var ne = { id: uuid(), tally: true, vessel: vessel, vesselId: nv ? qk.vid.trim() : (base.vesselId || ''), position: base.position || '', vesselLength: nv ? qk.vl : (base.vesselLength || ''), vesselPower: nv ? qk.vp : (base.vesselPower || ''), propulsion: nv ? qk.vprop : (base.propulsion || 'I'), numEngines: base.numEngines || '', owner: base.owner || '',
           supName: base.supName || '', supPosition: base.supPosition || '', supCert: base.supCert || '', supPhone: base.supPhone || '', supEmail: base.supEmail || '',
           operationType: base.operationType || 'C', modeOfOperation: quickMode(c), yacht: !!base.yacht, category: c, start: d, end: d, days: n, notes: d ? '' : 'Earlier service, exact dates not recorded.' };
         if (did) ne.dualId = did;
@@ -2815,7 +2824,7 @@
       }
     });
     lastAddedId = first && first.id;
-    var msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + (dual ? ' as a dual day' : '') + ' on ' + vessel + (base.vessel ? '' : '. Add its length and power under the entry so it can count.');
+    var msg = 'Added ' + n + ' day' + (n === 1 ? '' : 's') + (dual ? ' as a dual day' : '') + ' on ' + vessel + '';
     try { localStorage.setItem(QUICK_KEY, JSON.stringify({ vessel: vessel, duties: duties })); } catch (e) {}
     saveEntries(); closeQuick();
     setTimeout(function () { completedThisRender = false; renderMain(); if (!completedThisRender) fx('success'); burst(innerWidth / 2, grandTotalEl.getBoundingClientRect().top + 30, completedThisRender ? 0 : 26);
