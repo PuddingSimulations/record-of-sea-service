@@ -3052,7 +3052,7 @@
       var list = TICKETS.filter(function (t) { return t.group === g && goalAvailable(t); }); if (!list.length) return;
       h += '<div class="group-label">' + g + '</div>';
       list.forEach(function (t) {
-        h += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '<small>' + goalReq(t) + ' days of sea service</small></span><input type="checkbox" class="switch" data-goalpick="' + t.id + '" ' + (goalIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
+        h += '<label class="set-row"><span class="n">' + escapeHtml(t.name) + '<small>' + goalLabel(t) + '</small></span><input type="checkbox" class="switch" data-goalpick="' + t.id + '" ' + (goalIds.indexOf(t.id) !== -1 ? 'checked' : '') + ' /></label>';
       });
     });
     goalsBody.innerHTML = h;
